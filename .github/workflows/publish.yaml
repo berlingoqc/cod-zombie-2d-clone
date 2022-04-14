@@ -12,7 +12,9 @@ jobs:
       - name: Check out
         uses: actions/checkout@v1
 
-      - name: Generate your awesome content
+      - name: Add cargo make
+        run: cargo install --force cargo-make
+      - name: Generate website
         run: cargo make web-dev
       - name: Publish generated content to GitHub Pages
         uses: tsunematsu21/actions-publish-gh-pages@v1.0.2
