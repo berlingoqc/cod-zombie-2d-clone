@@ -11,3 +11,19 @@ i tend to right summary to help me focusing.
 
 * [First day, just thinking](./logs/2022-04-13.md)
 
+
+
+## Run the project
+
+
+```bash
+cargo vendor
+
+# Run in desktop mode
+cargo make run
+
+# Run in the browser
+cargo make serve
+
+```
+

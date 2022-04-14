@@ -1,8 +1,42 @@
 [package]
 name = "cod-zombie-2d-clone"
+authors = ["William Quintal <william95quintalwilliam@outlook.com>"]
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = [
+    "bevy/bevy_gltf",
+    "bevy/bevy_winit",
+    "bevy/render",
+    "bevy/png"
+]
+
+native = [
+    "bevy/x11",
+#    "bevy/bevy_wgpu"
+]
+
+web = [
+#    "bevy_webgl2"
+]
+
+audio = [
+    "bevy/bevy_audio",
+    "bevy/vorbis"
+]
 
 [dependencies]
+bevy = {version = "0.6.1", default-features=false}
+# bevy_webgl2 = {version = "0.5.2", default-features = false, optional=true}
+structopt = "0.3"
+uuid = "=0.8.1"
+
+[profile.dev]
+opt-level = 1
+
+[profile.release]
+lto = true
+opt-level = 's'
+
