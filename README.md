@@ -10,8 +10,7 @@ Here is a list of my development entry , when i code or work on the project
 i tend to right summary to help me focusing.
 
 * [First day, just thinking](./logs/2022-04-13.md)
-
-
+* [Starting the project](./logs/2022-04-14.md)
 
 ## Run the project
 
