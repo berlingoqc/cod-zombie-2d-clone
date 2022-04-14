@@ -2,4 +2,5 @@
 /vendor
 public/*.js
 public/*.wasm
+public/assets/
 

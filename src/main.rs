@@ -29,9 +29,10 @@ fn main() {
     .add_plugins(DefaultPlugins)
     .add_startup_system(setup);
 
-    if opts.benchmark_mode {
+
+    //if opts.benchmark_mode {
         app.add_plugin(FPSPlugin{});
-    }
+    //}
 
     app.run();
 }
