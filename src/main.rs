@@ -7,12 +7,15 @@ mod game;
 
 use bevy::{
     prelude::*,
-    window::WindowDescriptor, sprite::collide_aabb::collide
+    window::WindowDescriptor, sprite::collide_aabb::collide, core::FixedTimestep
 };
-use player::Player;
+use player::{Player, Projectile, Velocity};
 use map::{Collider, MapElementPosition};
 
 use crate::{plugins::frame_cnt::FPSPlugin, map::setup_map, game::{Game, GameState}};
+
+
+const TIME_STEP: f32 = 1.0 / 60.0;
 
 fn main() {
     let opts = config::Opts::get();
@@ -42,7 +45,10 @@ fn main() {
         .add_system_set(SystemSet::on_enter(GameState::Playing).with_system(setup))
         .add_system_set(
             SystemSet::on_update(GameState::Playing)
+                .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
+                .with_system(apply_velocity)
                 .with_system(move_player)
+                .with_system(fire)
         );
     
 
@@ -58,7 +64,22 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn_bundle(UiCameraBundle::default());
 }
 
+fn fire(
+    mut commands: Commands,
+    keyboard_input: Res<Input<KeyCode>>,
+    query: Query<&Transform, With<Player>>,
+) {
+}
+
+fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>) {
+    for (mut transform, velocity) in query.iter_mut() {
+        transform.translation.x += velocity.v.x * TIME_STEP;
+        transform.translation.y += velocity.v.y * TIME_STEP;
+    }
+}
+
 fn move_player(
+    mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<&mut Transform, With<Player>>,
     collider_query: Query<(Entity, &Transform, &MapElementPosition), (With<Collider>, With<MapElementPosition>, Without<Player>)>,
@@ -68,26 +89,53 @@ fn move_player(
     let mut movement = Vec3::default();
     let mut moved = false;
 
-    if keyboard_input.pressed(KeyCode::Up) {
+    if keyboard_input.pressed(KeyCode::W) {
         movement += Vec3::new(0.,1.,0.);
         moved = true;
     }
-    if keyboard_input.pressed(KeyCode::Down) {
+    if keyboard_input.pressed(KeyCode::S) {
         movement += Vec3::new(0.,-1.,0.);
         moved = true;
     }
-    if keyboard_input.pressed(KeyCode::Left) {
+    if keyboard_input.pressed(KeyCode::A) {
         movement += Vec3::new(-1.,0.,0.);
         moved = true;
     }
-    if keyboard_input.pressed(KeyCode::Right) {
+    if keyboard_input.pressed(KeyCode::D) {
         movement += Vec3::new(1.,0.,0.);
         moved = true;
     }
 
+    if keyboard_input.pressed(KeyCode::Space) {
+        let amo_v = if !moved {
+            Vec3::new(1., 0., 0.)
+        } else {
+            movement
+        };
+        commands
+            .spawn()
+            .insert(Projectile{})
+            .insert_bundle(SpriteBundle {
+                transform: Transform {
+                    translation: player_transform.translation,
+                   ..Transform::default()
+                },
+                sprite: Sprite {
+                    color: Color::BISQUE,
+                    custom_size: Some(Vec2::new(5.0, 5.0)),
+                    ..Sprite::default()
+                },
+                ..SpriteBundle::default()
+            })
+            .insert(Collider{})
+            .insert(Velocity{ v: amo_v.truncate() * 500. });
+    }
+
+
+
     if !moved { return; }
 
-    let dest = player_transform.translation + movement;
+    let dest = player_transform.translation + (movement * 3.);
 
     let mut save_move = true;
     for (collider_entity, transform, info) in collider_query.iter() {
