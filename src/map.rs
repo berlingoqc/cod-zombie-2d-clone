@@ -1,6 +1,7 @@
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
+use bevy_ecs_tilemap::prelude::*;
 
 #[derive(Component)]
 pub struct Collider {}
@@ -77,6 +78,8 @@ pub fn setup_map(
         }
     ];
 
+    /*
+
     commands.spawn_bundle(
         MaterialMesh2dBundle {
             mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
@@ -85,6 +88,7 @@ pub fn setup_map(
             ..MaterialMesh2dBundle::default()
         }
     );
+    */
 
 
     walls.into_iter().for_each(|w| {

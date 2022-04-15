@@ -29,9 +29,12 @@ audio = [
 
 [dependencies]
 bevy = {version = "0.6.1", default-features=false}
+bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap", branch =  "main"}
 # bevy_webgl2 = {version = "0.5.2", default-features = false, optional=true}
+tiled = "0.9.5"
 structopt = "0.3"
 uuid = "=0.8.1"
+anyhow ="1.0"
 
 [profile.dev]
 opt-level = 1

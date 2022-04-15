@@ -3,19 +3,41 @@ mod config;
 mod map;
 mod player;
 mod game;
-
+mod tiled_map;
 
 use bevy::{
     prelude::*,
     window::WindowDescriptor, sprite::collide_aabb::collide, core::FixedTimestep
 };
+use bevy_ecs_tilemap::prelude::*;
 use player::{Player, Projectile, Velocity};
 use map::{Collider, MapElementPosition};
+use tiled_map::tiled::{TiledMapBundle, TiledMapPlugin};
+use tiled_map::texture::set_texture_filters_to_nearest;
 
-use crate::{plugins::frame_cnt::FPSPlugin, map::setup_map, game::{Game, GameState}};
+use crate::{plugins::frame_cnt::FPSPlugin, map::setup_map, game::{Game, GameState}, tiled_map::tiled_usage::startup_tiled};
+
 
 
 const TIME_STEP: f32 = 1.0 / 60.0;
+
+
+/*fn main() {
+    App::new()
+        .insert_resource(WindowDescriptor {
+            width: 1270.0,
+            height: 720.0,
+            title: String::from("Tiled map editor example"),
+            ..Default::default()
+        })
+        .add_plugins(DefaultPlugins)
+        .add_plugin(TilemapPlugin)
+        .add_plugin(TiledMapPlugin)
+        .add_startup_system(startup)
+        .add_system(helpers::camera::movement)
+        .add_system(helpers::texture::set_texture_filters_to_nearest)
+        .run();
+}*/
 
 fn main() {
     let opts = config::Opts::get();
@@ -36,8 +58,12 @@ fn main() {
         ..WindowDescriptor::default()
     })
     .add_plugins(DefaultPlugins)
+    .add_plugin(TilemapPlugin)
+    .add_plugin(TiledMapPlugin)
+    .add_startup_system(startup_tiled)
     .add_startup_system(setup_camera)
-    .add_startup_system(setup_map);
+    .add_startup_system(setup_map)
+    .add_system(set_texture_filters_to_nearest);
 
     app
         .init_resource::<Game>()
@@ -61,7 +87,7 @@ fn main() {
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    commands.spawn_bundle(UiCameraBundle::default());
+    //commands.spawn_bundle(UiCameraBundle::default());
 }
 
 fn fire(
