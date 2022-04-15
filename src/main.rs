@@ -7,8 +7,10 @@ mod game;
 
 use bevy::{
     prelude::*,
-    window::WindowDescriptor
+    window::WindowDescriptor, sprite::collide_aabb::collide
 };
+use player::Player;
+use map::{Collider, MapElementPosition};
 
 use crate::{plugins::frame_cnt::FPSPlugin, map::setup_map, game::{Game, GameState}};
 
@@ -42,7 +44,7 @@ fn main() {
             SystemSet::on_update(GameState::Playing)
                 .with_system(move_player)
         );
-
+    
 
     //if opts.benchmark_mode {
         app.add_plugin(FPSPlugin{});
@@ -56,41 +58,52 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn_bundle(UiCameraBundle::default());
 }
 
-
 fn move_player(
-    mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
-    mut game: ResMut<Game>,
-    mut transforms: Query<&mut Transform>,
-    time: Res<Time>,
+    mut query: Query<&mut Transform, With<Player>>,
+    collider_query: Query<(Entity, &Transform, &MapElementPosition), (With<Collider>, With<MapElementPosition>, Without<Player>)>,
 ) {
+    let mut player_transform = query.single_mut();
+
+    let mut movement = Vec3::default();
     let mut moved = false;
+
     if keyboard_input.pressed(KeyCode::Up) {
-        game.player.y += 1;
-        moved = true;   
+        movement += Vec3::new(0.,1.,0.);
+        moved = true;
     }
     if keyboard_input.pressed(KeyCode::Down) {
-        game.player.y -= 1;
-        moved = true;   
-    }
-    if keyboard_input.pressed(KeyCode::Right) {
-        game.player.x += 1;
-        moved = true;   
+        movement += Vec3::new(0.,-1.,0.);
+        moved = true;
     }
     if keyboard_input.pressed(KeyCode::Left) {
-        game.player.x -= 1;
-        moved = true;   
+        movement += Vec3::new(-1.,0.,0.);
+        moved = true;
+    }
+    if keyboard_input.pressed(KeyCode::Right) {
+        movement += Vec3::new(1.,0.,0.);
+        moved = true;
     }
 
-    if moved {
-        *transforms.get_mut(game.player.entity.unwrap()).unwrap() = Transform {
-            translation: Vec3::new(
-                game.player.x as f32,
-                game.player.y as f32,
-                6.,
-            ),
-            ..Transform::default()
-        };
+    if !moved { return; }
+
+    let dest = player_transform.translation + movement;
+
+    let mut save_move = true;
+    for (collider_entity, transform, info) in collider_query.iter() {
+        let collision = collide(
+            dest,
+            Vec2::new(25.,25.),
+            transform.translation,
+            info.size
+        );
+        if let Some(collision) = collision {
+            save_move = false;
+        }
+    }
+
+    if save_move {
+        player_transform.translation = dest;
     }
 }
 
@@ -103,9 +116,16 @@ fn setup(
             custom_size: Some(Vec2::new(25.0, 25.0)),
             ..Sprite::default()
         },
+        transform: Transform {
+           translation: Vec3::new(0.,0.,10.),
+           ..Transform::default()
+        },
         ..SpriteBundle::default()
     };
 
-    game.player.entity = Some(commands.spawn_bundle(sprite_bundle).id());
+    commands
+        .spawn()
+        .insert(Player{})
+        .insert_bundle(sprite_bundle);
 
 }
