@@ -7,7 +7,6 @@ edition = "2021"
 
 [features]
 default = [
-    "bevy/bevy_gltf",
     "bevy/bevy_winit",
     "bevy/render",
     "bevy/png"
@@ -28,10 +27,10 @@ audio = [
 ]
 
 [dependencies]
-bevy = {version = "0.6.1", default-features=false}
-bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap", branch =  "main"}
+bevy = {version = "0.7.0", default-features=false, features = ["bevy_render","bevy_core_pipeline","bevy_sprite"]}
+bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap/", branch = "main"}
 # bevy_webgl2 = {version = "0.5.2", default-features = false, optional=true}
-tiled = "0.9.5"
+tiled = { version = "0.9", default-features=false}
 structopt = "0.3"
 uuid = "=0.8.1"
 anyhow ="1.0"

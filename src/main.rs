@@ -52,7 +52,6 @@ fn main() {
         width: 500.,
         height: 300.,
         resizable: true,
-        vsync,
         #[cfg(target_arch = "wasm32")]
         canvas: Some("#bevy-canvas".to_string()),
         ..WindowDescriptor::default()
