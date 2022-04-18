@@ -12,11 +12,10 @@ use bevy::{
 };
 use bevy_ecs_tilemap::prelude::*;
 use player::{Player, Projectile, Velocity};
-use map::{Collider, MapElementPosition};
 use tiled_map::tiled::{TiledMapBundle, TiledMapPlugin};
 use tiled_map::texture::set_texture_filters_to_nearest;
 
-use crate::map::{load_scene_system, MapDataAsset, MapDataAssetLoader, render_scene, MapDataState, react_event_scene};
+use crate::map::{load_scene_system, react_event_scene, render_scene, data::{MapDataState, MapElementPosition, MapDataAsset, Collider}, loader::MapDataAssetLoader};
 use crate::{plugins::frame_cnt::FPSPlugin, game::{Game, GameState}, tiled_map::tiled_usage::startup_tiled};
 
 const TIME_STEP: f32 = 1.0 / 60.0;
