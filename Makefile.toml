@@ -42,6 +42,10 @@ command = "${CARGO_TARGET_DIR}/${ENV_DIR}/${CARGO_MAKE_BINARY_EXECUTABLE_NAME}"
 args = ["--benchmark-mode"]
 dependencies = ["build-native"]
 
+[tasks.run-dyn]
+command = "cargo"
+args = ["run", "--features", "native", "--features", "bevy/dynamic"]
+
 [tasks.cp-assets-public]
 command = "cp"
 args = ["-r", "./assets", "./public/"]
