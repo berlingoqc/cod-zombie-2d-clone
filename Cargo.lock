@@ -959,6 +959,8 @@ dependencies = [
  "anyhow",
  "bevy",
  "bevy_ecs_tilemap",
+ "ron",
+ "serde",
  "structopt",
  "tiled",
  "uuid",

@@ -5,6 +5,7 @@ mod player;
 mod game;
 mod tiled_map;
 
+use bevy::asset::AssetServerSettings;
 use bevy::{
     prelude::*,
     window::WindowDescriptor, sprite::collide_aabb::collide, core::FixedTimestep
@@ -15,33 +16,17 @@ use map::{Collider, MapElementPosition};
 use tiled_map::tiled::{TiledMapBundle, TiledMapPlugin};
 use tiled_map::texture::set_texture_filters_to_nearest;
 
-use crate::{plugins::frame_cnt::FPSPlugin, map::setup_map, game::{Game, GameState}, tiled_map::tiled_usage::startup_tiled};
-
-
+use crate::map::{load_scene_system, MapDataAsset, MapDataAssetLoader, render_scene, MapDataState, react_event_scene};
+use crate::{plugins::frame_cnt::FPSPlugin, game::{Game, GameState}, tiled_map::tiled_usage::startup_tiled};
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
 
-/*fn main() {
-    App::new()
-        .insert_resource(WindowDescriptor {
-            width: 1270.0,
-            height: 720.0,
-            title: String::from("Tiled map editor example"),
-            ..Default::default()
-        })
-        .add_plugins(DefaultPlugins)
-        .add_plugin(TilemapPlugin)
-        .add_plugin(TiledMapPlugin)
-        .add_startup_system(startup)
-        .add_system(helpers::camera::movement)
-        .add_system(helpers::texture::set_texture_filters_to_nearest)
-        .run();
-}*/
 
 fn main() {
     let opts = config::Opts::get();
     info!("opts: {:?}", opts);
+
 
     let vsync = opts.fps == 60 && !opts.benchmark_mode;
 
@@ -56,12 +41,18 @@ fn main() {
         canvas: Some("#bevy-canvas".to_string()),
         ..WindowDescriptor::default()
     })
+    .register_type::<MapElementPosition>()
     .add_plugins(DefaultPlugins)
     .add_plugin(TilemapPlugin)
     .add_plugin(TiledMapPlugin)
+    .init_resource::<MapDataState>()
+    .add_asset::<MapDataAsset>()
+    .init_asset_loader::<MapDataAssetLoader>()
     .add_startup_system(startup_tiled)
     .add_startup_system(setup_camera)
-    .add_startup_system(setup_map)
+    .add_startup_system(load_scene_system)
+    .add_system(react_event_scene)
+    .add_system(render_scene)
     .add_system(set_texture_filters_to_nearest);
 
     app
@@ -78,7 +69,7 @@ fn main() {
     
 
     //if opts.benchmark_mode {
-        app.add_plugin(FPSPlugin{});
+    //    app.add_plugin(FPSPlugin{});
     //}
 
     app.run();
