@@ -32,6 +32,7 @@ audio = [
 [dependencies]
 bevy = {version = "0.7.0", default-features=false, features = ["bevy_render","bevy_core_pipeline","bevy_sprite"]}
 bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap/", branch = "main"}
+bevy_networking_turbulence = { git = "https://github.com/berlingoqc/bevy_networking_turbulence/", branch = "master"}
 ron = "0.7.0"
 serde = { version = "1", features = ["derive"] }
 tiled = { version = "0.9", default-features=false}

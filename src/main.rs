@@ -16,8 +16,9 @@ use crate::map::{MapPlugin, data::{MovementCollider, ProjectileCollider, MapElem
 use crate::{plugins::frame_cnt::FPSPlugin, game::{Game, GameState}};
 use crate::player::{apply_velocity, input_player, movement_projectile, setup_players};
 
-const TIME_STEP: f32 = 1.0 / 60.0;
+use bevy_networking_turbulence::{NetworkEvent, NetworkResource, NetworkingPlugin, Packet};
 
+const TIME_STEP: f32 = 1.0 / 60.0;
 
 
 fn main() {
@@ -45,6 +46,7 @@ fn main() {
         .init_resource::<Game>()
         .init_resource::<ZombieGame>()
         .init_resource::<ZombieLevelAssetState>()
+        .add_plugin(NetworkingPlugin::default())
         .add_asset::<ZombieLevelAsset>()
         .init_asset_loader::<ZombieLevelAssetLoader>()
         .add_state(GameState::PlayingZombie)
