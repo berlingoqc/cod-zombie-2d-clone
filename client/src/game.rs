@@ -1,30 +1,30 @@
 use std::time::Duration;
 
-use bevy::asset::{AssetLoader, LoadContext, BoxedFuture, LoadedAsset};
-use bevy::prelude::shape::Quad;
-use bevy::reflect::TypeUuid;
-use bevy::{prelude::*};
-use serde::Deserialize;
-use rand::prelude::*;
+use crate::map::data::{
+    MapElementPosition, MovementCollider, ProjectileCollider, Window, ZombieSpawner,
+};
 use crate::player::Player;
-use crate::map::data::{ProjectileCollider, MovementCollider, MapElementPosition, ZombieSpawner, Window};
+use bevy::asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset};
+use bevy::prelude::shape::Quad;
+use bevy::prelude::*;
+use bevy::reflect::TypeUuid;
+use rand::prelude::*;
+use serde::Deserialize;
 
-use pathfinding::prelude::{Grid, astar};
-
-
+use pathfinding::prelude::{astar, Grid};
 
 #[derive(Default)]
 pub struct Game {
     pub player: Player,
 
-    pub zombie_game: Option<ZombieGame>
+    pub zombie_game: Option<ZombieGame>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum GameState {
     Menu,
     PlayingZombie,
-    GameOver
+    GameOver,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -33,46 +33,46 @@ pub enum ZombieGameState {
     Starting = 0,
     Round,
     RoundInterlude,
-    Over
+    Over,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ZombieState {
     AwakingFromTheDead,
     FindingEnterace,
-    FollowingPlayer
+    FollowingPlayer,
 }
 
 #[derive(Default, Deserialize, Clone)]
 pub struct MapRoundConfiguration {
     pub starting_zombie: i32,
     pub round_increments: i32,
-    pub initial_timeout: u64
+    pub initial_timeout: u64,
 }
 
 #[derive(Default)]
 pub struct CurrentRoundInfo {
     pub total_zombie: i32,
-    pub zombie_remaining: i32
+    pub zombie_remaining: i32,
 }
 
 #[derive(Default)]
 pub struct ZombieGame {
     pub round: i32,
-    pub state: i32,//ZombieGameState,
+    pub state: i32, //ZombieGameState,
     pub current_round: CurrentRoundInfo,
     pub configuration: MapRoundConfiguration,
 }
 
 #[derive(Component)]
 pub struct Zombie {
-    pub state: ZombieState
+    pub state: ZombieState,
 }
 
 #[derive(Component, Default)]
 pub struct BotDestination {
     pub destination: MapElementPosition,
-    pub path: Vec<(i32, i32)>
+    pub path: Vec<(i32, i32)>,
 }
 
 #[derive(Bundle)]
@@ -89,7 +89,7 @@ pub struct ZombieBundle {
 #[derive(Deserialize, TypeUuid, Clone, Component)]
 #[uuid = "39cadc56-aa9c-4543-8640-a018b74b5023"]
 pub struct ZombieLevelAsset {
-    pub configuration: MapRoundConfiguration
+    pub configuration: MapRoundConfiguration,
 }
 
 #[derive(Default)]
@@ -105,7 +105,7 @@ impl AssetLoader for ZombieLevelAssetLoader {
     fn load<'a>(
         &'a self,
         bytes: &'a [u8],
-        load_context: &'a mut LoadContext
+        load_context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
         Box::pin(async move {
             let map_data_asset = ron::de::from_bytes::<ZombieLevelAsset>(bytes)?;
@@ -119,81 +119,78 @@ impl AssetLoader for ZombieLevelAssetLoader {
     }
 }
 
-
-
-
 impl ZombieBundle {
     fn new(info: MapElementPosition, dest: BotDestination) -> ZombieBundle {
-        ZombieBundle{
-            sprite_bundle: SpriteBundle{
+        ZombieBundle {
+            sprite_bundle: SpriteBundle {
                 sprite: Sprite {
                     color: Color::rgb(1., 1., 1.),
                     custom_size: Some(info.size),
-                        ..Sprite::default()
-                    },
-                    transform: Transform {
-                       translation: info.position.extend(10.0),
-                       scale: Vec3::new(0., 0., 0.),
-                       ..Transform::default()
-                    },
-             
-                        ..SpriteBundle::default()
-                    },
-                    collider: MovementCollider{},
-                    projectile_collider: ProjectileCollider{},
-                    zombie: Zombie{
-                        state: ZombieState::AwakingFromTheDead
-                    },
-                    info,
-                    destination: dest
-                }
-            }
-}
+                    ..Sprite::default()
+                },
+                transform: Transform {
+                    translation: info.position.extend(10.0),
+                    scale: Vec3::new(0., 0., 0.),
+                    ..Transform::default()
+                },
 
+                ..SpriteBundle::default()
+            },
+            collider: MovementCollider {},
+            projectile_collider: ProjectileCollider {},
+            zombie: Zombie {
+                state: ZombieState::AwakingFromTheDead,
+            },
+            info,
+            destination: dest,
+        }
+    }
+}
 
 pub struct ZombieSpawnerConfig {
     timer: Timer,
-    nums_ndg: Vec<f32>
+    nums_ndg: Vec<f32>,
 }
-
 
 pub fn setup_zombie_game(
     mut state: ResMut<ZombieLevelAssetState>,
-    mut commands: Commands, asset_server: Res<AssetServer>, game: Res<Game>, mut zombie_game: ResMut<ZombieGame>
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    game: Res<Game>,
+    mut zombie_game: ResMut<ZombieGame>,
 ) {
     let handle: Handle<ZombieLevelAsset> = asset_server.load("level_1.level");
     state.handle = handle;
     state.loaded = false;
 
-    commands.insert_resource(ZombieSpawnerConfig{
+    commands.insert_resource(ZombieSpawnerConfig {
         timer: Timer::new(Duration::from_secs(5), true),
-        nums_ndg: (-50..50).map(|x| x as f32).collect()
+        nums_ndg: (-50..50).map(|x| x as f32).collect(),
     });
 
-    commands
-       .spawn_bundle(TextBundle {
-              text: Text {
-              sections: vec![
-                  TextSection {
-                      value: "Round: ".to_string(),
-                     style: TextStyle {
-                          font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                          font_size: 20.0,
-                          color: Color::WHITE,
-                      },
-                  },
-                  TextSection {
-                      value: "Remaining: ".to_string(),
-                     style: TextStyle {
-                          font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                          font_size: 20.0,
-                          color: Color::WHITE,
-                      },
-                  },
-              ],
-              ..default()
-          },
-          ..default()
+    commands.spawn_bundle(TextBundle {
+        text: Text {
+            sections: vec![
+                TextSection {
+                    value: "Round: ".to_string(),
+                    style: TextStyle {
+                        font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                        font_size: 20.0,
+                        color: Color::WHITE,
+                    },
+                },
+                TextSection {
+                    value: "Remaining: ".to_string(),
+                    style: TextStyle {
+                        font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                        font_size: 20.0,
+                        color: Color::WHITE,
+                    },
+                },
+            ],
+            ..default()
+        },
+        ..default()
     });
 }
 
@@ -203,8 +200,7 @@ pub fn system_zombie_handle(
     mut query_zombies: Query<(&mut Transform, &mut BotDestination, &mut Zombie), With<Zombie>>,
 ) {
     let player = query_player.get_single().unwrap();
-    for (mut pos,mut dest, mut zombie) in query_zombies.iter_mut() {
-
+    for (mut pos, mut dest, mut zombie) in query_zombies.iter_mut() {
         match zombie.state {
             ZombieState::AwakingFromTheDead => {
                 if pos.scale.x < 1.0 {
@@ -216,38 +212,50 @@ pub fn system_zombie_handle(
                     pos.rotation = Quat::from_rotation_z(0.);
                     zombie.state = ZombieState::FindingEnterace;
                 }
-            },
-            ZombieState::FollowingPlayer |
-            ZombieState::FindingEnterace => {
-               if let Some(el) = dest.path.pop() {
+            }
+            ZombieState::FollowingPlayer | ZombieState::FindingEnterace => {
+                if let Some(el) = dest.path.pop() {
                     pos.translation.x = el.0 as f32;
                     pos.translation.y = el.1 as f32;
-               }
+                }
 
-               if dest.path.len() == 0 {
-                   // change target for the user
-                   let goal = (player.translation.x as i32, player.translation.y as i32);
-                   let mut result = astar(&(pos.translation.x as i32, pos.translation.y as i32),
-                    |&(x, y)| vec![(x+1,y+2), (x+1,y-2), (x-1,y+2), (x-1,y-2),
-                          (x+2,y+1), (x+2,y-1), (x-2,y+1), (x-2,y-1)]
-                          .into_iter().map(|p| (p, 1)),
-                    |&(x, y)| (goal.0.abs_diff(x) + goal.1.abs_diff(y)) / 3,
-                    |&p| p == goal).unwrap().0;
+                if dest.path.len() == 0 {
+                    // change target for the user
+                    let goal = (player.translation.x as i32, player.translation.y as i32);
+                    let mut result = astar(
+                        &(pos.translation.x as i32, pos.translation.y as i32),
+                        |&(x, y)| {
+                            vec![
+                                (x + 1, y + 2),
+                                (x + 1, y - 2),
+                                (x - 1, y + 2),
+                                (x - 1, y - 2),
+                                (x + 2, y + 1),
+                                (x + 2, y - 1),
+                                (x - 2, y + 1),
+                                (x - 2, y - 1),
+                            ]
+                            .into_iter()
+                            .map(|p| (p, 1))
+                        },
+                        |&(x, y)| (goal.0.abs_diff(x) + goal.1.abs_diff(y)) / 3,
+                        |&p| p == goal,
+                    )
+                    .unwrap()
+                    .0;
 
-                   result.reverse();
-                   let len = result.len() as f32;
-                   dest.path = if len >= 10. {
-                        let len_taken = ((len  * 0.25)).ceil() as usize;
+                    result.reverse();
+                    let len = result.len() as f32;
+                    dest.path = if len >= 10. {
+                        let len_taken = (len * 0.25).ceil() as usize;
                         let start = result.len() - 1 - len_taken;
                         let end = result.len() - 1;
                         result[start..end].to_vec()
-                   } else {
-                       result
-                   };
-               }
-
+                    } else {
+                        result
+                    };
+                }
             }
-
         }
     }
 }
@@ -270,13 +278,12 @@ pub fn system_zombie_game(
     query_spawner: Query<&MapElementPosition, With<ZombieSpawner>>,
     query_window: Query<&MapElementPosition, With<Window>>,
 
-    mut app_state: ResMut<State<GameState>>
+    mut app_state: ResMut<State<GameState>>,
 ) {
     let mut nbr_zombie = 0;
     for _ in zombie_query.iter() {
         nbr_zombie += 1;
     }
-
 
     match unsafe { ::std::mem::transmute(zombie_game.state) } {
         ZombieGameState::Starting => {
@@ -288,14 +295,17 @@ pub fn system_zombie_game(
 
             zombie_game.round = 1;
             zombie_game.configuration = data_asset.configuration.clone();
-            zombie_game.current_round = CurrentRoundInfo{
+            zombie_game.current_round = CurrentRoundInfo {
                 total_zombie: zombie_game.configuration.starting_zombie,
-                zombie_remaining: zombie_game.configuration.starting_zombie
+                zombie_remaining: zombie_game.configuration.starting_zombie,
             };
-            config.timer = Timer::new(Duration::from_secs(zombie_game.configuration.initial_timeout), true);
+            config.timer = Timer::new(
+                Duration::from_secs(zombie_game.configuration.initial_timeout),
+                true,
+            );
 
             zombie_game.state = ZombieGameState::Round as i32;
-        },
+        }
         ZombieGameState::Round => {
             if nbr_zombie == 0 && zombie_game.current_round.zombie_remaining == 0 {
                 zombie_game.state = ZombieGameState::RoundInterlude as i32;
@@ -305,14 +315,20 @@ pub fn system_zombie_game(
 
             config.timer.tick(time.delta());
 
-            if config.timer.finished() && zombie_game.current_round.zombie_remaining > 0 && nbr_zombie < 20 {
+            if config.timer.finished()
+                && zombie_game.current_round.zombie_remaining > 0
+                && nbr_zombie < 20
+            {
                 for position in query_spawner.iter() {
                     if zombie_game.current_round.zombie_remaining > 0 {
                         let mut ndg = rand::thread_rng();
                         config.nums_ndg.shuffle(&mut ndg);
 
-                        let position = position.position + Vec2::new(config.nums_ndg[0] as f32, config.nums_ndg[50] as f32);
-                        let mut closest_window = MapElementPosition{..MapElementPosition::default()};
+                        let position = position.position
+                            + Vec2::new(config.nums_ndg[0] as f32, config.nums_ndg[50] as f32);
+                        let mut closest_window = MapElementPosition {
+                            ..MapElementPosition::default()
+                        };
                         let mut closest_window_dst = 90000.;
                         for w in query_window.iter() {
                             let distance = position.distance(w.position);
@@ -322,44 +338,69 @@ pub fn system_zombie_game(
                             }
                         }
 
-                        let goal = (closest_window.position.x as i32, closest_window.position.y as i32);
-                        let mut result = astar(&(position.x as i32, position.y as i32),
-                            |&(x, y)| vec![(x+1,y+2), (x+1,y-2), (x-1,y+2), (x-1,y-2),
-                                  (x+2,y+1), (x+2,y-1), (x-2,y+1), (x-2,y-1)]
-                                  .into_iter().map(|p| (p, 1)),
+                        let goal = (
+                            closest_window.position.x as i32,
+                            closest_window.position.y as i32,
+                        );
+                        let mut result = astar(
+                            &(position.x as i32, position.y as i32),
+                            |&(x, y)| {
+                                vec![
+                                    (x + 1, y + 2),
+                                    (x + 1, y - 2),
+                                    (x - 1, y + 2),
+                                    (x - 1, y - 2),
+                                    (x + 2, y + 1),
+                                    (x + 2, y - 1),
+                                    (x - 2, y + 1),
+                                    (x - 2, y - 1),
+                                ]
+                                .into_iter()
+                                .map(|p| (p, 1))
+                            },
                             |&(x, y)| (goal.0.abs_diff(x) + goal.1.abs_diff(y)) / 3,
-                            |&p| p == goal).unwrap().0;
+                            |&p| p == goal,
+                        )
+                        .unwrap()
+                        .0;
 
                         result.reverse();
 
-                        commands.spawn().insert_bundle(ZombieBundle::new(MapElementPosition{
-                            position,
-                            size: Vec2::new(25.,25.),
-                            rotation: 0
-                        }, BotDestination { destination: closest_window.clone(), path: result }));
-
+                        commands.spawn().insert_bundle(ZombieBundle::new(
+                            MapElementPosition {
+                                position,
+                                size: Vec2::new(25., 25.),
+                                rotation: 0,
+                            },
+                            BotDestination {
+                                destination: closest_window.clone(),
+                                path: result,
+                            },
+                        ));
 
                         zombie_game.current_round.zombie_remaining -= 1;
                     }
                 }
             }
-        },
+        }
         ZombieGameState::RoundInterlude => {
             zombie_game.round += 1;
-            let zombie_count = zombie_game.configuration.starting_zombie + ((zombie_game.round - 1) * zombie_game.configuration.round_increments);
+            let zombie_count = zombie_game.configuration.starting_zombie
+                + ((zombie_game.round - 1) * zombie_game.configuration.round_increments);
             zombie_game.current_round = CurrentRoundInfo {
-               zombie_remaining: zombie_count,
-               total_zombie: zombie_count
+                zombie_remaining: zombie_count,
+                total_zombie: zombie_count,
             };
             zombie_game.state = ZombieGameState::Round as i32;
-        },
-        ZombieGameState::Over => {
-
         }
+        ZombieGameState::Over => {}
     }
     let mut text = query.single_mut();
     text.sections[0].value = format!("Round: {} \n", zombie_game.round);
-    text.sections[1].value = format!("Remaining: {} ",  zombie_game.current_round.zombie_remaining + nbr_zombie);
+    text.sections[1].value = format!(
+        "Remaining: {} ",
+        zombie_game.current_round.zombie_remaining + nbr_zombie
+    );
 }
 
 pub fn react_level_data(
@@ -376,9 +417,8 @@ pub fn react_level_data(
                 for z in query_zombies.iter() {
                     commands.entity(z).despawn();
                 }
-            },
+            }
             _ => {}
         }
     }
 }
-

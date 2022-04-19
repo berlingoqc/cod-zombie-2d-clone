@@ -4,9 +4,6 @@ authors = ["William Quintal <william95quintalwilliam@outlook.com>"]
 version = "0.1.0"
 edition = "2021"
 
-[workspace]
-resolver = "2" 
-
 [features]
 default = [
     "bevy/bevy_winit",
@@ -30,9 +27,17 @@ audio = [
 ]
 
 [dependencies]
+shared = { path = "../shared" }
+
 bevy = {version = "0.7.0", default-features=false, features = ["bevy_render","bevy_core_pipeline","bevy_sprite"]}
 bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap/", branch = "main"}
-bevy_networking_turbulence = { git = "https://github.com/berlingoqc/bevy_networking_turbulence/", branch = "master"}
+
+turbulence = "0.3"
+bevy_networking_turbulence = { git = "https://github.com/berlingoqc/bevy_networking_turbulence/", branch = "master", default_features = false, features = ["use-webrtc"] }
+
+gloo-events = "0.1.1"
+web-sys = "0.3.45"
+
 ron = "0.7.0"
 serde = { version = "1", features = ["derive"] }
 tiled = { version = "0.9", default-features=false}

@@ -1,0 +1,12 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+shared = { path = "../shared" }
+rand = "0.8.3"
+serde = { version = "1", features = ["derive"] }
+turbulence = "0.3"
+bevy_networking_turbulence = { git = "https://github.com/berlingoqc/bevy_networking_turbulence.git", branch = "master", default-features = false, features = ["use-webrtc"] }
+bevy = { version = "0.7.0", default-features = false }

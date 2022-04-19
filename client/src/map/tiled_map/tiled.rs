@@ -19,7 +19,7 @@ impl Plugin for TiledMapPlugin {
 
 #[derive(Component)]
 pub struct MapData {
-    path: String
+    path: String,
 }
 
 #[derive(TypeUuid)]
@@ -195,7 +195,11 @@ pub fn process_loaded_tile_maps(
                             &mut commands,
                             map_settings.clone(),
                             &mut meshes,
-                            tiled_map.tilesets.get(&tileset.first_gid).unwrap().clone_weak(),
+                            tiled_map
+                                .tilesets
+                                .get(&tileset.first_gid)
+                                .unwrap()
+                                .clone_weak(),
                             0u16,
                             layer.layer_index as u16,
                             move |mut tile_pos| {

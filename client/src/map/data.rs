@@ -1,6 +1,11 @@
 use std::io::Write;
 
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle, reflect::{TypeRegistry, TypeUuid}, asset::{AssetLoader, LoadContext, BoxedFuture, LoadedAsset}};
+use bevy::{
+    asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset},
+    prelude::*,
+    reflect::{TypeRegistry, TypeUuid},
+    sprite::MaterialMesh2dBundle,
+};
 
 use bevy_ecs_tilemap::prelude::*;
 
@@ -14,7 +19,6 @@ pub struct MovementCollider {}
 #[reflect(Component)]
 pub struct ProjectileCollider {}
 
-
 #[derive(Component)]
 pub struct CollisionEvent {}
 
@@ -24,7 +28,7 @@ pub struct WallBundle {
     sprite_bundle: SpriteBundle,
     collider: MovementCollider,
     projectile_collider: ProjectileCollider,
-    info: MapElementPosition
+    info: MapElementPosition,
 }
 
 #[derive(Component)]
@@ -36,7 +40,7 @@ pub struct WindowBundle {
     sprite_bundle: SpriteBundle,
     info: MapElementPosition,
     collider: MovementCollider,
-    window: Window
+    window: Window,
 }
 
 #[derive(Component)]
@@ -47,9 +51,8 @@ pub struct MapElement {}
 pub struct MapElementPosition {
     pub position: Vec2,
     pub size: Vec2,
-    pub rotation: i32
+    pub rotation: i32,
 }
-
 
 #[derive(Default)]
 pub struct MapDataState {
@@ -72,7 +75,7 @@ pub struct ZombieSpawnerBundle {
     sprite_bundle: SpriteBundle,
     position: MapElementPosition,
     map_element: MapElement,
-    spawner: ZombieSpawner
+    spawner: ZombieSpawner,
 }
 
 #[derive(Deserialize, TypeUuid, Clone, Component)]
@@ -81,14 +84,13 @@ pub struct MapDataAsset {
     pub walls: Vec<MapElementPosition>,
     pub windows: Vec<MapElementPosition>,
     pub spawners: Vec<MapElementPosition>,
-    pub tiled: MapTiledData
+    pub tiled: MapTiledData,
 }
-
 
 impl ZombieSpawnerBundle {
     pub fn new(info: MapElementPosition) -> ZombieSpawnerBundle {
-        ZombieSpawnerBundle{
-            sprite_bundle: SpriteBundle{
+        ZombieSpawnerBundle {
+            sprite_bundle: SpriteBundle {
                 sprite: Sprite {
                     color: Color::rgb(0.10, 0.30, 0.50),
                     custom_size: Some(info.size),
@@ -102,15 +104,15 @@ impl ZombieSpawnerBundle {
             },
             position: info,
             map_element: MapElement {},
-            spawner: ZombieSpawner{}
+            spawner: ZombieSpawner {},
         }
     }
 }
 
 impl WindowBundle {
     pub fn new(info: MapElementPosition) -> WindowBundle {
-        WindowBundle{
-           sprite_bundle: SpriteBundle{
+        WindowBundle {
+            sprite_bundle: SpriteBundle {
                 sprite: Sprite {
                     color: Color::rgb(0.25, 0.50, 0.50),
                     custom_size: Some(info.size),
@@ -121,18 +123,18 @@ impl WindowBundle {
                     ..Transform::default()
                 },
                 ..SpriteBundle::default()
-           },
-           collider: MovementCollider {  },
-           info,
-           window: Window {  }
+            },
+            collider: MovementCollider {},
+            info,
+            window: Window {},
         }
     }
 }
 
 impl WallBundle {
     pub fn new(info: MapElementPosition) -> WallBundle {
-        WallBundle{
-           sprite_bundle: SpriteBundle{
+        WallBundle {
+            sprite_bundle: SpriteBundle {
                 sprite: Sprite {
                     color: Color::rgb(0.25, 0.25, 0.25),
                     custom_size: Some(info.size),
@@ -144,14 +146,9 @@ impl WallBundle {
                 },
                 ..SpriteBundle::default()
             },
-           collider: MovementCollider{},
-           projectile_collider: ProjectileCollider {},
-           info
+            collider: MovementCollider {},
+            projectile_collider: ProjectileCollider {},
+            info,
         }
     }
 }
-
-
-
-
-

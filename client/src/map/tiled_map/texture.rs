@@ -13,7 +13,7 @@ pub fn set_texture_filters_to_nearest(
                         | TextureUsages::COPY_SRC
                         | TextureUsages::COPY_DST;
                 }
-            },
+            }
             AssetEvent::Created { handle } => {
                 if let Some(mut texture) = textures.get_mut(handle) {
                     texture.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING

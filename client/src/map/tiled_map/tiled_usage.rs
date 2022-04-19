@@ -13,4 +13,3 @@ pub fn startup_tiled(mut commands: Commands, asset_server: Res<AssetServer>) {
         ..Default::default()
     });
 }
-

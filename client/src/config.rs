@@ -1,6 +1,5 @@
 use structopt::StructOpt;
 
-
 #[derive(StructOpt, Debug, Default, Clone)]
 #[structopt(name = "basic")]
 pub struct Opts {
@@ -16,7 +15,6 @@ pub struct Opts {
     #[structopt(short, long, default_value = "60")]
     pub fps: usize,
 }
-
 
 impl Opts {
     pub fn get() -> Opts {

@@ -1,4 +1,7 @@
-use bevy::{prelude::*, asset::{AssetLoader, LoadContext, BoxedFuture, LoadedAsset}};
+use bevy::{
+    asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset},
+    prelude::*,
+};
 
 use super::data::MapDataAsset;
 
@@ -9,7 +12,7 @@ impl AssetLoader for MapDataAssetLoader {
     fn load<'a>(
         &'a self,
         bytes: &'a [u8],
-        load_context: &'a mut LoadContext
+        load_context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
         Box::pin(async move {
             println!("Importing data");
@@ -24,5 +27,3 @@ impl AssetLoader for MapDataAssetLoader {
         &["custom"]
     }
 }
-
-

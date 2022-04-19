@@ -1,9 +1,9 @@
-use bevy::{
-    prelude::*,
-    sprite::collide_aabb::collide
-};
+use bevy::{prelude::*, sprite::collide_aabb::collide};
 
-use crate::{map::{data::{MovementCollider, ProjectileCollider, MapElementPosition}}, game::Zombie};
+use crate::{
+    game::Zombie,
+    map::data::{MapElementPosition, MovementCollider, ProjectileCollider},
+};
 
 use crate::game::Game;
 
@@ -18,19 +18,20 @@ pub struct Projectile {}
 #[derive(Default, Component)]
 pub struct ExpiringComponent {
     pub created_at: f32,
-    pub duration: f32
+    pub duration: f32,
 }
 
 #[derive(Component)]
 pub struct Velocity {
-    pub v: Vec2
+    pub v: Vec2,
 }
 
 #[derive(Component)]
 pub struct MainCamera;
 
 pub fn apply_velocity(
-    mut commands: Commands, mut query: Query<(&mut Transform, &Velocity, Entity)>
+    mut commands: Commands,
+    mut query: Query<(&mut Transform, &Velocity, Entity)>,
 ) {
     for (mut transform, velocity, entity) in query.iter_mut() {
         let x_vel = velocity.v.x * TIME_STEP;
@@ -48,19 +49,26 @@ pub fn movement_projectile(
     mut commands: Commands,
     time: Res<Time>,
     projectile_query: Query<(Entity, &Transform, &ExpiringComponent), With<Projectile>>,
-    collider_query: Query<(Entity, &Transform, &MapElementPosition, Option<&Zombie>), (With<ProjectileCollider>, With<MapElementPosition>, Without<Player>)>,
+    collider_query: Query<
+        (Entity, &Transform, &MapElementPosition, Option<&Zombie>),
+        (
+            With<ProjectileCollider>,
+            With<MapElementPosition>,
+            Without<Player>,
+        ),
+    >,
 ) {
     'outer: for (projectile_entity, transform, expiring) in projectile_query.iter() {
-       if expiring.created_at + expiring.duration <= time.time_since_startup().as_secs_f32() {
+        if expiring.created_at + expiring.duration <= time.time_since_startup().as_secs_f32() {
             commands.entity(projectile_entity).despawn();
             break;
         }
         for (hit_entity, transform_collider, info, zombie) in collider_query.iter() {
             let collision = collide(
                 transform.translation,
-                Vec2::new(5.,5.),
+                Vec2::new(5., 5.),
                 transform_collider.translation,
-                info.size
+                info.size,
             );
             if let Some(collision) = collision {
                 if let Some(zombie) = zombie {
@@ -69,22 +77,21 @@ pub fn movement_projectile(
                 commands.entity(projectile_entity).despawn();
                 break 'outer;
             }
-
         }
     }
 }
 
 fn get_cursor_location(
     wnds: &Windows,
-    q_camera: &Query<(&Camera, &GlobalTransform), With<MainCamera>>
+    q_camera: &Query<(&Camera, &GlobalTransform), With<MainCamera>>,
 ) -> Vec2 {
- // get the camera info and transform
+    // get the camera info and transform
     // assuming there is exactly one main camera entity, so query::single() is OK
     let (camera, camera_transform) = q_camera.single();
 
     let window = match camera.target {
         bevy::render::camera::RenderTarget::Window(w) => w,
-        _ => panic!("camera not rendering to windows")
+        _ => panic!("camera not rendering to windows"),
     };
 
     // get the window that the camera is displaying to
@@ -109,7 +116,7 @@ fn get_cursor_location(
 
         return world_pos;
     } else {
-        return Vec2::new(0.,0.);
+        return Vec2::new(0., 0.);
     }
 }
 
@@ -119,9 +126,16 @@ pub fn input_player(
     keyboard_input: Res<Input<KeyCode>>,
     buttons: Res<Input<MouseButton>>,
     mut query: Query<&mut Transform, With<Player>>,
-    collider_query: Query<(Entity, &Transform, &MapElementPosition), (With<MovementCollider>, With<MapElementPosition>, Without<Player>)>,
+    collider_query: Query<
+        (Entity, &Transform, &MapElementPosition),
+        (
+            With<MovementCollider>,
+            With<MapElementPosition>,
+            Without<Player>,
+        ),
+    >,
     wnds: Res<Windows>,
-    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>
+    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
 ) {
     let mut player_transform = query.single_mut();
 
@@ -129,19 +143,19 @@ pub fn input_player(
     let mut moved = false;
 
     if keyboard_input.pressed(KeyCode::W) {
-        movement += Vec3::new(0.,1.,0.);
+        movement += Vec3::new(0., 1., 0.);
         moved = true;
     }
     if keyboard_input.pressed(KeyCode::S) {
-        movement += Vec3::new(0.,-1.,0.);
+        movement += Vec3::new(0., -1., 0.);
         moved = true;
     }
     if keyboard_input.pressed(KeyCode::A) {
-        movement += Vec3::new(-1.,0.,0.);
+        movement += Vec3::new(-1., 0., 0.);
         moved = true;
     }
     if keyboard_input.pressed(KeyCode::D) {
-        movement += Vec3::new(1.,0.,0.);
+        movement += Vec3::new(1., 0., 0.);
         moved = true;
     }
 
@@ -156,11 +170,11 @@ pub fn input_player(
 
         commands
             .spawn()
-            .insert(Projectile{})
+            .insert(Projectile {})
             .insert_bundle(SpriteBundle {
                 transform: Transform {
                     translation: player_transform.translation,
-                   ..Transform::default()
+                    ..Transform::default()
                 },
                 sprite: Sprite {
                     color: Color::BISQUE,
@@ -169,28 +183,25 @@ pub fn input_player(
                 },
                 ..SpriteBundle::default()
             })
-            .insert(ExpiringComponent{
-               created_at: time.time_since_startup().as_secs_f32(),
-               duration: 2.
+            .insert(ExpiringComponent {
+                created_at: time.time_since_startup().as_secs_f32(),
+                duration: 2.,
             })
-            .insert(ProjectileCollider{})
-            .insert(Velocity{ v: mouse_location * 1000. });
+            .insert(ProjectileCollider {})
+            .insert(Velocity {
+                v: mouse_location * 1000.,
+            });
     }
 
-
-
-    if !moved { return; }
+    if !moved {
+        return;
+    }
 
     let dest = player_transform.translation + (movement * 3.);
 
     let mut save_move = true;
     for (collider_entity, transform, info) in collider_query.iter() {
-        let collision = collide(
-            dest,
-            Vec2::new(25.,25.),
-            transform.translation,
-            info.size
-        );
+        let collision = collide(dest, Vec2::new(25., 25.), transform.translation, info.size);
         if let Some(collision) = collision {
             save_move = false;
         }
@@ -202,9 +213,14 @@ pub fn input_player(
 }
 
 pub fn setup_players(
-    mut commands: Commands, asset_server: Res<AssetServer>, mut game: ResMut<Game>
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut game: ResMut<Game>,
 ) {
-    commands.spawn().insert_bundle(OrthographicCameraBundle::new_2d()).insert(MainCamera);
+    commands
+        .spawn()
+        .insert_bundle(OrthographicCameraBundle::new_2d())
+        .insert(MainCamera);
     commands.spawn().insert_bundle(UiCameraBundle::default());
 
     let sprite_bundle = SpriteBundle {
@@ -214,16 +230,14 @@ pub fn setup_players(
             ..Sprite::default()
         },
         transform: Transform {
-           translation: Vec3::new(0.,0.,10.),
-           ..Transform::default()
+            translation: Vec3::new(0., 0., 10.),
+            ..Transform::default()
         },
         ..SpriteBundle::default()
     };
 
     commands
         .spawn()
-        .insert(Player{})
+        .insert(Player {})
         .insert_bundle(sprite_bundle);
-
 }
-

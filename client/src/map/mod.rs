@@ -4,10 +4,19 @@ mod loader;
 mod render;
 mod tiled_map;
 
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle, reflect::{TypeRegistry, TypeUuid}, asset::{AssetLoader, LoadContext, BoxedFuture, LoadedAsset}};
+use bevy::{
+    asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset},
+    prelude::*,
+    reflect::{TypeRegistry, TypeUuid},
+    sprite::MaterialMesh2dBundle,
+};
 use bevy_ecs_tilemap::prelude::*;
 
-use tiled_map::{tiled::{TiledMapBundle, TiledMapPlugin, MapData}, texture::set_texture_filters_to_nearest, tiled_usage::startup_tiled};
+use tiled_map::{
+    texture::set_texture_filters_to_nearest,
+    tiled::{MapData, TiledMapBundle, TiledMapPlugin},
+    tiled_usage::startup_tiled,
+};
 
 use data::*;
 use loader::*;
@@ -17,8 +26,7 @@ pub struct MapPlugin {}
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .register_type::<MapElementPosition>()
+        app.register_type::<MapElementPosition>()
             .add_plugin(TilemapPlugin)
             .add_plugin(TiledMapPlugin)
             .init_resource::<MapDataState>()
@@ -30,5 +38,3 @@ impl Plugin for MapPlugin {
             .add_system(set_texture_filters_to_nearest);
     }
 }
-
-
