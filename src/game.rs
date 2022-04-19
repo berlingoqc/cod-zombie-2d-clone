@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use bevy::asset::{AssetLoader, LoadContext, BoxedFuture, LoadedAsset};
+use bevy::prelude::shape::Quad;
 use bevy::reflect::TypeUuid;
 use bevy::{prelude::*};
 use serde::Deserialize;
@@ -35,6 +36,13 @@ pub enum ZombieGameState {
     Over
 }
 
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+pub enum ZombieState {
+    AwakingFromTheDead,
+    FindingEnterace,
+    FollowingPlayer
+}
+
 #[derive(Default, Deserialize, Clone)]
 pub struct MapRoundConfiguration {
     pub starting_zombie: i32,
@@ -56,9 +64,10 @@ pub struct ZombieGame {
     pub configuration: MapRoundConfiguration,
 }
 
-#[derive(Component, Default)]
-pub struct Zombie {}
-
+#[derive(Component)]
+pub struct Zombie {
+    pub state: ZombieState
+}
 
 #[derive(Component, Default)]
 pub struct BotDestination {
@@ -124,6 +133,7 @@ impl ZombieBundle {
                     },
                     transform: Transform {
                        translation: info.position.extend(10.0),
+                       scale: Vec3::new(0., 0., 0.),
                        ..Transform::default()
                     },
              
@@ -131,7 +141,9 @@ impl ZombieBundle {
                     },
                     collider: MovementCollider{},
                     projectile_collider: ProjectileCollider{},
-                    zombie: Zombie{},
+                    zombie: Zombie{
+                        state: ZombieState::AwakingFromTheDead
+                    },
                     info,
                     destination: dest
                 }
@@ -187,36 +199,56 @@ pub fn setup_zombie_game(
 
 pub fn system_zombie_handle(
     query_player: Query<&Transform, (With<Player>, Without<Zombie>)>,
-    mut query_zombies: Query<(&mut Transform, &mut BotDestination), With<Zombie>>,
+    mut config: ResMut<ZombieSpawnerConfig>,
+    mut query_zombies: Query<(&mut Transform, &mut BotDestination, &mut Zombie), With<Zombie>>,
 ) {
     let player = query_player.get_single().unwrap();
-    for (mut pos,mut dest) in query_zombies.iter_mut() {
-       if let Some(el) = dest.path.pop() {
-            pos.translation.x = el.0 as f32;
-            pos.translation.y = el.1 as f32;
-       }
+    for (mut pos,mut dest, mut zombie) in query_zombies.iter_mut() {
 
-       if dest.path.len() == 0 {
-           // change target for the user
-           let goal = (player.translation.x as i32, player.translation.y as i32);
-           let mut result = astar(&(pos.translation.x as i32, pos.translation.y as i32),
-            |&(x, y)| vec![(x+1,y+2), (x+1,y-2), (x-1,y+2), (x-1,y-2),
-                  (x+2,y+1), (x+2,y-1), (x-2,y+1), (x-2,y-1)]
-                  .into_iter().map(|p| (p, 1)),
-            |&(x, y)| (goal.0.abs_diff(x) + goal.1.abs_diff(y)) / 3,
-            |&p| p == goal).unwrap().0;
+        match zombie.state {
+            ZombieState::AwakingFromTheDead => {
+                if pos.scale.x < 1.0 {
+                    let mut rng = rand::thread_rng();
+                    config.nums_ndg.shuffle(&mut rng);
+                    pos.scale += Vec3::new(0.01, 0.01, 0.01);
+                    pos.rotation = Quat::from_rotation_z(config.nums_ndg[75] / 10.);
+                } else {
+                    pos.rotation = Quat::from_rotation_z(0.);
+                    zombie.state = ZombieState::FindingEnterace;
+                }
+            },
+            ZombieState::FollowingPlayer |
+            ZombieState::FindingEnterace => {
+               if let Some(el) = dest.path.pop() {
+                    pos.translation.x = el.0 as f32;
+                    pos.translation.y = el.1 as f32;
+               }
 
-           result.reverse();
-           let len = result.len() as f32;
-           dest.path = if len >= 10. {
-                let len_taken = ((len  * 0.25)).ceil() as usize;
-                let start = result.len() - 1 - len_taken;
-                let end = result.len() - 1;
-                result[start..end].to_vec()
-           } else {
-               result
-           };
-       }
+               if dest.path.len() == 0 {
+                   // change target for the user
+                   let goal = (player.translation.x as i32, player.translation.y as i32);
+                   let mut result = astar(&(pos.translation.x as i32, pos.translation.y as i32),
+                    |&(x, y)| vec![(x+1,y+2), (x+1,y-2), (x-1,y+2), (x-1,y-2),
+                          (x+2,y+1), (x+2,y-1), (x-2,y+1), (x-2,y-1)]
+                          .into_iter().map(|p| (p, 1)),
+                    |&(x, y)| (goal.0.abs_diff(x) + goal.1.abs_diff(y)) / 3,
+                    |&p| p == goal).unwrap().0;
+
+                   result.reverse();
+                   let len = result.len() as f32;
+                   dest.path = if len >= 10. {
+                        let len_taken = ((len  * 0.25)).ceil() as usize;
+                        let start = result.len() - 1 - len_taken;
+                        let end = result.len() - 1;
+                        result[start..end].to_vec()
+                   } else {
+                       result
+                   };
+               }
+
+            }
+
+        }
     }
 }
 
