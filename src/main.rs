@@ -11,7 +11,7 @@ use bevy::{
 use bevy_ecs_tilemap::prelude::*;
 use player::{Player, Projectile, Velocity};
 
-use crate::game::{ZombieGameState, setup_zombie_game, system_zombie_game, system_zombie_handle, ZombieGame};
+use crate::game::{ZombieGameState, setup_zombie_game, system_zombie_game, system_zombie_handle, ZombieGame, ZombieLevelAsset, ZombieLevelAssetLoader, ZombieLevelAssetState, react_level_data};
 use crate::map::{MapPlugin, data::{MovementCollider, ProjectileCollider, MapElementPosition}};
 use crate::{plugins::frame_cnt::FPSPlugin, game::{Game, GameState}};
 use crate::player::{apply_velocity, input_player, movement_projectile, setup_players};
@@ -44,6 +44,9 @@ fn main() {
     app
         .init_resource::<Game>()
         .init_resource::<ZombieGame>()
+        .init_resource::<ZombieLevelAssetState>()
+        .add_asset::<ZombieLevelAsset>()
+        .init_asset_loader::<ZombieLevelAssetLoader>()
         .add_state(GameState::PlayingZombie)
         .add_state(ZombieGameState::Starting)
         .add_system_set(SystemSet::on_enter(GameState::PlayingZombie).with_system(setup_players).with_system(setup_zombie_game))
@@ -55,6 +58,7 @@ fn main() {
                 .with_system(apply_velocity)
                 .with_system(input_player)
                 .with_system(movement_projectile)
+                .with_system(react_level_data)
         );
     
 
