@@ -1,4 +1,3 @@
-#![feature(derive_default_enum)]
 mod plugins;
 mod config; mod map;
 mod player;
