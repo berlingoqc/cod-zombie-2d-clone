@@ -3,6 +3,18 @@ MapDataAsset(
         path: "iso_map.tmx",
         transform: (00., 00., 0.)
     ),
+    spawners: [
+        MapElementPosition(
+            position: (550., 120.),
+            size: (10., 10.),
+            rotation: 1,
+        ),
+        MapElementPosition(
+            position: (-600., 90.),
+            size: (10., 10.),
+            rotation: 1,
+        ),
+    ],
     windows: [
        MapElementPosition(
             position: (200., 75.),
