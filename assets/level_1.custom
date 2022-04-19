@@ -1,28 +1,65 @@
 MapDataAsset(
     tiled: (
-        path: "map.tmx",
-        transform: (0., 0., 0.)
+        path: "iso_map.tmx",
+        transform: (00., 00., 0.)
     ),
+    windows: [
+       MapElementPosition(
+            position: (200., 75.),
+            size: (10., 60.),
+            rotation: 1,
+       ),
+       MapElementPosition(
+            position: (-200., -80.),
+            size: (10., 70.),
+            rotation: 1,
+       ),
+       MapElementPosition(
+            position: (50., -200.),
+            size: (90., 10.),
+            rotation: 1,
+       ),
+    ],
     walls: [
+        // Mur droite
         MapElementPosition(
-            position: (200., 0.),
-            size: (10., 400.),
+            position: (200., 155.),
+            size: (10., 100.),
             rotation: 1,
         ),
         MapElementPosition(
-            position: (-200., 0.),
-            size: (10., 400.),
+            position: (200., -80.),
+            size: (10., 250.),
             rotation: 1,
         ),
+        // Mur gauche
+        MapElementPosition(
+            position: (-200., 80.),
+            size: (10., 250.),
+            rotation: 1,
+        ),
+        MapElementPosition(
+            position: (-200., -160.),
+            size: (10., 90.),
+            rotation: 1,
+        ),
+        // Mur haut
         MapElementPosition(
             position: (0., 200.),
             size: (400., 10.),
             rotation: 1,
         ),
+        // Mur bas
         MapElementPosition(
-            position: (0., -200.),
-            size: (400., 10.),
+            position: (-95., -200.),
+            size: (200., 10.),
+            rotation: 1,
+        ),
+        MapElementPosition(
+            position: (145., -200.),
+            size: (110., 10.),
             rotation: 1,
         )
+ 
     ]
 )

@@ -8,7 +8,12 @@ use serde::Deserialize;
 
 #[derive(Component, Reflect, Default, Deserialize, Clone)]
 #[reflect(Component)]
-pub struct Collider {}
+pub struct MovementCollider {}
+
+#[derive(Component, Reflect, Default, Deserialize, Clone)]
+#[reflect(Component)]
+pub struct ProjectileCollider {}
+
 
 #[derive(Component)]
 pub struct CollisionEvent {}
@@ -17,8 +22,21 @@ pub struct CollisionEvent {}
 pub struct WallBundle {
     #[bundle]
     sprite_bundle: SpriteBundle,
-    collider: Collider,
+    collider: MovementCollider,
+    projectile_collider: ProjectileCollider,
     info: MapElementPosition
+}
+
+#[derive(Component)]
+pub struct Window {}
+
+#[derive(Bundle)]
+pub struct WindowBundle {
+    #[bundle]
+    sprite_bundle: SpriteBundle,
+    info: MapElementPosition,
+    collider: MovementCollider,
+    window: Window
 }
 
 #[derive(Component)]
@@ -49,9 +67,32 @@ pub struct MapTiledData {
 #[uuid = "39cadc56-aa9c-4543-8640-a018b74b5052"]
 pub struct MapDataAsset {
     pub walls: Vec<MapElementPosition>,
+    pub windows: Vec<MapElementPosition>,
     pub tiled: MapTiledData
 }
 
+
+impl WindowBundle {
+    pub fn new(info: MapElementPosition) -> WindowBundle {
+        WindowBundle{
+           sprite_bundle: SpriteBundle{
+                sprite: Sprite {
+                    color: Color::rgb(0.25, 0.50, 0.50),
+                    custom_size: Some(info.size),
+                    ..Sprite::default()
+                },
+                transform: Transform {
+                    translation: info.position.extend(10.0),
+                    ..Transform::default()
+                },
+                ..SpriteBundle::default()
+           },
+           collider: MovementCollider {  },
+           info,
+           window: Window {  }
+        }
+    }
+}
 
 impl WallBundle {
     pub fn new(info: MapElementPosition) -> WallBundle {
@@ -68,7 +109,8 @@ impl WallBundle {
                 },
                 ..SpriteBundle::default()
             },
-           collider: Collider{},
+           collider: MovementCollider{},
+           projectile_collider: ProjectileCollider {},
            info
         }
     }

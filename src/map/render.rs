@@ -23,6 +23,10 @@ impl MapDataAsset {
         for w in (&self.walls).into_iter() {
             let child_wall = command.spawn().insert(MapElement{}).insert_bundle(WallBundle::new(w.clone())).id();
         }
+
+        for w in (&self.windows).into_iter() {
+            command.spawn().insert(MapElement{}).insert_bundle(WindowBundle::new(w.clone()));
+        }
     }
 }
 
