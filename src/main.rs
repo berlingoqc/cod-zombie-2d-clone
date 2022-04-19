@@ -12,7 +12,7 @@ use bevy::{
 use bevy_ecs_tilemap::prelude::*;
 use player::{Player, Projectile, Velocity};
 
-use crate::game::{ZombieGameState, setup_zombie_game, system_zombie_game, ZombieGame};
+use crate::game::{ZombieGameState, setup_zombie_game, system_zombie_game, system_zombie_handle, ZombieGame};
 use crate::map::{MapPlugin, data::{MovementCollider, ProjectileCollider, MapElementPosition}};
 use crate::{plugins::frame_cnt::FPSPlugin, game::{Game, GameState}};
 use crate::player::{apply_velocity, input_player, movement_projectile, setup_players};
@@ -51,6 +51,7 @@ fn main() {
         .add_system_set(
             SystemSet::on_update(GameState::PlayingZombie)
                 .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
+                .with_system(system_zombie_handle)
                 .with_system(system_zombie_game)
                 .with_system(apply_velocity)
                 .with_system(input_player)

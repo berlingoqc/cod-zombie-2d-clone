@@ -109,7 +109,7 @@ fn get_cursor_location(
 
         return world_pos;
     } else {
-        panic!("NO WORLD POSITION FOR CURSOR");
+        return Vec2::new(0.,0.);
     }
 }
 

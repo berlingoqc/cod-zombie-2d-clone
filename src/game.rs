@@ -2,7 +2,11 @@ use std::time::Duration;
 
 use bevy::{prelude::*};
 use crate::player::Player;
-use crate::map::data::{ProjectileCollider, MovementCollider, MapElementPosition, ZombieSpawner};
+use crate::map::data::{ProjectileCollider, MovementCollider, MapElementPosition, ZombieSpawner, Window};
+
+use pathfinding::prelude::{Grid, astar};
+
+
 
 #[derive(Default)]
 pub struct Game {
@@ -50,18 +54,26 @@ pub struct ZombieGame {
 #[derive(Component, Default)]
 pub struct Zombie {}
 
+
+#[derive(Component, Default)]
+pub struct BotDestination {
+    pub destination: MapElementPosition,
+    pub path: Vec<(i32, i32)>
+}
+
 #[derive(Bundle)]
 pub struct ZombieBundle {
     #[bundle]
     sprite_bundle: SpriteBundle,
     collider: MovementCollider,
+    destination: BotDestination,
     projectile_collider: ProjectileCollider,
     info: MapElementPosition,
     zombie: Zombie,
 }
 
 impl ZombieBundle {
-    fn new(info: MapElementPosition) -> ZombieBundle {
+    fn new(info: MapElementPosition, dest: BotDestination) -> ZombieBundle {
         ZombieBundle{
             sprite_bundle: SpriteBundle{
                 sprite: Sprite {
@@ -79,7 +91,8 @@ impl ZombieBundle {
                     collider: MovementCollider{},
                     projectile_collider: ProjectileCollider{},
                     zombie: Zombie{},
-                    info
+                    info,
+                    destination: dest
                 }
             }
 }
@@ -135,6 +148,35 @@ pub fn setup_zombie_game(
     });
 }
 
+pub fn system_zombie_handle(
+    query_player: Query<&Transform, (With<Player>, Without<Zombie>)>,
+    mut query_zombies: Query<(&mut Transform, &mut BotDestination), With<Zombie>>,
+) {
+    let player = query_player.get_single().unwrap();
+    for (mut pos,mut dest) in query_zombies.iter_mut() {
+       if let Some(el) = dest.path.pop() {
+            pos.translation.x = el.0 as f32;
+            pos.translation.y = el.1 as f32;
+       }
+
+       if dest.path.len() == 0 {
+           // change target for the user
+           let goal = (player.translation.x as i32, player.translation.y as i32);
+           let mut result = astar(&(pos.translation.x as i32, pos.translation.y as i32),
+            |&(x, y)| vec![(x+1,y+2), (x+1,y-2), (x-1,y+2), (x-1,y-2),
+                  (x+2,y+1), (x+2,y-1), (x-2,y+1), (x-2,y-1)]
+                  .into_iter().map(|p| (p, 1)),
+            |&(x, y)| (goal.0.abs_diff(x) + goal.1.abs_diff(y)) / 3,
+            |&p| p == goal).unwrap().0;
+
+           result.reverse();
+
+           // utilise seulement un fraction des resultats pour reagir vite au changement de user
+           // position
+           dest.path = result;
+       }
+    }
+}
 
 pub fn system_zombie_game(
     mut commands: Commands,
@@ -149,6 +191,7 @@ pub fn system_zombie_game(
     mut config: ResMut<ZombieSpawnerConfig>,
 
     query_spawner: Query<&MapElementPosition, With<ZombieSpawner>>,
+    query_window: Query<&MapElementPosition, With<Window>>,
 
     mut app_state: ResMut<State<GameState>>
 ) {
@@ -174,11 +217,33 @@ pub fn system_zombie_game(
             if config.timer.finished() && zombie_game.current_round.zombie_remaining > 0 && nbr_zombie < 20 {
                 for position in query_spawner.iter() {
                     if zombie_game.current_round.zombie_remaining > 0 {
+                        let mut closest_window = MapElementPosition{..MapElementPosition::default()};
+                        let mut closest_window_dst = 90000.;
+                        for w in query_window.iter() {
+                            let distance = position.position.distance(w.position);
+                            if distance < closest_window_dst {
+                                closest_window_dst = distance;
+                                closest_window = w.clone();
+                            }
+                        }
+
+                        let goal = (closest_window.position.x as i32, closest_window.position.y as i32);
+                        let mut result = astar(&(position.position.x as i32, position.position.y as i32),
+                            |&(x, y)| vec![(x+1,y+2), (x+1,y-2), (x-1,y+2), (x-1,y-2),
+                                  (x+2,y+1), (x+2,y-1), (x-2,y+1), (x-2,y-1)]
+                                  .into_iter().map(|p| (p, 1)),
+                            |&(x, y)| (goal.0.abs_diff(x) + goal.1.abs_diff(y)) / 3,
+                            |&p| p == goal).unwrap().0;
+
+                        result.reverse();
+
                         commands.spawn().insert_bundle(ZombieBundle::new(MapElementPosition{
                             position: position.position,
                             size: Vec2::new(25.,25.),
                             rotation: 0
-                        }));
+                        }, BotDestination { destination: closest_window.clone(), path: result }));
+
+
                         zombie_game.current_round.zombie_remaining -= 1;
                     }
                 }
