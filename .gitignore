@@ -1,6 +1,6 @@
-/target
-/vendor
-public/*.js
-public/*.wasm
-public/assets/
+**/target
+**/vendor
+**/public/*.js
+**/public/*.wasm
+**/public/assets/
 

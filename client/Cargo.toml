@@ -1,0 +1,51 @@
+[package]
+name = "cod-zombie-2d-clone"
+authors = ["William Quintal <william95quintalwilliam@outlook.com>"]
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+resolver = "2" 
+
+[features]
+default = [
+    "bevy/bevy_winit",
+    "bevy/render",
+    "bevy/png"
+]
+
+native = [
+    "bevy/x11",
+#    "bevy/dynamic"
+#    "bevy/bevy_wgpu"
+]
+
+web = [
+#    "bevy_webgl2"
+]
+
+audio = [
+    "bevy/bevy_audio",
+    "bevy/vorbis"
+]
+
+[dependencies]
+bevy = {version = "0.7.0", default-features=false, features = ["bevy_render","bevy_core_pipeline","bevy_sprite"]}
+bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap/", branch = "main"}
+bevy_networking_turbulence = { git = "https://github.com/berlingoqc/bevy_networking_turbulence/", branch = "master"}
+ron = "0.7.0"
+serde = { version = "1", features = ["derive"] }
+tiled = { version = "0.9", default-features=false}
+rand = "0.8.5"
+structopt = "0.3"
+uuid = "=0.8.1"
+anyhow ="1.0"
+pathfinding = "3.0.12"
+
+[profile.dev]
+opt-level = 1
+
+[profile.release]
+lto = true
+opt-level = 's'
+

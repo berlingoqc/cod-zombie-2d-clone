@@ -15,10 +15,10 @@ jobs:
       - name: Add cargo make
         run: cargo install --force cargo-make
       - name: Generate website
-        run: cargo make build-web
+        run: cd client && cargo make build-web
       - name: Publish generated content to GitHub Pages
         uses: tsunematsu21/actions-publish-gh-pages@v1.0.2
         with:
-          dir: public
+          dir: client/public
           branch: gh-pages
           token: ${{ secrets.ACCESS_TOKEN }}

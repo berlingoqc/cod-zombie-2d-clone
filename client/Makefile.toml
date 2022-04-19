@@ -1,7 +1,7 @@
 [env]
 ENV_DIR = {source="${CARGO_MAKE_PROFILE}", default_value = "debug", mapping = {release = "release"}}
 TARGET_DIR = "target"
-PUBLIC_DIR = "public"
+PUBLIC_DIR = "./public"
 CARGO_TARGET_DIR = {value = "${TARGET_DIR}", condition = {env_not_set = ["CARGO_TARGET_DIR"]}}
 CARGO_WASM_PATH = "${CARGO_TARGET_DIR}/wasm32-unknown-unknown/release/${CARGO_MAKE_CRATE_NAME}.wasm"
 CARGO_PROFILE = "dev"
