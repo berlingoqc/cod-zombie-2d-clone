@@ -4,6 +4,7 @@ use bevy::asset::{AssetLoader, LoadContext, BoxedFuture, LoadedAsset};
 use bevy::reflect::TypeUuid;
 use bevy::{prelude::*};
 use serde::Deserialize;
+use rand::prelude::*;
 use crate::player::Player;
 use crate::map::data::{ProjectileCollider, MovementCollider, MapElementPosition, ZombieSpawner, Window};
 
@@ -140,6 +141,7 @@ impl ZombieBundle {
 
 pub struct ZombieSpawnerConfig {
     timer: Timer,
+    nums_ndg: Vec<f32>
 }
 
 
@@ -152,7 +154,8 @@ pub fn setup_zombie_game(
     state.loaded = false;
 
     commands.insert_resource(ZombieSpawnerConfig{
-        timer: Timer::new(Duration::from_secs(5), true)
+        timer: Timer::new(Duration::from_secs(5), true),
+        nums_ndg: (-50..50).map(|x| x as f32).collect()
     });
 
     commands
@@ -273,10 +276,14 @@ pub fn system_zombie_game(
             if config.timer.finished() && zombie_game.current_round.zombie_remaining > 0 && nbr_zombie < 20 {
                 for position in query_spawner.iter() {
                     if zombie_game.current_round.zombie_remaining > 0 {
+                        let mut ndg = rand::thread_rng();
+                        config.nums_ndg.shuffle(&mut ndg);
+
+                        let position = position.position + Vec2::new(config.nums_ndg[0] as f32, config.nums_ndg[50] as f32);
                         let mut closest_window = MapElementPosition{..MapElementPosition::default()};
                         let mut closest_window_dst = 90000.;
                         for w in query_window.iter() {
-                            let distance = position.position.distance(w.position);
+                            let distance = position.distance(w.position);
                             if distance < closest_window_dst {
                                 closest_window_dst = distance;
                                 closest_window = w.clone();
@@ -284,7 +291,7 @@ pub fn system_zombie_game(
                         }
 
                         let goal = (closest_window.position.x as i32, closest_window.position.y as i32);
-                        let mut result = astar(&(position.position.x as i32, position.position.y as i32),
+                        let mut result = astar(&(position.x as i32, position.y as i32),
                             |&(x, y)| vec![(x+1,y+2), (x+1,y-2), (x-1,y+2), (x-1,y-2),
                                   (x+2,y+1), (x+2,y-1), (x-2,y+1), (x-2,y-1)]
                                   .into_iter().map(|p| (p, 1)),
@@ -294,7 +301,7 @@ pub fn system_zombie_game(
                         result.reverse();
 
                         commands.spawn().insert_bundle(ZombieBundle::new(MapElementPosition{
-                            position: position.position,
+                            position,
                             size: Vec2::new(25.,25.),
                             rotation: 0
                         }, BotDestination { destination: closest_window.clone(), path: result }));

@@ -960,6 +960,7 @@ dependencies = [
  "bevy",
  "bevy_ecs_tilemap",
  "pathfinding",
+ "rand 0.8.5",
  "ron",
  "serde",
  "structopt",

@@ -35,6 +35,7 @@ bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap/", bra
 ron = "0.7.0"
 serde = { version = "1", features = ["derive"] }
 tiled = { version = "0.9", default-features=false}
+rand = "0.8.5"
 structopt = "0.3"
 uuid = "=0.8.1"
 anyhow ="1.0"
