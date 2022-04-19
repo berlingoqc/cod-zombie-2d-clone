@@ -1,3 +1,4 @@
+#![feature(derive_default_enum)]
 mod plugins;
 mod config; mod map;
 mod player;
@@ -11,6 +12,7 @@ use bevy::{
 use bevy_ecs_tilemap::prelude::*;
 use player::{Player, Projectile, Velocity};
 
+use crate::game::{ZombieGameState, setup_zombie_game, system_zombie_game, ZombieGame};
 use crate::map::{MapPlugin, data::{MovementCollider, ProjectileCollider, MapElementPosition}};
 use crate::{plugins::frame_cnt::FPSPlugin, game::{Game, GameState}};
 use crate::player::{apply_velocity, input_player, movement_projectile, setup_players};
@@ -42,11 +44,14 @@ fn main() {
 
     app
         .init_resource::<Game>()
-        .add_state(GameState::Playing)
-        .add_system_set(SystemSet::on_enter(GameState::Playing).with_system(setup_players))
+        .init_resource::<ZombieGame>()
+        .add_state(GameState::PlayingZombie)
+        .add_state(ZombieGameState::Starting)
+        .add_system_set(SystemSet::on_enter(GameState::PlayingZombie).with_system(setup_players).with_system(setup_zombie_game))
         .add_system_set(
-            SystemSet::on_update(GameState::Playing)
+            SystemSet::on_update(GameState::PlayingZombie)
                 .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
+                .with_system(system_zombie_game)
                 .with_system(apply_velocity)
                 .with_system(input_player)
                 .with_system(movement_projectile)
@@ -54,7 +59,7 @@ fn main() {
     
 
     //if opts.benchmark_mode {
-    //    app.add_plugin(FPSPlugin{});
+    //  app.add_plugin(FPSPlugin{});
     //}
 
     app.run();

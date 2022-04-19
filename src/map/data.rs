@@ -63,14 +63,49 @@ pub struct MapTiledData {
     pub transform: Vec3,
 }
 
+#[derive(Component, Default)]
+pub struct ZombieSpawner {}
+
+#[derive(Bundle)]
+pub struct ZombieSpawnerBundle {
+    #[bundle]
+    sprite_bundle: SpriteBundle,
+    position: MapElementPosition,
+    map_element: MapElement,
+    spawner: ZombieSpawner
+}
+
 #[derive(Deserialize, TypeUuid, Clone, Component)]
 #[uuid = "39cadc56-aa9c-4543-8640-a018b74b5052"]
 pub struct MapDataAsset {
     pub walls: Vec<MapElementPosition>,
     pub windows: Vec<MapElementPosition>,
+    pub spawners: Vec<MapElementPosition>,
     pub tiled: MapTiledData
 }
 
+
+impl ZombieSpawnerBundle {
+    pub fn new(info: MapElementPosition) -> ZombieSpawnerBundle {
+        ZombieSpawnerBundle{
+            sprite_bundle: SpriteBundle{
+                sprite: Sprite {
+                    color: Color::rgb(0.10, 0.30, 0.50),
+                    custom_size: Some(info.size),
+                    ..Sprite::default()
+                },
+                transform: Transform {
+                    translation: info.position.extend(10.0),
+                    ..Transform::default()
+                },
+                ..SpriteBundle::default()
+            },
+            position: info,
+            map_element: MapElement {},
+            spawner: ZombieSpawner{}
+        }
+    }
+}
 
 impl WindowBundle {
     pub fn new(info: MapElementPosition) -> WindowBundle {

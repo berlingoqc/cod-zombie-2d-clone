@@ -20,6 +20,11 @@ impl MapDataAsset {
             ..Default::default()
         });
 
+
+        for s in (&self.spawners).into_iter() {
+            command.spawn().insert_bundle(ZombieSpawnerBundle::new(s.clone()));
+        }
+
         for w in (&self.walls).into_iter() {
             let child_wall = command.spawn().insert(MapElement{}).insert_bundle(WallBundle::new(w.clone())).id();
         }

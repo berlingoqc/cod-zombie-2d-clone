@@ -3,7 +3,7 @@ use bevy::{
     sprite::collide_aabb::collide
 };
 
-use crate::map::{data::{MovementCollider, ProjectileCollider, MapElementPosition}};
+use crate::{map::{data::{MovementCollider, ProjectileCollider, MapElementPosition}}, game::Zombie};
 
 use crate::game::Game;
 
@@ -48,14 +48,14 @@ pub fn movement_projectile(
     mut commands: Commands,
     time: Res<Time>,
     projectile_query: Query<(Entity, &Transform, &ExpiringComponent), With<Projectile>>,
-    collider_query: Query<(Entity, &Transform, &MapElementPosition), (With<ProjectileCollider>, With<MapElementPosition>, Without<Player>)>,
+    collider_query: Query<(Entity, &Transform, &MapElementPosition, Option<&Zombie>), (With<ProjectileCollider>, With<MapElementPosition>, Without<Player>)>,
 ) {
-    for (projectile_entity, transform, expiring) in projectile_query.iter() {
-        if expiring.created_at + expiring.duration <= time.time_since_startup().as_secs_f32() {
+    'outer: for (projectile_entity, transform, expiring) in projectile_query.iter() {
+       if expiring.created_at + expiring.duration <= time.time_since_startup().as_secs_f32() {
             commands.entity(projectile_entity).despawn();
             break;
         }
-        for (_, transform_collider, info) in collider_query.iter() {
+        for (hit_entity, transform_collider, info, zombie) in collider_query.iter() {
             let collision = collide(
                 transform.translation,
                 Vec2::new(5.,5.),
@@ -63,8 +63,11 @@ pub fn movement_projectile(
                 info.size
             );
             if let Some(collision) = collision {
+                if let Some(zombie) = zombie {
+                    commands.entity(hit_entity).despawn();
+                }
                 commands.entity(projectile_entity).despawn();
-                break;
+                break 'outer;
             }
 
         }
@@ -202,6 +205,7 @@ pub fn setup_players(
     mut commands: Commands, asset_server: Res<AssetServer>, mut game: ResMut<Game>
 ) {
     commands.spawn().insert_bundle(OrthographicCameraBundle::new_2d()).insert(MainCamera);
+    commands.spawn().insert_bundle(UiCameraBundle::default());
 
     let sprite_bundle = SpriteBundle {
         sprite: Sprite {
