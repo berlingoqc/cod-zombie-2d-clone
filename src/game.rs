@@ -170,10 +170,15 @@ pub fn system_zombie_handle(
             |&p| p == goal).unwrap().0;
 
            result.reverse();
-
-           // utilise seulement un fraction des resultats pour reagir vite au changement de user
-           // position
-           dest.path = result;
+           let len = result.len() as f32;
+           dest.path = if len >= 10. {
+                let len_taken = ((len  * 0.25)).ceil() as usize;
+                let start = result.len() - 1 - len_taken;
+                let end = result.len() - 1;
+                result[start..end].to_vec()
+           } else {
+               result
+           };
        }
     }
 }
