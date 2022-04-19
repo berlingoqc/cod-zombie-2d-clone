@@ -3,7 +3,6 @@ mod config;
 mod map;
 mod player;
 mod game;
-mod tiled_map;
 
 use bevy::asset::AssetServerSettings;
 use bevy::{
@@ -12,11 +11,9 @@ use bevy::{
 };
 use bevy_ecs_tilemap::prelude::*;
 use player::{Player, Projectile, Velocity};
-use tiled_map::tiled::{TiledMapBundle, TiledMapPlugin};
-use tiled_map::texture::set_texture_filters_to_nearest;
 
-use crate::map::{load_scene_system, react_event_scene, render_scene, data::{MapDataState, MapElementPosition, MapDataAsset, Collider}, loader::MapDataAssetLoader};
-use crate::{plugins::frame_cnt::FPSPlugin, game::{Game, GameState}, tiled_map::tiled_usage::startup_tiled};
+use crate::map::{MapPlugin, data::{Collider, MapElementPosition}};
+use crate::{plugins::frame_cnt::FPSPlugin, game::{Game, GameState}};
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
@@ -40,19 +37,9 @@ fn main() {
         canvas: Some("#bevy-canvas".to_string()),
         ..WindowDescriptor::default()
     })
-    .register_type::<MapElementPosition>()
     .add_plugins(DefaultPlugins)
-    .add_plugin(TilemapPlugin)
-    .add_plugin(TiledMapPlugin)
-    .init_resource::<MapDataState>()
-    .add_asset::<MapDataAsset>()
-    .init_asset_loader::<MapDataAssetLoader>()
-    .add_startup_system(startup_tiled)
-    .add_startup_system(setup_camera)
-    .add_startup_system(load_scene_system)
-    .add_system(react_event_scene)
-    .add_system(render_scene)
-    .add_system(set_texture_filters_to_nearest);
+    .add_plugin(MapPlugin{})
+    .add_startup_system(setup_camera);
 
     app
         .init_resource::<Game>()

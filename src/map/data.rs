@@ -21,6 +21,9 @@ pub struct WallBundle {
     info: MapElementPosition
 }
 
+#[derive(Component)]
+pub struct MapElement {}
+
 #[derive(Component, Reflect, Default, Deserialize, Clone)]
 #[reflect(Component)]
 pub struct MapElementPosition {
@@ -36,13 +39,18 @@ pub struct MapDataState {
     pub rendered: bool,
 }
 
+#[derive(Deserialize, Clone, Component)]
+pub struct MapTiledData {
+    pub path: String,
+    pub transform: Vec3,
+}
+
 #[derive(Deserialize, TypeUuid, Clone, Component)]
 #[uuid = "39cadc56-aa9c-4543-8640-a018b74b5052"]
 pub struct MapDataAsset {
     pub walls: Vec<MapElementPosition>,
+    pub tiled: MapTiledData
 }
-
-
 
 
 impl WallBundle {

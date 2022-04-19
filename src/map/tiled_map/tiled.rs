@@ -17,6 +17,11 @@ impl Plugin for TiledMapPlugin {
     }
 }
 
+#[derive(Component)]
+pub struct MapData {
+    path: String
+}
+
 #[derive(TypeUuid)]
 #[uuid = "e51081d0-6168-4881-a1c6-4249b2000d7f"]
 pub struct TiledMap {
