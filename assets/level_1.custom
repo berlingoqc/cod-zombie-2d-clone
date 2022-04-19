@@ -36,40 +36,40 @@ MapDataAsset(
         // Mur droite
         MapElementPosition(
             position: (200., 155.),
-            size: (10., 100.),
+            size: (25., 100.),
             rotation: 1,
         ),
         MapElementPosition(
             position: (200., -80.),
-            size: (10., 250.),
+            size: (25., 250.),
             rotation: 1,
         ),
         // Mur gauche
         MapElementPosition(
             position: (-200., 80.),
-            size: (10., 250.),
+            size: (25., 250.),
             rotation: 1,
         ),
         MapElementPosition(
             position: (-200., -160.),
-            size: (10., 90.),
+            size: (25., 90.),
             rotation: 1,
         ),
         // Mur haut
         MapElementPosition(
             position: (0., 200.),
-            size: (400., 10.),
+            size: (400., 25.),
             rotation: 1,
         ),
         // Mur bas
         MapElementPosition(
             position: (-95., -200.),
-            size: (200., 10.),
+            size: (200., 25.),
             rotation: 1,
         ),
         MapElementPosition(
             position: (145., -200.),
-            size: (110., 10.),
+            size: (110., 25.),
             rotation: 1,
         )
  
