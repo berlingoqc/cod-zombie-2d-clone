@@ -3,6 +3,7 @@ mod game;
 mod map;
 mod player;
 mod plugins;
+mod client;
 
 use bevy::asset::AssetServerSettings;
 use bevy::{
@@ -46,13 +47,13 @@ fn main() {
         canvas: Some("#bevy-canvas".to_string()),
         ..WindowDescriptor::default()
     })
+    //.insert_resource(opts)
     .add_plugins(DefaultPlugins)
     .add_plugin(MapPlugin {});
 
     app.init_resource::<Game>()
         .init_resource::<ZombieGame>()
         .init_resource::<ZombieLevelAssetState>()
-        .add_plugin(NetworkingPlugin::default())
         .add_asset::<ZombieLevelAsset>()
         .init_asset_loader::<ZombieLevelAssetLoader>()
         .add_state(GameState::PlayingZombie)

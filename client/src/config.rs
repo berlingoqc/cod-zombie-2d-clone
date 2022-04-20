@@ -14,6 +14,12 @@ pub struct Opts {
 
     #[structopt(short, long, default_value = "60")]
     pub fps: usize,
+
+    #[structopt(short, long, default_value = "")]
+    pub host: String,
+
+    #[structopt(short, long, default_value = "0")]
+    pub port: i32
 }
 
 impl Opts {
