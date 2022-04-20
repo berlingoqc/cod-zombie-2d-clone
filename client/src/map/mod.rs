@@ -4,18 +4,12 @@ mod loader;
 mod render;
 mod tiled_map;
 
-use bevy::{
-    asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset},
-    prelude::*,
-    reflect::{TypeRegistry, TypeUuid},
-    sprite::MaterialMesh2dBundle,
-};
+use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
 
 use tiled_map::{
     texture::set_texture_filters_to_nearest,
-    tiled::{MapData, TiledMapBundle, TiledMapPlugin},
-    tiled_usage::startup_tiled,
+    tiled::TiledMapPlugin,
 };
 
 use data::*;

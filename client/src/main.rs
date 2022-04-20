@@ -5,36 +5,26 @@ mod player;
 mod plugins;
 mod client;
 
-use bevy::asset::AssetServerSettings;
 use bevy::{
-    core::FixedTimestep, prelude::*, sprite::collide_aabb::collide, window::WindowDescriptor,
+    core::FixedTimestep, prelude::*, window::WindowDescriptor,
 };
-use bevy_ecs_tilemap::prelude::*;
-use player::{Player, Projectile, Velocity};
 
 use crate::game::{
     react_level_data, setup_zombie_game, system_zombie_game, system_zombie_handle, ZombieGame,
     ZombieGameState, ZombieLevelAsset, ZombieLevelAssetLoader, ZombieLevelAssetState,
 };
-use crate::map::{
-    data::{MapElementPosition, MovementCollider, ProjectileCollider},
-    MapPlugin,
-};
+use crate::map::MapPlugin;
 use crate::player::{apply_velocity, input_player, movement_projectile, setup_players};
 use crate::{
     game::{Game, GameState},
     plugins::frame_cnt::FPSPlugin,
 };
 
-use bevy_networking_turbulence::{NetworkEvent, NetworkResource, NetworkingPlugin, Packet};
-
 const TIME_STEP: f32 = 1.0 / 60.0;
 
 fn main() {
     let opts = config::Opts::get();
     info!("opts: {:?}", opts);
-
-    let vsync = opts.fps == 60 && !opts.benchmark_mode;
 
     let mut app = App::new();
 
@@ -74,9 +64,9 @@ fn main() {
                 .with_system(react_level_data),
         );
 
-    //if opts.benchmark_mode {
-    //  app.add_plugin(FPSPlugin{});
-    //}
+    if opts.benchmark_mode {
+      app.add_plugin(FPSPlugin{});
+    }
 
     app.run();
 }

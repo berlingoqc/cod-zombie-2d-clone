@@ -5,8 +5,6 @@ use crate::{
     map::data::{MapElementPosition, MovementCollider, ProjectileCollider},
 };
 
-use crate::game::Game;
-
 const TIME_STEP: f32 = 1.0 / 60.0;
 
 #[derive(Default, Component)]
@@ -70,8 +68,8 @@ pub fn movement_projectile(
                 transform_collider.translation,
                 info.size,
             );
-            if let Some(collision) = collision {
-                if let Some(zombie) = zombie {
+            if collision.is_some() {
+                if let Some(_zombie) = zombie {
                     commands.entity(hit_entity).despawn();
                 }
                 commands.entity(projectile_entity).despawn();
@@ -160,12 +158,6 @@ pub fn input_player(
     }
 
     if buttons.just_pressed(MouseButton::Left) || keyboard_input.pressed(KeyCode::Space) {
-        let amo_v = if !moved {
-            Vec3::new(1., 0., 0.)
-        } else {
-            movement
-        };
-
         let mouse_location = get_cursor_location(&wnds, &q_camera).normalize_or_zero();
 
         commands
@@ -200,9 +192,9 @@ pub fn input_player(
     let dest = player_transform.translation + (movement * 3.);
 
     let mut save_move = true;
-    for (collider_entity, transform, info) in collider_query.iter() {
+    for (_, transform, info) in collider_query.iter() {
         let collision = collide(dest, Vec2::new(25., 25.), transform.translation, info.size);
-        if let Some(collision) = collision {
+        if collision.is_some() {
             save_move = false;
         }
     }
@@ -214,8 +206,6 @@ pub fn input_player(
 
 pub fn setup_players(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut game: ResMut<Game>,
 ) {
     commands
         .spawn()

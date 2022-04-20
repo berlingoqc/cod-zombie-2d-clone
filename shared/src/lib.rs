@@ -1,9 +1,4 @@
-use bevy::{
-    core::Time,
-    ecs::bundle::Bundle,
-    prelude::{Component, Query, Res},
-};
-use bevy::{math::Vec2, prelude::ResMut};
+use bevy::prelude::*;
 use bevy_networking_turbulence::{
     ConnectionChannelsBuilder, MessageChannelMode, MessageChannelSettings, NetworkResource,
     ReliableChannelSettings,
@@ -53,14 +48,14 @@ pub const SERVER_MESSAGE_SETTINGS: MessageChannelSettings = MessageChannelSettin
     packet_buffer_size: 8,
 };
 
-fn player_component_message_settings(channel: u8) -> MessageChannelSettings {
+/*fn player_component_message_settings(channel: u8) -> MessageChannelSettings {
     MessageChannelSettings {
         channel,
         channel_mode: MessageChannelMode::Unreliable,
         message_buffer_size: 8,
         packet_buffer_size: 8,
     }
-}
+}*/
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ClientMessage {

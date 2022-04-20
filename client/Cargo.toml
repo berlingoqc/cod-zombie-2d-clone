@@ -13,13 +13,9 @@ default = [
 
 native = [
     "bevy/x11",
-#    "bevy/dynamic"
-#    "bevy/bevy_wgpu"
 ]
 
-web = [
-#    "bevy_webgl2"
-]
+web = []
 
 audio = [
     "bevy/bevy_audio",

@@ -5,13 +5,12 @@ use crate::map::data::{
 };
 use crate::player::Player;
 use bevy::asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset};
-use bevy::prelude::shape::Quad;
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
 use rand::prelude::*;
 use serde::Deserialize;
 
-use pathfinding::prelude::{astar, Grid};
+use pathfinding::prelude::astar;
 
 #[derive(Default)]
 pub struct Game {
@@ -20,14 +19,14 @@ pub struct Game {
     pub zombie_game: Option<ZombieGame>,
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub enum GameState {
-    Menu,
+    //Menu,
     PlayingZombie,
-    GameOver,
+    //GameOver,
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
 #[repr(i32)]
 pub enum ZombieGameState {
     Starting = 0,
@@ -156,8 +155,7 @@ pub fn setup_zombie_game(
     mut state: ResMut<ZombieLevelAssetState>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    game: Res<Game>,
-    mut zombie_game: ResMut<ZombieGame>,
+    //mut zombie_game: ResMut<ZombieGame>,
 ) {
     let handle: Handle<ZombieLevelAsset> = asset_server.load("level_1.level");
     state.handle = handle;
@@ -266,11 +264,10 @@ pub fn system_zombie_game(
     level_asset_state: Res<ZombieLevelAssetState>,
     custom_assets: ResMut<Assets<ZombieLevelAsset>>,
 
-    game: Res<Game>,
     mut zombie_game: ResMut<ZombieGame>,
 
     mut query: Query<&mut Text>,
-    mut zombie_query: Query<&Zombie>,
+    zombie_query: Query<&Zombie>,
 
     time: Res<Time>,
     mut config: ResMut<ZombieSpawnerConfig>,
@@ -278,7 +275,7 @@ pub fn system_zombie_game(
     query_spawner: Query<&MapElementPosition, With<ZombieSpawner>>,
     query_window: Query<&MapElementPosition, With<Window>>,
 
-    mut app_state: ResMut<State<GameState>>,
+    //mut app_state: ResMut<State<GameState>>,
 ) {
     let mut nbr_zombie = 0;
     for _ in zombie_query.iter() {
@@ -405,14 +402,13 @@ pub fn system_zombie_game(
 
 pub fn react_level_data(
     mut asset_events: EventReader<AssetEvent<ZombieLevelAsset>>,
-    custom_assets: ResMut<Assets<ZombieLevelAsset>>,
     mut zombie_game: ResMut<ZombieGame>,
     mut commands: Commands,
-    mut query_zombies: Query<Entity, With<Zombie>>,
+    query_zombies: Query<Entity, With<Zombie>>,
 ) {
     for event in asset_events.iter() {
         match event {
-            AssetEvent::Modified { handle } => {
+            AssetEvent::Modified { ..  } => {
                 zombie_game.state = ZombieGameState::Starting as i32;
                 for z in query_zombies.iter() {
                     commands.entity(z).despawn();

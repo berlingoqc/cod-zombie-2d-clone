@@ -1,6 +1,5 @@
 use bevy::{
     asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset},
-    prelude::*,
 };
 
 use super::data::MapDataAsset;

@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
 
 use super::data::*;
-use super::loader::*;
 use super::tiled_map::tiled::{TiledMap, TiledMapBundle};
 
 impl MapDataAsset {
@@ -31,11 +30,10 @@ impl MapDataAsset {
         }
 
         for w in (&self.walls).into_iter() {
-            let child_wall = command
+            command
                 .spawn()
                 .insert(MapElement {})
-                .insert_bundle(WallBundle::new(w.clone()))
-                .id();
+                .insert_bundle(WallBundle::new(w.clone()));
         }
 
         for w in (&self.windows).into_iter() {
@@ -58,8 +56,6 @@ pub fn render_map_data(
 pub fn load_scene_system(
     asset_server: Res<AssetServer>,
     mut state: ResMut<MapDataState>,
-    mut scene_spawner: ResMut<SceneSpawner>,
-    mut commands: Commands,
 ) {
     // Scenes are loaded just like any other asset.
     let handle: Handle<MapDataAsset> = asset_server.load("level_1.custom");
@@ -88,14 +84,13 @@ pub fn render_scene(
 
 pub fn react_event_scene(
     mut asset_events: EventReader<AssetEvent<MapDataAsset>>,
-    custom_assets: ResMut<Assets<MapDataAsset>>,
     mut commands: Commands,
-    mut entity: Query<Entity, With<MapElement>>,
+    entity: Query<Entity, With<MapElement>>,
     mut state: ResMut<MapDataState>,
 ) {
     for event in asset_events.iter() {
         match event {
-            AssetEvent::Modified { handle } => {
+            AssetEvent::Modified { .. } => {
                 for element in entity.iter() {
                     commands.entity(element).despawn();
                 }
