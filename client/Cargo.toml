@@ -46,11 +46,3 @@ structopt = "0.3"
 uuid = "=0.8.1"
 anyhow ="1.0"
 pathfinding = "3.0.12"
-
-[profile.dev]
-opt-level = 1
-
-[profile.release]
-lto = true
-opt-level = 's'
-
