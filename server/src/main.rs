@@ -39,7 +39,7 @@ fn main() {
 }
 
 fn setup_server(mut net: ResMut<NetworkResource>) {
-    let ip_address = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+    let ip_address = IpAddr::V4(Ipv4Addr::new(192, 168, 50, 19));
     let socket_address = SocketAddr::new(ip_address, 9001);
     net.listen(socket_address, None, None);
     println!("Listening...");
@@ -62,6 +62,7 @@ fn network_events(
  //   unowned_balls: Query<(Entity, &BallId), Without<NetworkHandle>>,
 ) {
     for event in network_event_reader.iter() {
+        println!("{:?}", event);
         match event {
             NetworkEvent::Connected(handle) => match net.connections.get_mut(handle) {
                 Some(_connection) => {

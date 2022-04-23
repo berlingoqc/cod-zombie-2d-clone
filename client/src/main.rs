@@ -39,6 +39,7 @@ fn main() {
     })
     //.insert_resource(opts)
     .add_plugins(DefaultPlugins)
+    .add_plugin(client::NetworkClientPlugin{})
     .add_plugin(MapPlugin {});
 
     app.init_resource::<Game>()
