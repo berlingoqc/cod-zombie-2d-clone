@@ -2,7 +2,7 @@ use bevy::{
     asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset},
 };
 
-use super::data::MapDataAsset;
+use super::render::MapDataAsset;
 
 #[derive(Default)]
 pub struct MapDataAssetLoader;

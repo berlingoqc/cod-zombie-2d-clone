@@ -25,7 +25,6 @@ fn setup_client(mut net: ResMut<NetworkResource>) {
     let ip_address = IpAddr::V4(Ipv4Addr::new(192, 168, 50, 19));
     let socket_address = SocketAddr::new(ip_address, 9001);
     info!("Connecting to {}...", socket_address);
-    info!("Connecting to {}...", socket_address);
     net.connect(socket_address);
 }
 

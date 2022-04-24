@@ -1,20 +1,7 @@
-use bevy::{
-    prelude::*,
-    reflect::TypeUuid,
-};
+use bevy::{prelude::*, reflect::TypeUuid};
 
+use super::collider::{MovementCollider, ProjectileCollider};
 use serde::Deserialize;
-
-#[derive(Component, Reflect, Default, Deserialize, Clone)]
-#[reflect(Component)]
-pub struct MovementCollider {}
-
-#[derive(Component, Reflect, Default, Deserialize, Clone)]
-#[reflect(Component)]
-pub struct ProjectileCollider {}
-
-#[derive(Component)]
-pub struct CollisionEvent {}
 
 #[derive(Bundle)]
 pub struct WallBundle {
@@ -48,18 +35,6 @@ pub struct MapElementPosition {
     pub rotation: i32,
 }
 
-#[derive(Default)]
-pub struct MapDataState {
-    pub handle: Handle<MapDataAsset>,
-    pub rendered: bool,
-}
-
-#[derive(Deserialize, Clone, Component)]
-pub struct MapTiledData {
-    pub path: String,
-    pub transform: Vec3,
-}
-
 #[derive(Component, Default)]
 pub struct ZombieSpawner {}
 
@@ -70,15 +45,6 @@ pub struct ZombieSpawnerBundle {
     position: MapElementPosition,
     map_element: MapElement,
     spawner: ZombieSpawner,
-}
-
-#[derive(Deserialize, TypeUuid, Clone, Component)]
-#[uuid = "39cadc56-aa9c-4543-8640-a018b74b5052"]
-pub struct MapDataAsset {
-    pub walls: Vec<MapElementPosition>,
-    pub windows: Vec<MapElementPosition>,
-    pub spawners: Vec<MapElementPosition>,
-    pub tiled: MapTiledData,
 }
 
 impl ZombieSpawnerBundle {
@@ -146,3 +112,4 @@ impl WallBundle {
         }
     }
 }
+

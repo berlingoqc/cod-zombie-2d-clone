@@ -1,9 +1,8 @@
 use std::time::Duration;
 
-use crate::map::data::{
-    MapElementPosition, MovementCollider, ProjectileCollider, Window, ZombieSpawner,
-};
-use crate::player::Player;
+use super::collider::{MovementCollider, ProjectileCollider};
+use super::map::{MapElementPosition, Window, ZombieSpawner};
+use super::player::Player;
 use bevy::asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset};
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
@@ -166,6 +165,7 @@ pub fn setup_zombie_game(
         nums_ndg: (-50..50).map(|x| x as f32).collect(),
     });
 
+    /*
     commands.spawn_bundle(TextBundle {
         text: Text {
             sections: vec![
@@ -190,6 +190,7 @@ pub fn setup_zombie_game(
         },
         ..default()
     });
+    */
 }
 
 pub fn system_zombie_handle(
@@ -266,7 +267,7 @@ pub fn system_zombie_game(
 
     mut zombie_game: ResMut<ZombieGame>,
 
-    mut query: Query<&mut Text>,
+    //mut query: Query<&mut Text>,
     zombie_query: Query<&Zombie>,
 
     time: Res<Time>,
@@ -274,7 +275,6 @@ pub fn system_zombie_game(
 
     query_spawner: Query<&MapElementPosition, With<ZombieSpawner>>,
     query_window: Query<&MapElementPosition, With<Window>>,
-
     //mut app_state: ResMut<State<GameState>>,
 ) {
     let mut nbr_zombie = 0;
@@ -392,12 +392,12 @@ pub fn system_zombie_game(
         }
         ZombieGameState::Over => {}
     }
-    let mut text = query.single_mut();
+    /*let mut text = query.single_mut();
     text.sections[0].value = format!("Round: {} \n", zombie_game.round);
     text.sections[1].value = format!(
         "Remaining: {} ",
         zombie_game.current_round.zombie_remaining + nbr_zombie
-    );
+    );*/
 }
 
 pub fn react_level_data(
@@ -408,7 +408,7 @@ pub fn react_level_data(
 ) {
     for event in asset_events.iter() {
         match event {
-            AssetEvent::Modified { ..  } => {
+            AssetEvent::Modified { .. } => {
                 zombie_game.state = ZombieGameState::Starting as i32;
                 for z in query_zombies.iter() {
                     commands.entity(z).despawn();

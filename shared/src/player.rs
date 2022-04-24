@@ -1,8 +1,9 @@
 use bevy::{prelude::*, sprite::collide_aabb::collide};
 
 use crate::{
+    collider::{MovementCollider, ProjectileCollider},
     game::Zombie,
-    map::data::{MapElementPosition, MovementCollider, ProjectileCollider},
+    map::MapElementPosition,
 };
 
 const TIME_STEP: f32 = 1.0 / 60.0;
@@ -204,9 +205,7 @@ pub fn input_player(
     }
 }
 
-pub fn setup_players(
-    mut commands: Commands,
-) {
+pub fn setup_players(mut commands: Commands) {
     commands
         .spawn()
         .insert_bundle(OrthographicCameraBundle::new_2d())

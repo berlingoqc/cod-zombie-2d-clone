@@ -1,5 +1,3 @@
-pub mod data;
-
 mod loader;
 mod render;
 mod tiled_map;
@@ -12,7 +10,8 @@ use tiled_map::{
     tiled::TiledMapPlugin,
 };
 
-use data::*;
+use shared::map::*;
+use shared::collider::*;
 use loader::*;
 use render::*;
 

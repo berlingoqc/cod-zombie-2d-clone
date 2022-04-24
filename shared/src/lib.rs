@@ -1,3 +1,8 @@
+pub mod collider;
+pub mod game;
+pub mod map;
+pub mod player;
+
 use bevy::prelude::*;
 use bevy_networking_turbulence::{
     ConnectionChannelsBuilder, MessageChannelMode, MessageChannelSettings, NetworkResource,
@@ -64,7 +69,7 @@ pub enum ClientMessage {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ServerMessage {}
-        
+
 pub fn setup_network_channels(mut net: ResMut<NetworkResource>) {
     net.set_channels_builder(|builder: &mut ConnectionChannelsBuilder| {
         builder
@@ -75,4 +80,3 @@ pub fn setup_network_channels(mut net: ResMut<NetworkResource>) {
             .unwrap();
     });
 }
-

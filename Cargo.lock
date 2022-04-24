@@ -1092,6 +1092,7 @@ name = "cod-zombie-2d-clone"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "approx",
  "bevy",
  "bevy_ecs_tilemap",
  "bevy_networking_turbulence",
@@ -2970,8 +2971,12 @@ dependencies = [
 name = "shared"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bevy",
  "bevy_networking_turbulence",
+ "pathfinding",
+ "rand 0.8.5",
+ "ron",
  "serde",
 ]
 

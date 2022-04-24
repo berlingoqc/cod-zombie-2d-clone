@@ -7,7 +7,6 @@ pub struct Opts {
     pub benchmark_mode: bool,
 
     #[structopt(short, long)]
-    pub debug: bool,
 
     #[structopt(short, long, default_value = "8")]
     pub key_frame_interval: usize,

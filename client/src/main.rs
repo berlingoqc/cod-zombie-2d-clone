@@ -1,7 +1,5 @@
 mod config;
-mod game;
 mod map;
-mod player;
 mod plugins;
 mod client;
 
@@ -9,16 +7,18 @@ use bevy::{
     core::FixedTimestep, prelude::*, window::WindowDescriptor,
 };
 
-use crate::game::{
-    react_level_data, setup_zombie_game, system_zombie_game, system_zombie_handle, ZombieGame,
-    ZombieGameState, ZombieLevelAsset, ZombieLevelAssetLoader, ZombieLevelAssetState,
+use shared::{
+    game::{
+        react_level_data, setup_zombie_game, system_zombie_game, system_zombie_handle, ZombieGame,
+        Game, GameState,
+        ZombieGameState, ZombieLevelAsset, ZombieLevelAssetLoader, ZombieLevelAssetState,
+    },
+    player::{
+        apply_velocity, input_player, movement_projectile, setup_players
+    },
 };
 use crate::map::MapPlugin;
-use crate::player::{apply_velocity, input_player, movement_projectile, setup_players};
-use crate::{
-    game::{Game, GameState},
-    plugins::frame_cnt::FPSPlugin,
-};
+use crate::plugins::frame_cnt::FPSPlugin;
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
@@ -69,5 +69,31 @@ fn main() {
       app.add_plugin(FPSPlugin{});
     }
 
+    #[cfg(target_arch = "wasm32")]
+    app.add_system(update_window_size);
+
     app.run();
+}
+
+
+#[cfg(target_arch = "wasm32")]
+fn update_window_size(mut windows: ResMut<Windows>) {
+    //See: https://github.com/rust-windowing/winit/issues/1491
+    // TODO: use window resize event instead of polling
+    use approx::relative_eq;
+    let web_window = web_sys::window().unwrap();
+    let width = web_window.inner_width().unwrap().as_f64().unwrap() as f32;
+    let height = web_window.inner_height().unwrap().as_f64().unwrap() as f32;
+
+    let window = windows.get_primary_mut().unwrap();
+    if relative_eq!(width, window.width()) && relative_eq!(height, window.height()) {
+        return;
+    }
+
+    info!(
+        "resizing canvas {:?}, old size {:?}",
+        (width, height),
+        (window.width(), window.height())
+    );
+    window.set_resolution(width, height);
 }

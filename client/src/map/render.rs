@@ -1,8 +1,32 @@
 use bevy::prelude::*;
+use bevy::reflect::TypeUuid;
 use bevy_ecs_tilemap::prelude::*;
 
-use super::data::*;
+use shared::map::*;
+use shared::collider::*;
 use super::tiled_map::tiled::{TiledMap, TiledMapBundle};
+use serde::Deserialize;
+
+#[derive(Default)]
+pub struct MapDataState {
+    pub handle: Handle<MapDataAsset>,
+    pub rendered: bool,
+}
+
+#[derive(Deserialize, Clone, Component)]
+pub struct MapTiledData {
+    pub path: String,
+    pub transform: Vec3,
+}
+
+#[derive(Deserialize, TypeUuid, Clone, Component)]
+#[uuid = "39cadc56-aa9c-4543-8640-a018b74b5052"]
+pub struct MapDataAsset {
+    pub walls: Vec<MapElementPosition>,
+    pub windows: Vec<MapElementPosition>,
+    pub spawners: Vec<MapElementPosition>,
+    pub tiled: MapTiledData,
+}
 
 impl MapDataAsset {
     pub fn render(&self, command: &mut Commands, asset_server: &AssetServer) {
