@@ -20,30 +20,13 @@
       font-family: 'Source Code Pro', monospace;
       color: #777;
     }
-    #board {
-      font-size: 2em;
-      margin: 0px;
-      line-height: 120%;
-    }
-    .container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-    }
-    canvas {
-        min-height: 800px;
-        min-width: 1600px;
-        height: 90%;
-        width: 90%;
+
+    body {
+      margin: 0px !important;
     }
   </style>
+</head>
   <body>
-    <div class="container">
-            <div>
-              <canvas id="bevy-canvas" tabIndex="0" autofocus height="90%" width="90%"></canvas>
-                <a href="#" onclick="var c = document.getElementById('bevy-canvas'); let x = (c.webkitRequestFullScreen || c.requestFullscreen); x.call(c);">fullscreen</a>
-            </div>
-    </div>
+    <canvas id="bevy-canvas" tabIndex="0" autofocus></canvas>
   </body>
 </html>
