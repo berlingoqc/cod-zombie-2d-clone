@@ -8,6 +8,7 @@ use bevy_networking_turbulence::{
     ConnectionChannelsBuilder, MessageChannelMode, MessageChannelSettings, NetworkResource,
     ReliableChannelSettings,
 };
+use game::EntityId;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -68,7 +69,9 @@ pub enum ClientMessage {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum ServerMessage {}
+pub enum ServerMessage {
+    Welcome(EntityId)
+}
 
 pub fn setup_network_channels(mut net: ResMut<NetworkResource>) {
     net.set_channels_builder(|builder: &mut ConnectionChannelsBuilder| {

@@ -1,5 +1,4 @@
 mod config;
-mod map;
 mod plugins;
 mod client;
 
@@ -11,13 +10,13 @@ use shared::{
     game::{
         react_level_data, setup_zombie_game, system_zombie_game, system_zombie_handle, ZombieGame,
         Game, GameState,
-        ZombieGameState, ZombieLevelAsset, ZombieLevelAssetLoader, ZombieLevelAssetState,
+        ZombieGameState, ZombieLevelAsset, ZombieLevelAssetLoader, ZombieLevelAssetState, ZombieGamePlugin, LevelMapRequested,
     },
     player::{
         apply_velocity, input_player, movement_projectile, setup_players
     },
 };
-use crate::map::MapPlugin;
+use shared::map::MapPlugin;
 use crate::plugins::frame_cnt::FPSPlugin;
 
 const TIME_STEP: f32 = 1.0 / 60.0;
@@ -37,18 +36,15 @@ fn main() {
         canvas: Some("#bevy-canvas".to_string()),
         ..WindowDescriptor::default()
     })
-    //.insert_resource(opts)
+    .insert_resource(LevelMapRequested{map: opts.map, level: opts.level})
     .add_plugins(DefaultPlugins)
-    .add_plugin(client::NetworkClientPlugin{})
     .add_plugin(MapPlugin {});
 
-    app.init_resource::<Game>()
-        .init_resource::<ZombieGame>()
-        .init_resource::<ZombieLevelAssetState>()
-        .add_asset::<ZombieLevelAsset>()
-        .init_asset_loader::<ZombieLevelAssetLoader>()
-        .add_state(GameState::PlayingZombie)
-        .add_state(ZombieGameState::Starting)
+    app.add_plugin(ZombieGamePlugin{});
+
+    if opts.host == "" {
+        info!("Startin single player mode");
+        app
         .add_system_set(
             SystemSet::on_enter(GameState::PlayingZombie)
                 .with_system(setup_players)
@@ -64,6 +60,10 @@ fn main() {
                 .with_system(movement_projectile)
                 .with_system(react_level_data),
         );
+    } else {
+        info!("Startin multiplayer mode");
+        app.add_plugin(client::NetworkClientPlugin{});
+    }
 
     if opts.benchmark_mode {
       app.add_plugin(FPSPlugin{});

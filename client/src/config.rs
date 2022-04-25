@@ -18,7 +18,13 @@ pub struct Opts {
     pub host: String,
 
     #[structopt(short, long, default_value = "0")]
-    pub port: i32
+    pub port: i32,
+
+    #[structopt(short, long, default_value = "level_1.custom")]
+    pub map: String,
+
+    #[structopt(short, long, default_value = "level_1.level")]
+    pub level: String
 }
 
 impl Opts {
@@ -26,3 +32,4 @@ impl Opts {
         return Opts::from_args();
     }
 }
+

@@ -10,3 +10,6 @@ serde = { version = "1", features = ["derive"] }
 turbulence = "0.3"
 bevy_networking_turbulence = { git = "https://github.com/berlingoqc/bevy_networking_turbulence.git", branch = "master", default-features = false, features = ["use-webrtc"] }
 bevy = { version = "0.7.0", default-features = false }
+
+
+pathfinding = "3.0.12"

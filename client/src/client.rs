@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_networking_turbulence::{NetworkingPlugin, NetworkResource, NetworkEvent };
 use std::net::{IpAddr, SocketAddr, Ipv4Addr};
 
-use shared::ClientMessage;
+use shared::{ClientMessage, ServerMessage};
 
 pub struct NetworkServerRessource {
     host: String,
@@ -17,6 +17,7 @@ impl Plugin for NetworkClientPlugin {
             .add_plugin(NetworkingPlugin::default())
             .add_startup_system(shared::setup_network_channels)
             .add_startup_system(setup_client)
+            .add_system(read_server_message_channel)
             .add_system(network_events);
     }
 }
@@ -37,9 +38,6 @@ fn network_events(
             NetworkEvent::Connected(handle) => match net.connections.get_mut(handle) {
                 Some(_connection) => {
                     info!("Connection successful");
-
-                    net.send_message(*handle, ClientMessage::Hello)
-                        .expect("Could not send hello");
                 }
                 None => panic!("Got packet for non-existing connection [{}]", handle),
             },
@@ -48,4 +46,24 @@ fn network_events(
             }
         }
     }
+}
+
+fn read_server_message_channel(
+    mut cmd: Commands,
+    mut net: ResMut<NetworkResource>
+) {
+
+    for (_, connection) in net.connections.iter_mut() {
+        let channels = connection.channels().unwrap();
+
+        while let Some(message) = channels.recv::<ServerMessage>() {
+            match message {
+                ServerMessage::Welcome(your_player_id) => {
+
+                    info!("Receive my entity : {:?}", your_player_id);
+                }
+            }
+        }
+    }
+
 }

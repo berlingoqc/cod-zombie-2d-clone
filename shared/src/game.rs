@@ -7,7 +7,7 @@ use bevy::asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset};
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
 use rand::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use pathfinding::prelude::astar;
 
@@ -28,7 +28,8 @@ pub enum GameState {
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 #[repr(i32)]
 pub enum ZombieGameState {
-    Starting = 0,
+    Initializing = 0,
+    Starting,
     Round,
     RoundInterlude,
     Over,
@@ -54,12 +55,27 @@ pub struct CurrentRoundInfo {
     pub zombie_remaining: i32,
 }
 
+
+#[derive(Component, Serialize, Deserialize, Default, Clone, Copy, Debug, PartialEq, Hash, Eq)]
+pub struct EntityId(pub u32);
+
+#[derive(Component)]
+pub struct ZombiePlayer {}
+
+
+pub struct ZombiePlayerInformation {
+    pub handle: u32,
+    pub entity: u32
+}
+
 #[derive(Default)]
 pub struct ZombieGame {
     pub round: i32,
     pub state: i32, //ZombieGameState,
     pub current_round: CurrentRoundInfo,
     pub configuration: MapRoundConfiguration,
+
+    pub players: Vec<ZombiePlayerInformation>
 }
 
 #[derive(Component)]
@@ -118,7 +134,7 @@ impl AssetLoader for ZombieLevelAssetLoader {
 }
 
 impl ZombieBundle {
-    fn new(info: MapElementPosition, dest: BotDestination) -> ZombieBundle {
+    pub fn new(info: MapElementPosition, dest: BotDestination) -> ZombieBundle {
         ZombieBundle {
             sprite_bundle: SpriteBundle {
                 sprite: Sprite {
@@ -145,18 +161,43 @@ impl ZombieBundle {
     }
 }
 
-pub struct ZombieSpawnerConfig {
-    timer: Timer,
-    nums_ndg: Vec<f32>,
+#[derive(Default)]
+pub struct LevelMapRequested {
+    pub map: String,
+    pub level: String
 }
 
+pub struct ZombieSpawnerConfig {
+    pub timer: Timer,
+    pub nums_ndg: Vec<f32>,
+}
+
+pub struct ZombieGamePlugin {}
+
+impl Plugin for ZombieGamePlugin {
+    fn build(&self, app: &mut App) {
+        app
+            .init_resource::<Game>()
+            .init_resource::<ZombieGame>()
+            .init_resource::<ZombieLevelAssetState>()
+
+            .add_asset::<ZombieLevelAsset>()
+            .init_asset_loader::<ZombieLevelAssetLoader>()
+
+            .add_state(GameState::PlayingZombie)
+            .add_state(ZombieGameState::Starting);
+    }
+}
+
+// make on client and server side ....
 pub fn setup_zombie_game(
     mut state: ResMut<ZombieLevelAssetState>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    requested_level: Res<LevelMapRequested>
     //mut zombie_game: ResMut<ZombieGame>,
 ) {
-    let handle: Handle<ZombieLevelAsset> = asset_server.load("level_1.level");
+    let handle: Handle<ZombieLevelAsset> = asset_server.load(requested_level.level.as_str());
     state.handle = handle;
     state.loaded = false;
 
@@ -283,7 +324,7 @@ pub fn system_zombie_game(
     }
 
     match unsafe { ::std::mem::transmute(zombie_game.state) } {
-        ZombieGameState::Starting => {
+        ZombieGameState::Initializing => {
             let data_asset = custom_assets.get(&level_asset_state.handle);
             if level_asset_state.loaded || data_asset.is_none() {
                 return;
@@ -302,7 +343,10 @@ pub fn system_zombie_game(
             );
 
             zombie_game.state = ZombieGameState::Round as i32;
-        }
+        },
+        ZombieGameState::Starting => {
+
+        },
         ZombieGameState::Round => {
             if nbr_zombie == 0 && zombie_game.current_round.zombie_remaining == 0 {
                 zombie_game.state = ZombieGameState::RoundInterlude as i32;

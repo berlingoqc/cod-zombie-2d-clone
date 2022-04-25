@@ -2,9 +2,10 @@ use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
 use bevy_ecs_tilemap::prelude::*;
 
-use shared::map::*;
-use shared::collider::*;
+use crate::collider::*;
 use super::tiled_map::tiled::{TiledMap, TiledMapBundle};
+use super::*;
+use crate::game::LevelMapRequested;
 use serde::Deserialize;
 
 #[derive(Default)]
@@ -80,9 +81,10 @@ pub fn render_map_data(
 pub fn load_scene_system(
     asset_server: Res<AssetServer>,
     mut state: ResMut<MapDataState>,
+    level_requested: Res<LevelMapRequested>
 ) {
     // Scenes are loaded just like any other asset.
-    let handle: Handle<MapDataAsset> = asset_server.load("level_1.custom");
+    let handle: Handle<MapDataAsset> = asset_server.load(level_requested.map.as_str());
     state.handle = handle;
     state.rendered = false;
 
