@@ -1,6 +1,11 @@
+#![feature(stmt_expr_attributes)]
+
+
 mod config;
 mod plugins;
 mod client;
+mod ingameui;
+mod player;
 
 use bevy::{
     core::FixedTimestep, prelude::*, window::WindowDescriptor,
@@ -14,7 +19,7 @@ use shared::{
     },
     player::{
         apply_velocity, input_player, movement_projectile, setup_players
-    },
+    }, weapons::weapons::handle_weapon_input,
 };
 use shared::map::MapPlugin;
 use crate::plugins::frame_cnt::FPSPlugin;
@@ -47,16 +52,20 @@ fn main() {
         app
         .add_system_set(
             SystemSet::on_enter(GameState::PlayingZombie)
-                .with_system(setup_players)
+                .with_system(player::setup_player_camera)
+                .with_system(ingameui::setup_ingame_ui)
                 .with_system(setup_zombie_game),
         )
         .add_system_set(
             SystemSet::on_update(GameState::PlayingZombie)
                 .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
+                .with_system(ingameui::system_ingame_ui)
+                .with_system(ingameui::system_weapon_ui)
                 .with_system(system_zombie_handle)
                 .with_system(system_zombie_game)
                 .with_system(apply_velocity)
                 .with_system(input_player)
+                .with_system(handle_weapon_input)
                 .with_system(movement_projectile)
                 .with_system(react_level_data),
         );

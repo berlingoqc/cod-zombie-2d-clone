@@ -17,7 +17,7 @@ struct NetworkHandle(u32);
 pub fn setup_server(mut net: ResMut<NetworkResource>) {
     let ip_address = IpAddr::V4(Ipv4Addr::new(192, 168, 50, 19));
     let socket_address = SocketAddr::new(ip_address, 9001);
-    net.listen(socket_address, None, None);
+    net.listen(socket_address, Some(socket_address), Some(socket_address));
     println!("Listening...");
 }
 

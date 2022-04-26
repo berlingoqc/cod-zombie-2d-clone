@@ -37,7 +37,7 @@ fn main() {
         // Game setup
         
         .add_plugin(ZombieGamePlugin{})
-        .add_startup_system(setup_zombie_game)
+        //.add_startup_system(setup_zombie_game)
         //.add_system(arugio_shared::update_velocity)
         //.add_system(arugio_shared::update_position)
         //.add_system(spawn_ball_system)

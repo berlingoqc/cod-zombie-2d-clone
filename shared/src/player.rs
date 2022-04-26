@@ -2,17 +2,71 @@ use bevy::{prelude::*, sprite::collide_aabb::collide};
 
 use crate::{
     collider::{MovementCollider, ProjectileCollider},
-    game::Zombie,
+    game::{Zombie, ZombieGame},
     map::MapElementPosition,
+    weapons::{weapons::{Projectile, Weapon, WeaponState, WeaponBundle, ActivePlayerWeapon, AmmunitionState, WeaponCurrentAction}, loader::WeaponAssetState}
 };
+
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
 #[derive(Default, Component)]
 pub struct Player {}
 
-#[derive(Default, Component)]
-pub struct Projectile {}
+
+#[derive(Bundle)]
+pub struct PlayerBundle {
+    pub player: Player,
+    #[bundle] 
+    pub sprite: SpriteBundle,
+}
+
+impl PlayerBundle {
+    fn new() -> PlayerBundle {
+        PlayerBundle { 
+            player: Player{},
+            sprite : SpriteBundle {
+                sprite: Sprite {
+                    color: Color::rgb(0.25, 0.25, 0.75),
+                    custom_size: Some(Vec2::new(25.0, 25.0)),
+                    ..Sprite::default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(0., 0., 10.),
+                    ..Transform::default()
+                },
+                ..SpriteBundle::default()
+            }
+        }
+    }
+}
+
+pub fn setup_players(
+    mut commands: Commands,
+
+    zombie_game: &ResMut<ZombieGame>,
+    weapons: &Res<WeaponAssetState>,
+) {
+    // TODO: for multiplayer
+    // Fetch the location of the player spawner in the map
+    // Use your player index in the player array of the game
+    // to select your color and where your spawn
+
+    // get the default weapon for the map
+    let default_weapon_name = zombie_game.configuration.starting_weapon.as_str();
+
+    let weapon = weapons.weapons.iter().find(|w| w.name.eq(default_weapon_name)).unwrap().clone();
+
+    let player = commands.spawn_bundle(PlayerBundle::new()).id();
+        
+    let weapon = commands.spawn()
+        .insert_bundle(WeaponBundle::new(weapon, true)).id();
+
+    commands.entity(player).add_child(weapon);
+
+}
+
+
 
 #[derive(Default, Component)]
 pub struct ExpiringComponent {
@@ -80,51 +134,13 @@ pub fn movement_projectile(
     }
 }
 
-fn get_cursor_location(
-    wnds: &Windows,
-    q_camera: &Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-) -> Vec2 {
-    // get the camera info and transform
-    // assuming there is exactly one main camera entity, so query::single() is OK
-    let (camera, camera_transform) = q_camera.single();
-
-    let window = match camera.target {
-        bevy::render::camera::RenderTarget::Window(w) => w,
-        _ => panic!("camera not rendering to windows"),
-    };
-
-    // get the window that the camera is displaying to
-    let wnd = wnds.get(window).unwrap();
-
-    // check if the cursor is inside the window and get its position
-    if let Some(screen_pos) = wnd.cursor_position() {
-        // get the size of the window
-        let window_size = Vec2::new(wnd.width() as f32, wnd.height() as f32);
-
-        // convert screen position [0..resolution] to ndc [-1..1] (gpu coordinates)
-        let ndc = (screen_pos / window_size) * 2.0 - Vec2::ONE;
-
-        // matrix for undoing the projection and camera transform
-        let ndc_to_world = camera_transform.compute_matrix() * camera.projection_matrix.inverse();
-
-        // use it to convert ndc to world-space coordinates
-        let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));
-
-        // reduce it to a 2D value
-        let world_pos: Vec2 = world_pos.truncate();
-
-        return world_pos;
-    } else {
-        return Vec2::new(0., 0.);
-    }
-}
-
 pub fn input_player(
     mut commands: Commands,
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
     buttons: Res<Input<MouseButton>>,
     mut query: Query<&mut Transform, With<Player>>,
+	mut query_player_weapon: Query<(&mut AmmunitionState, &mut WeaponState, &Weapon), With<ActivePlayerWeapon>>,
     collider_query: Query<
         (Entity, &Transform, &MapElementPosition),
         (
@@ -136,97 +152,45 @@ pub fn input_player(
     wnds: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
 ) {
-    let mut player_transform = query.single_mut();
+    for mut player_transform in query.iter_mut() {
 
-    let mut movement = Vec3::default();
-    let mut moved = false;
+        let mut movement = Vec3::default();
+        let mut moved = false;
 
-    if keyboard_input.pressed(KeyCode::W) {
-        movement += Vec3::new(0., 1., 0.);
-        moved = true;
-    }
-    if keyboard_input.pressed(KeyCode::S) {
-        movement += Vec3::new(0., -1., 0.);
-        moved = true;
-    }
-    if keyboard_input.pressed(KeyCode::A) {
-        movement += Vec3::new(-1., 0., 0.);
-        moved = true;
-    }
-    if keyboard_input.pressed(KeyCode::D) {
-        movement += Vec3::new(1., 0., 0.);
-        moved = true;
-    }
+        if keyboard_input.pressed(KeyCode::W) {
+            movement += Vec3::new(0., 1., 0.);
+            moved = true;
+        }
+        if keyboard_input.pressed(KeyCode::S) {
+            movement += Vec3::new(0., -1., 0.);
+            moved = true;
+        }
+        if keyboard_input.pressed(KeyCode::A) {
+            movement += Vec3::new(-1., 0., 0.);
+            moved = true;
+        }
+        if keyboard_input.pressed(KeyCode::D) {
+            movement += Vec3::new(1., 0., 0.);
+            moved = true;
+        }
+        
+        if !moved {
+            return;
+        }
 
-    if buttons.just_pressed(MouseButton::Left) || keyboard_input.pressed(KeyCode::Space) {
-        let mouse_location = get_cursor_location(&wnds, &q_camera).normalize_or_zero();
+        let dest = player_transform.translation + (movement * 3.);
 
-        commands
-            .spawn()
-            .insert(Projectile {})
-            .insert_bundle(SpriteBundle {
-                transform: Transform {
-                    translation: player_transform.translation,
-                    ..Transform::default()
-                },
-                sprite: Sprite {
-                    color: Color::BISQUE,
-                    custom_size: Some(Vec2::new(5.0, 5.0)),
-                    ..Sprite::default()
-                },
-                ..SpriteBundle::default()
-            })
-            .insert(ExpiringComponent {
-                created_at: time.time_since_startup().as_secs_f32(),
-                duration: 2.,
-            })
-            .insert(ProjectileCollider {})
-            .insert(Velocity {
-                v: mouse_location * 1000.,
-            });
-    }
+        let mut save_move = true;
+        for (_, transform, info) in collider_query.iter() {
+            let collision = collide(dest, Vec2::new(25., 25.), transform.translation, info.size);
+            if collision.is_some() {
+                save_move = false;
+            }
+        }
 
-    if !moved {
-        return;
-    }
-
-    let dest = player_transform.translation + (movement * 3.);
-
-    let mut save_move = true;
-    for (_, transform, info) in collider_query.iter() {
-        let collision = collide(dest, Vec2::new(25., 25.), transform.translation, info.size);
-        if collision.is_some() {
-            save_move = false;
+        if save_move {
+            player_transform.translation = dest;
         }
     }
-
-    if save_move {
-        player_transform.translation = dest;
-    }
 }
 
-pub fn setup_players(mut commands: Commands) {
-    commands
-        .spawn()
-        .insert_bundle(OrthographicCameraBundle::new_2d())
-        .insert(MainCamera);
-    commands.spawn().insert_bundle(UiCameraBundle::default());
-
-    let sprite_bundle = SpriteBundle {
-        sprite: Sprite {
-            color: Color::rgb(0.25, 0.25, 0.75),
-            custom_size: Some(Vec2::new(25.0, 25.0)),
-            ..Sprite::default()
-        },
-        transform: Transform {
-            translation: Vec3::new(0., 0., 10.),
-            ..Transform::default()
-        },
-        ..SpriteBundle::default()
-    };
-
-    commands
-        .spawn()
-        .insert(Player {})
-        .insert_bundle(sprite_bundle);
-}

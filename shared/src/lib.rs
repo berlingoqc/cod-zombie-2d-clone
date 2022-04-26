@@ -1,7 +1,10 @@
+#![feature(derive_default_enum)]
 pub mod collider;
 pub mod game;
 pub mod map;
 pub mod player;
+pub mod weapons;
+pub mod utils;
 
 use bevy::prelude::*;
 use bevy_networking_turbulence::{

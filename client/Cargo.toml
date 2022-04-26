@@ -22,6 +22,10 @@ audio = [
     "bevy/vorbis"
 ]
 
+[source.vendored-sources]
+directory = "vendor"
+
+
 [dependencies]
 shared = { path = "../shared" }
 

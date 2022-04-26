@@ -1,5 +1,8 @@
 use std::time::Duration;
 
+use crate::player::setup_players;
+use crate::weapons::loader::{WeaponAssetPlugin, WeaponAssetState, WeaponsAsset, WeaponAssetLoader};
+
 use super::collider::{MovementCollider, ProjectileCollider};
 use super::map::{MapElementPosition, Window, ZombieSpawner};
 use super::player::Player;
@@ -47,6 +50,7 @@ pub struct MapRoundConfiguration {
     pub starting_zombie: i32,
     pub round_increments: i32,
     pub initial_timeout: u64,
+    pub starting_weapon: String
 }
 
 #[derive(Default)]
@@ -177,6 +181,7 @@ pub struct ZombieGamePlugin {}
 impl Plugin for ZombieGamePlugin {
     fn build(&self, app: &mut App) {
         app
+            .add_plugin(WeaponAssetPlugin{})
             .init_resource::<Game>()
             .init_resource::<ZombieGame>()
             .init_resource::<ZombieLevelAssetState>()
@@ -205,33 +210,6 @@ pub fn setup_zombie_game(
         timer: Timer::new(Duration::from_secs(5), true),
         nums_ndg: (-50..50).map(|x| x as f32).collect(),
     });
-
-    /*
-    commands.spawn_bundle(TextBundle {
-        text: Text {
-            sections: vec![
-                TextSection {
-                    value: "Round: ".to_string(),
-                    style: TextStyle {
-                        font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                        font_size: 20.0,
-                        color: Color::WHITE,
-                    },
-                },
-                TextSection {
-                    value: "Remaining: ".to_string(),
-                    style: TextStyle {
-                        font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                        font_size: 20.0,
-                        color: Color::WHITE,
-                    },
-                },
-            ],
-            ..default()
-        },
-        ..default()
-    });
-    */
 }
 
 pub fn system_zombie_handle(
@@ -239,7 +217,11 @@ pub fn system_zombie_handle(
     mut config: ResMut<ZombieSpawnerConfig>,
     mut query_zombies: Query<(&mut Transform, &mut BotDestination, &mut Zombie), With<Zombie>>,
 ) {
-    let player = query_player.get_single().unwrap();
+    let player = query_player.get_single();
+    if player.is_err() {
+        return;
+    }
+    let player = player.unwrap();
     for (mut pos, mut dest, mut zombie) in query_zombies.iter_mut() {
         match zombie.state {
             ZombieState::AwakingFromTheDead => {
@@ -316,7 +298,8 @@ pub fn system_zombie_game(
 
     query_spawner: Query<&MapElementPosition, With<ZombieSpawner>>,
     query_window: Query<&MapElementPosition, With<Window>>,
-    //mut app_state: ResMut<State<GameState>>,
+
+    weapons: Res<WeaponAssetState>,
 ) {
     let mut nbr_zombie = 0;
     for _ in zombie_query.iter() {
@@ -341,6 +324,9 @@ pub fn system_zombie_game(
                 Duration::from_secs(zombie_game.configuration.initial_timeout),
                 true,
             );
+
+            // Spawn players
+            setup_players(commands, &zombie_game, &weapons);
 
             zombie_game.state = ZombieGameState::Round as i32;
         },
@@ -436,12 +422,7 @@ pub fn system_zombie_game(
         }
         ZombieGameState::Over => {}
     }
-    /*let mut text = query.single_mut();
-    text.sections[0].value = format!("Round: {} \n", zombie_game.round);
-    text.sections[1].value = format!(
-        "Remaining: {} ",
-        zombie_game.current_round.zombie_remaining + nbr_zombie
-    );*/
+  
 }
 
 pub fn react_level_data(
