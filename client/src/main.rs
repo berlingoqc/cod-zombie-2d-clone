@@ -19,7 +19,7 @@ use shared::{
     },
     player::{
         apply_velocity, input_player, movement_projectile, setup_players
-    }, weapons::weapons::handle_weapon_input,
+    }, weapons::weapons::{handle_weapon_input},
 };
 use shared::map::MapPlugin;
 use crate::plugins::frame_cnt::FPSPlugin;
@@ -67,7 +67,7 @@ fn main() {
                 .with_system(input_player)
                 .with_system(handle_weapon_input)
                 .with_system(movement_projectile)
-                .with_system(react_level_data),
+                .with_system(react_level_data)
         );
     } else {
         info!("Startin multiplayer mode");

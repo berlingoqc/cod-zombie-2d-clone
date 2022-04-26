@@ -1,7 +1,7 @@
 
 
 use bevy::prelude::*;
-use shared::{game::{Zombie, ZombieGame}, weapons::weapons::{AmmunitionState, Weapon, ActivePlayerWeapon, WeaponState}, player::Player};
+use shared::{game::{Zombie, ZombieGame}, weapons::weapons::{AmmunitionState, Weapon, WeaponState, WeaponCurrentAction}, player::Player};
 
 #[derive(Component)]
 pub struct RoundText;
@@ -125,11 +125,11 @@ pub fn system_weapon_ui(
     }
 	let mut text = query_ammo_text.single_mut();
     for (ammo_state, weapon, weapon_state) in query_player_weapon.iter() {
-        if weapon_state.equiped {
+        if weapon_state.state == WeaponCurrentAction::Firing {
             text.sections[0].value = format!("{}\n-\n{}", ammo_state.mag_remaining, ammo_state.remaining_ammunition);
 
             let mut weapon_image = query_weapon_image.single_mut();
-            weapon_image.0 = asset_server.load(format!("/weapons/{}", weapon.asset_name).as_str());
+            weapon_image.0 = asset_server.load(weapon.asset_name.as_str());
         }
     }
 }

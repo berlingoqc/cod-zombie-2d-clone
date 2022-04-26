@@ -50,7 +50,8 @@ pub struct MapRoundConfiguration {
     pub starting_zombie: i32,
     pub round_increments: i32,
     pub initial_timeout: u64,
-    pub starting_weapon: String
+    pub starting_weapon: String,
+    pub starting_alternate_weapon: Option<String>,
 }
 
 #[derive(Default)]

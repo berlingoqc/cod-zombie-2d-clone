@@ -4,7 +4,7 @@ use crate::{
     collider::{MovementCollider, ProjectileCollider},
     game::{Zombie, ZombieGame},
     map::MapElementPosition,
-    weapons::{weapons::{Projectile, Weapon, WeaponState, WeaponBundle, ActivePlayerWeapon, AmmunitionState, WeaponCurrentAction}, loader::WeaponAssetState}
+    weapons::{weapons::{Projectile, Weapon, WeaponState, WeaponBundle, AmmunitionState, WeaponCurrentAction}, loader::WeaponAssetState}
 };
 
 
@@ -64,6 +64,13 @@ pub fn setup_players(
 
     commands.entity(player).add_child(weapon);
 
+
+    if let Some(alternate_weapon) = &zombie_game.configuration.starting_alternate_weapon {
+        let weapon = weapons.weapons.iter().find(|w| w.name.eq(alternate_weapon.as_str())).unwrap().clone();
+        let weapon = commands.spawn()
+            .insert_bundle(WeaponBundle::new(weapon, false)).id();
+        commands.entity(player).add_child(weapon);
+    }
 }
 
 
@@ -140,7 +147,6 @@ pub fn input_player(
     keyboard_input: Res<Input<KeyCode>>,
     buttons: Res<Input<MouseButton>>,
     mut query: Query<&mut Transform, With<Player>>,
-	mut query_player_weapon: Query<(&mut AmmunitionState, &mut WeaponState, &Weapon), With<ActivePlayerWeapon>>,
     collider_query: Query<
         (Entity, &Transform, &MapElementPosition),
         (
@@ -149,8 +155,6 @@ pub fn input_player(
             Without<Player>,
         ),
     >,
-    wnds: Res<Windows>,
-    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
 ) {
     for mut player_transform in query.iter_mut() {
 

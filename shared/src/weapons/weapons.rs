@@ -2,7 +2,11 @@ use bevy::{prelude::*, sprite::{SpriteBundle, Sprite}, math::Vec2};
 use serde::Deserialize;
 use std::time::Duration;
 
+use rand::prelude::SliceRandom;
+
 use crate::{utils::get_cursor_location, collider::ProjectileCollider, player::{Velocity, ExpiringComponent, MainCamera}};
+
+use super::loader::WeaponsAsset;
 
 #[derive(Default, Component, Clone, Deserialize)]
 pub struct Weapon {
@@ -11,6 +15,7 @@ pub struct Weapon {
 	pub ammunition: Ammunition,
 	pub firing_rate: f32,
 	pub reloading_time: f32,
+    pub offset: i32,
 	pub automatic: bool
 }
 
@@ -32,23 +37,18 @@ pub struct AmmunitionState {
 pub enum WeaponCurrentAction {
 	#[default]
 	Firing = 0,
-	Reloading
+	Reloading,
+    Hide,
 }
 
 #[derive(Default, Component)]
 pub struct WeaponState {
 	pub fired_at: f32,
-    pub equiped: bool,
 	pub state: WeaponCurrentAction
 }
 
 #[derive(Default, Component)]
-pub struct ActivePlayerWeapon {}
-
-
-#[derive(Default, Component)]
 pub struct Projectile {}
-
 
 
 #[derive(Bundle)]
@@ -69,8 +69,7 @@ impl WeaponBundle {
 			weapon,
 			weapon_state: WeaponState{
 				fired_at: 0.,
-                equiped,
-				state: WeaponCurrentAction::Firing
+				state: if equiped { WeaponCurrentAction::Firing } else { WeaponCurrentAction::Hide }
 			}
 		}
 	}
@@ -81,38 +80,44 @@ pub fn handle_weapon_input(
     time: Res<Time>,
 	keyboard_input: Res<Input<KeyCode>>,
     buttons: Res<Input<MouseButton>>,
-	mut query_player_weapon: Query<(&mut AmmunitionState, &mut WeaponState, &Weapon, &Parent)>,
+	mut query_player_weapon: Query<(&mut AmmunitionState, &mut WeaponState, &Weapon, &Parent), With<WeaponState>>,
 	
 	wnds: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
 
 	q_parent: Query<&GlobalTransform>,
 ) {
-	if (query_player_weapon.is_empty()) {
-		return;
-	}
+
     if keyboard_input.just_pressed(KeyCode::Tab) {
         let mut i = 0;
-        for _ in query_player_weapon.iter() {
-            i += 1;
-        }
-        if i == 2 {
-            for (_, mut weapon_state, w, _) in query_player_weapon.iter_mut() {
-                weapon_state.equiped = !weapon_state.equiped;
+        // If one of the gun is being reload do do shit when ask to change weapon
+        for (_, weapon_state, _, _) in query_player_weapon.iter() {
+            if weapon_state.state == WeaponCurrentAction::Reloading {
+                return;
             }
         }
+        for (_, mut weapon_state, w, _) in query_player_weapon.iter_mut() {
+            if weapon_state.state == WeaponCurrentAction::Firing {
+                weapon_state.state = WeaponCurrentAction::Hide;
+            } else if weapon_state.state == WeaponCurrentAction::Hide {
+                weapon_state.state = WeaponCurrentAction::Firing;
+            }
+        }
+
         return;
 	}
 
 
     for (mut ammunition_state, mut weapon_state, weapon, parent) in query_player_weapon.iter_mut() {
-        if !weapon_state.equiped {
-            return;
+
+        if weapon_state.state == WeaponCurrentAction::Hide {
+            continue;
         }
+
         if weapon_state.state == WeaponCurrentAction::Reloading {
             let current_time = time.time_since_startup().as_secs_f32();
             if current_time < weapon_state.fired_at + weapon.reloading_time {
-                return
+                continue;
             } 
             let diff = weapon.ammunition.magasin_size - ammunition_state.mag_remaining;
             if diff > ammunition_state.remaining_ammunition {
@@ -132,7 +137,7 @@ pub fn handle_weapon_input(
             if ammunition_state.mag_remaining < weapon.ammunition.magasin_size {
                 weapon_state.state = WeaponCurrentAction::Reloading;
                 weapon_state.fired_at = time.time_since_startup().as_secs_f32();
-                return;
+                continue;
             }
         }
 
@@ -147,13 +152,13 @@ pub fn handle_weapon_input(
             if ammunition_state.mag_remaining == 0 {
                 weapon_state.state = WeaponCurrentAction::Reloading;
                 weapon_state.fired_at = time.time_since_startup().as_secs_f32();
-                return;
+                continue;
             }
 
             let current_time = time.time_since_startup().as_secs_f32();
 
             if current_time < weapon_state.fired_at + weapon.firing_rate {
-                return;
+                continue;
             }
 
             weapon_state.fired_at = current_time;
@@ -162,7 +167,19 @@ pub fn handle_weapon_input(
             let mouse_location = get_cursor_location(&wnds, &q_camera);
             let parent_location = q_parent.get(parent.0).unwrap().translation;
 
-            let diff = Vec2::new(mouse_location.x - parent_location.x, mouse_location.y - parent_location.y).normalize();
+            let mut diff = Vec2::new(mouse_location.x - parent_location.x, mouse_location.y - parent_location.y).normalize();
+
+            if weapon.offset > 0 {
+                let bottom = weapon.offset * -1;
+                let top = weapon.offset * 1;
+
+                let mut ndg = rand::thread_rng();
+                let mut range: Vec<f32> = (bottom..top).map(|x| x as f32).collect();
+                range.shuffle(&mut ndg);
+                
+                diff.x += range[0] / 100.;
+                diff.y += range[1] / 100.;
+            }
 
             commands
                 .spawn()
@@ -190,3 +207,4 @@ pub fn handle_weapon_input(
         }
     }
 }
+

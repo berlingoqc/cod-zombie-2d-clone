@@ -3,7 +3,7 @@ use std::rc::Weak;
 use bevy::{prelude::*, utils::HashMap, asset::{AssetLoader, LoadContext, BoxedFuture, LoadedAsset}, reflect::TypeUuid};
 use serde::Deserialize;
 
-use super::weapons::Weapon;
+use super::weapons::{Weapon, AmmunitionState, WeaponState};
 
 
 #[derive(Deserialize, TypeUuid, Default, Component)]
@@ -76,6 +76,36 @@ impl Plugin for WeaponAssetPlugin {
 			.init_asset_loader::<WeaponAssetLoader>()
 
             .add_startup_system(setup_weapons_asset)
-            .add_system(system_weapon_asset);
+            .add_system(system_weapon_asset)
+            .add_system(react_weapon_asset_change);
 	}
+}
+
+pub fn react_weapon_asset_change(
+    mut asset_events: EventReader<AssetEvent<WeaponsAsset>>,
+    custom_assets: ResMut<Assets<WeaponsAsset>>,
+	mut query_player_weapon: Query<(&mut AmmunitionState, &mut WeaponState, &mut Weapon, &Parent), With<WeaponState>>,
+) {
+    for event in asset_events.iter() {
+        match event {
+            AssetEvent::Modified { handle } => {
+                let asset = custom_assets.get(handle).unwrap();
+                for (mut ammo_state, _, mut weapon, parent) in query_player_weapon.iter_mut() {
+                    let new_config = asset.weapons.iter().find(|&x| x.name.eq(weapon.name.as_str()));
+                    if let Some(new_config) = new_config {
+                        weapon.automatic = new_config.automatic;
+                        weapon.ammunition = new_config.ammunition.clone();
+                        weapon.asset_name = new_config.asset_name.clone();
+                        weapon.firing_rate = new_config.firing_rate;
+                        weapon.offset = new_config.offset;
+                        weapon.reloading_time = new_config.reloading_time;
+
+                        ammo_state.remaining_ammunition = new_config.ammunition.magasin_nbr_starting * new_config.ammunition.magasin_size;
+                    }
+                }
+            },
+            _ => {}
+        }
+    }
+
 }

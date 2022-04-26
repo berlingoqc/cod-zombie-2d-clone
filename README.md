@@ -16,6 +16,10 @@ i tend to right summary to help me focusing.
 * [Trying to integrate a tiled library](./logs/2022-04-15.md)
 * [Implementing the base of the game](./logs/2022-04-18.md)
 * [Starting to look at the networking](./logs/2022-04-19.md)
+* [Regretting my life resplitting the code](./logs/2022-04-20.md)
+* [Setuping the base of the server project](./logs/2022-04-23.md)
+* [Implementing weapons](./logs/2022-04-25.md)
+* [More weapon and starting windows](./logs/2022-04-26.md)
 
 ## Run the project
 
