@@ -13,6 +13,7 @@ default = [
 
 native = [
     "bevy/x11",
+    "bevy/filesystem_watcher"
 ]
 
 web = []
