@@ -48,6 +48,6 @@ jobs:
     - name: Rust up
       run: rustup target add x86_64-apple-darwin
     - name: Libssl
-      run: apt-get install -y libssl-dev
+      run: sudo apt-get install -y libssl-dev
     - name: Build mac
       run: cd client && cargo make build-mac
