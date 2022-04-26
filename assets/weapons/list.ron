@@ -2,24 +2,26 @@ WeaponsAsset(
 	weapons: [
 		Weapon(
 			name: "pistol",
-			asset_name: "pistol.png",
+			asset_name: "weapons/pistol-gun.png",
 			ammunition: Ammunition(
 				magasin_size: 8,
 				magasin_limit: 10,
 				magasin_nbr_starting: 5
 			),
 			firing_rate: 0.25,
+			offset: 0,
 			reloading_time: 0.9,
 			automatic: false
 		),
 		Weapon(
-			name: "shotgun",
-			asset_name: "pistol.png",
+			name: "tec9",
+			asset_name: "weapons/tec-9.png",
 			ammunition: Ammunition(
 				magasin_size: 36,
 				magasin_limit: 8,
 				magasin_nbr_starting: 3
 			),
+			offset: 15,
 			firing_rate: 0.05,
 			reloading_time: 0.9,
 			automatic: true
