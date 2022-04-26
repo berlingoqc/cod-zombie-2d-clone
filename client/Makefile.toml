@@ -37,6 +37,10 @@ dependencies = ["cargo-build-web", "install-wasm-bindgen-cli", "cp-assets-public
 args = ["build", "--features", "native", "@@split(CARGO_RELEASE_ARGS, )"]
 command = "cargo"
 
+[tasks.build-mac]
+args = ["build", "--target", "x86_64-apple-darwin", "@@split(CARGO_RELEASE_ARGS, )"]
+command = "cargo"
+
 [tasks.run]
 command = "${CARGO_TARGET_DIR}/${ENV_DIR}/${CARGO_MAKE_BINARY_EXECUTABLE_NAME}"
 args = ["--benchmark-mode"]

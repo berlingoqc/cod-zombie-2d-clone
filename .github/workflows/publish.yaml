@@ -35,3 +35,15 @@ jobs:
           dir: client/public
           branch: gh-pages
           token: ${{ secrets.ACCESS_TOKEN }}
+  release_dev:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Add cargo make
+      run: cargo install --force cargo-make
+    - name: Rust up
+      run: rustup target add x86_64-apple-darwin
+    - name: Libssl
+      run: apt-get install -y libssl-dev
+    - name: Build mac
+      run: cd client && cargo make build-mac
