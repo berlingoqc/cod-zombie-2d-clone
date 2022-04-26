@@ -40,3 +40,12 @@ pub fn get_cursor_location(
         return Vec2::new(0., 0.);
     }
 }
+
+
+pub fn vec2_perpendicular_clockwise(vec: Vec2) -> Vec2 {
+    Vec2::new(vec.y, -vec.x)
+}
+
+pub fn vec2_perpendicular_counter_clockwise(vec: Vec2) -> Vec2 {
+    Vec2::new(-vec.y, vec.x)
+}

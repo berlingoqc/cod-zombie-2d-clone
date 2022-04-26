@@ -118,17 +118,19 @@ pub fn movement_projectile(
         ),
     >,
 ) {
+    let mut i = 0;
     'outer: for (projectile_entity, transform, expiring) in projectile_query.iter() {
+        i += 1;
         if expiring.created_at + expiring.duration <= time.time_since_startup().as_secs_f32() {
             commands.entity(projectile_entity).despawn();
             break;
         }
         for (hit_entity, transform_collider, info, zombie) in collider_query.iter() {
             let collision = collide(
-                transform.translation,
-                Vec2::new(5., 5.),
-                transform_collider.translation,
+               transform_collider.translation,
                 info.size,
+                transform.translation,
+                Vec2::new(10., 10.),
             );
             if collision.is_some() {
                 if let Some(_zombie) = zombie {

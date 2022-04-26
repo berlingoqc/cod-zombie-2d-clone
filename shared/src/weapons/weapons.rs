@@ -4,9 +4,27 @@ use std::time::Duration;
 
 use rand::prelude::SliceRandom;
 
-use crate::{utils::get_cursor_location, collider::ProjectileCollider, player::{Velocity, ExpiringComponent, MainCamera}};
+use crate::{utils::{get_cursor_location, vec2_perpendicular_counter_clockwise, vec2_perpendicular_clockwise}, collider::ProjectileCollider, player::{Velocity, ExpiringComponent, MainCamera}};
 
 use super::loader::WeaponsAsset;
+
+
+fn default_firing_ammunition() -> u32 {
+    1
+}
+
+fn default_ammo_sprite_config() -> AmmunitionSpriteConfig {
+    AmmunitionSpriteConfig { 
+        size: Vec2::new(5., 5.)
+    }
+}
+
+
+#[derive(Default, Clone, Deserialize)]
+pub struct AmmunitionSpriteConfig {
+    //pub color: Vec3,
+    pub size: Vec2
+}
 
 #[derive(Default, Component, Clone, Deserialize)]
 pub struct Weapon {
@@ -15,6 +33,10 @@ pub struct Weapon {
 	pub ammunition: Ammunition,
 	pub firing_rate: f32,
 	pub reloading_time: f32,
+    #[serde(default = "default_firing_ammunition")]
+    pub firing_ammunition: u32,
+    #[serde(default = "default_firing_ammunition")]
+    pub spreading_ammunition: u32,
     pub offset: i32,
 	pub automatic: bool
 }
@@ -23,7 +45,12 @@ pub struct Weapon {
 pub struct Ammunition {
 	pub magasin_size: i32,
 	pub magasin_limit: i32,
-	pub magasin_nbr_starting: i32
+	pub magasin_nbr_starting: i32,
+
+    pub duration: f32,
+
+    #[serde(default = "default_ammo_sprite_config")]
+    pub sprite_config: AmmunitionSpriteConfig
 }
 
 #[derive(Default, Component)]
@@ -162,7 +189,6 @@ pub fn handle_weapon_input(
             }
 
             weapon_state.fired_at = current_time;
-            ammunition_state.mag_remaining -= 1;
 
             let mouse_location = get_cursor_location(&wnds, &q_camera);
             let parent_location = q_parent.get(parent.0).unwrap().translation;
@@ -181,30 +207,74 @@ pub fn handle_weapon_input(
                 diff.y += range[1] / 100.;
             }
 
-            commands
-                .spawn()
-                .insert(Projectile {})
-                .insert_bundle(SpriteBundle {
-                    transform: Transform {
-                        translation: parent_location,
-                        ..Transform::default()
-                    },
-                    sprite: Sprite {
-                        color: Color::BISQUE,
-                        custom_size: Some(Vec2::new(5.0, 5.0)),
-                        ..Sprite::default()
-                    },
-                    ..SpriteBundle::default()
-                })
-                .insert(ExpiringComponent {
-                    created_at: time.time_since_startup().as_secs_f32(),
-                    duration: 2.,
-                })
-                .insert(ProjectileCollider {})
-                .insert(Velocity {
-                    v: diff * 1000.,
-                });
+            let (starting_point, offset_each) = if weapon.firing_ammunition == 1 {
+                (parent_location, Vec2::new(0.,0.))
+            } else {
+                let counter_clock_perpenicular = vec2_perpendicular_counter_clockwise(diff);
+                let offset_scale = weapon.firing_ammunition / 2;
+
+                // not perfectly center
+                (
+                    (counter_clock_perpenicular * (offset_scale as f32) * weapon.ammunition.sprite_config.size.x).extend(10.) + parent_location,
+                    vec2_perpendicular_clockwise(diff) * weapon.ammunition.sprite_config.size.x
+                )
+            };
+
+            for i in (0..weapon.firing_ammunition) {
+                ammunition_state.mag_remaining -= 1;
+                
+
+                if weapon.spreading_ammunition > 1 {
+                    for x in 0..weapon.spreading_ammunition/2 {
+                        let scale: f32 = if x % 2 == 0 { 1. } else { -1. };
+                        let angle: f32 = ((x as f32) / 20.) * scale;
+
+                        let new_x = diff.x * angle.cos() - diff.y * angle.sin();
+                        let new_y = diff.x * angle.sin() + diff.y * angle.cos();
+
+                        spawn_bullet(&mut commands, &weapon, &time, &starting_point, &offset_each, &Vec2::new(new_x, new_y), i);
+                    }
+                } else {
+                    spawn_bullet(&mut commands, &weapon, &time, &starting_point, &offset_each, &diff, i);
+                }
+
+            }
+
         }
     }
+}
+
+pub fn spawn_bullet(
+    commands: &mut Commands,
+    weapon: &Weapon,
+    time: &Res<Time>,
+    starting_point: &Vec3,
+    offset_each: &Vec2,
+    velocity: &Vec2,
+    index: u32,
+) {
+    commands
+        .spawn()
+        .insert(Projectile {})
+        .insert_bundle(SpriteBundle {
+            transform: Transform {
+                translation: *starting_point + (offset_each.extend(0.) * index as f32),
+                ..Transform::default()
+            },
+            sprite: Sprite {
+                color: Color::BISQUE,
+                custom_size: Some(weapon.ammunition.sprite_config.size),
+                ..Sprite::default()
+            },
+        ..SpriteBundle::default()
+        })
+        .insert(ExpiringComponent {
+            created_at: time.time_since_startup().as_secs_f32(),
+            duration: weapon.ammunition.duration,
+        })
+        .insert(ProjectileCollider {})
+        .insert(Velocity {
+            v: *velocity * 1000.,
+        });
 }
 
