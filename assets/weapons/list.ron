@@ -6,7 +6,8 @@ WeaponsAsset(
 			ammunition: Ammunition(
 				magasin_size: 8,
 				magasin_limit: 10,
-				magasin_nbr_starting: 5
+				magasin_nbr_starting: 5,
+				duration: 2.
 			),
 			firing_rate: 0.25,
 			offset: 0,
@@ -19,12 +20,32 @@ WeaponsAsset(
 			ammunition: Ammunition(
 				magasin_size: 36,
 				magasin_limit: 8,
-				magasin_nbr_starting: 3
+				magasin_nbr_starting: 3,
+				duration: 2.
 			),
 			offset: 15,
 			firing_rate: 0.05,
 			reloading_time: 0.9,
 			automatic: true
+		),
+		Weapon(
+			name: "doublebarrel",
+			asset_name: "weapons/sawed-off-shotgun.png",
+			ammunition: Ammunition(
+				magasin_size: 2,
+				magasin_limit: 40,
+				magasin_nbr_starting: 10,
+				duration: 0.20,
+				sprite_config: AmmunitionSpriteConfig(
+					size: (10., 10.)
+				)
+			),
+			offset: 0,
+			firing_rate: 0.,
+			firing_ammunition: 1,
+			spreading_ammunition: 8,
+			reloading_time: 1.0,
+			automatic: false
 		)
 	]
 )
