@@ -337,6 +337,7 @@ pub fn system_zombie_game(
 
     level_asset_state: Res<ZombieLevelAssetState>,
     custom_assets: ResMut<Assets<ZombieLevelAsset>>,
+    weapon_state: Res<WeaponAssetState>,
 
     mut zombie_game: ResMut<ZombieGame>,
 
@@ -360,6 +361,9 @@ pub fn system_zombie_game(
         ZombieGameState::Initializing => {
             let data_asset = custom_assets.get(&level_asset_state.handle);
             if level_asset_state.loaded || data_asset.is_none() {
+                return;
+            }
+            if weapon_state.loaded == false {
                 return;
             }
             let data_asset = data_asset.unwrap();
