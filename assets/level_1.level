@@ -2,7 +2,7 @@
     configuration: (
         starting_zombie: 12,
         round_increments: 5,
-        initial_timeout:  10,
+        initial_timeout:  2,
         starting_weapon: "doublebarrel",
         starting_alternate_weapon: Some("pistol")
     ),
