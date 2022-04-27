@@ -1,9 +1,9 @@
 (
     configuration: (
-        starting_zombie: 12,
+        starting_zombie: 2,
         round_increments: 5,
         initial_timeout:  2,
-        starting_weapon: "doublebarrel",
+        starting_weapon: "tec9",
         starting_alternate_weapon: Some("pistol")
     ),
     level_path: "isometric-sheet.png"
