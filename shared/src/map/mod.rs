@@ -136,7 +136,8 @@ impl WindowBundle {
             info,
             window: Window {},
             interaction: PlayerInteraction {
-                interaction_type: crate::player::PlayerInteractionType::RepairWindow
+                interaction_type: crate::player::PlayerInteractionType::RepairWindow,
+                interaction_timeout: 1.2
             }
         }
     }
@@ -152,7 +153,6 @@ impl WindowPanelBundle {
         // spawn it a the location with the index and offset
         let scale = if index % 2 == 0 { 1. } else { -1. };
         let translation = direction * (scale * offset * (index as f32 / 2.).ceil());
-        println!("{:?} {:?} {} {} {}", translation, direction, scale, index, offset);
         WindowPanelBundle {
             sprite_bundle: SpriteBundle {
                 sprite: Sprite {
