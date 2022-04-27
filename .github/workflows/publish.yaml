@@ -42,7 +42,7 @@ jobs:
     - name: rustup
       run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && rustup default nightly && cargo install --force cargo-make && cd client && cargo make build-native
     - name: Create release folder
-      run: mkdir -p release && cp ./target/debug/cod-zombie-2d-clone ./release
+      run: mkdir -p release && cp ./client/target/debug/cod-zombie-2d-clone ./release
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"

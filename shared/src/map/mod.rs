@@ -12,7 +12,7 @@ use tiled_map::{
 
 use serde::Deserialize;
 
-use crate::collider::*;
+use crate::{collider::*, health::Health, player::PlayerInteraction};
 use loader::*;
 use render::*;
 
@@ -34,6 +34,9 @@ impl Plugin for MapPlugin {
 }
 
 
+
+#[derive(Component, Default)]
+pub struct Size(pub Vec2);
 #[derive(Bundle)]
 pub struct WallBundle {
     #[bundle]
@@ -52,7 +55,21 @@ pub struct WindowBundle {
     sprite_bundle: SpriteBundle,
     info: MapElementPosition,
     collider: MovementCollider,
-    window: Window
+    window: Window,
+    interaction: PlayerInteraction,
+}
+
+#[derive(Component)]
+pub struct WindowPanel {}
+
+#[derive(Bundle)]
+pub struct WindowPanelBundle {
+    #[bundle]
+    sprite_bundle: SpriteBundle,
+    collider: MovementCollider,
+    panel: WindowPanel,
+    health: Health,
+    size: Size,
 }
 
 #[derive(Component)]
@@ -118,6 +135,41 @@ impl WindowBundle {
             collider: MovementCollider {},
             info,
             window: Window {},
+            interaction: PlayerInteraction {
+                interaction_type: crate::player::PlayerInteractionType::RepairWindow
+            }
+        }
+    }
+}
+
+impl WindowPanelBundle {
+    pub fn new(parent: MapElementPosition, index: u32, offset: f32) -> WindowPanelBundle {
+        // need to find the direction vector of the window
+        let (direction, size)  = if parent.size.x > parent.size.y { // horizontal
+            (Vec2::new(1., 0.), Vec2::new(10., 20.))
+        } else { (Vec2::new(0., 1.), Vec2::new(20., 10.)) }; // vertical
+        // create a shap to fit the direction of the vector
+        // spawn it a the location with the index and offset
+        let scale = if index % 2 == 0 { 1. } else { -1. };
+        let translation = direction * (scale * offset * (index as f32 / 2.).ceil());
+        println!("{:?} {:?} {} {} {}", translation, direction, scale, index, offset);
+        WindowPanelBundle {
+            sprite_bundle: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::BLACK,
+                    custom_size: Some(size),
+                    ..Sprite::default()
+                },
+                transform: Transform {
+                    translation: translation.extend(10.),
+                    ..Transform::default()
+                },
+                ..SpriteBundle::default()
+            },
+            collider: MovementCollider {  },
+            panel: WindowPanel {},
+            size: Size(size),
+            health: Health { current_health: 1., max_health: 1. }
         }
     }
 }

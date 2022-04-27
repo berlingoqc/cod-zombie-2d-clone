@@ -1,10 +1,13 @@
 use std::time::Duration;
 
+use crate::health::Health;
+use crate::map::{WindowPanel, Window};
 use crate::player::setup_players;
 use crate::weapons::loader::{WeaponAssetPlugin, WeaponAssetState, WeaponsAsset, WeaponAssetLoader};
+use crate::weapons::weapons::{WeaponState, WeaponCurrentAction};
 
 use super::collider::{MovementCollider, ProjectileCollider};
-use super::map::{MapElementPosition, Window, ZombieSpawner};
+use super::map::{MapElementPosition,  ZombieSpawner};
 use super::player::Player;
 use bevy::asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset};
 use bevy::prelude::*;
@@ -92,6 +95,7 @@ pub struct Zombie {
 pub struct BotDestination {
     pub destination: MapElementPosition,
     pub path: Vec<(i32, i32)>,
+    pub entity: u32
 }
 
 #[derive(Bundle)]
@@ -103,6 +107,7 @@ pub struct ZombieBundle {
     projectile_collider: ProjectileCollider,
     info: MapElementPosition,
     zombie: Zombie,
+    weapon_state: WeaponState,
 }
 
 #[derive(Deserialize, TypeUuid, Clone, Component)]
@@ -162,6 +167,7 @@ impl ZombieBundle {
             },
             info,
             destination: dest,
+            weapon_state: WeaponState { fired_at: 0., state: WeaponCurrentAction::Firing }
         }
     }
 }
@@ -214,16 +220,21 @@ pub fn setup_zombie_game(
 }
 
 pub fn system_zombie_handle(
+    mut commands: Commands,
     query_player: Query<&Transform, (With<Player>, Without<Zombie>)>,
     mut config: ResMut<ZombieSpawnerConfig>,
-    mut query_zombies: Query<(&mut Transform, &mut BotDestination, &mut Zombie), With<Zombie>>,
+    mut query_zombies: Query<(&mut Transform, &mut BotDestination, &mut Zombie, &mut WeaponState), With<Zombie>>,
+    mut query_windows: Query<(&Window, Entity, &Children)>,
+    mut query_panel: Query<(&WindowPanel, &mut Sprite, &mut Health)>,
+
+    time: Res<Time>
 ) {
     let player = query_player.get_single();
     if player.is_err() {
         return;
     }
     let player = player.unwrap();
-    for (mut pos, mut dest, mut zombie) in query_zombies.iter_mut() {
+    for (mut pos, mut dest, mut zombie, mut weapon_state) in query_zombies.iter_mut() {
         match zombie.state {
             ZombieState::AwakingFromTheDead => {
                 if pos.scale.x < 1.0 {
@@ -234,6 +245,44 @@ pub fn system_zombie_handle(
                 } else {
                     pos.rotation = Quat::from_rotation_z(0.);
                     zombie.state = ZombieState::FindingEnterace;
+                }
+            }
+            ZombieState::FindingEnterace => {
+                if let Some(el) = dest.path.pop() {
+                    pos.translation.x = el.0 as f32;
+                    pos.translation.y = el.1 as f32;
+                } else {
+
+                    let (window, entity, children): (&Window, Entity, &Children) = query_windows.get(Entity::from_raw(dest.entity)).unwrap();
+
+                    let mut attack = false;
+                    let mut remaining = 0;
+                    for &panel_entity in children.iter() {
+                        let (pannel, mut sprite, mut health) = query_panel.get_mut(panel_entity).unwrap();
+                        if health.current_health > 0. {
+                            if !attack {
+                                let current_time = time.time_since_startup().as_secs_f32();
+                                // TODO : NOT HARDCODE
+                                if !(current_time < weapon_state.fired_at + 1.) {
+
+                                    health.current_health = 0.;
+                                    attack = true;
+
+                                    sprite.custom_size = Some(Vec2::new(0., 0.));
+
+                                    weapon_state.fired_at = current_time;
+                                } else {
+                                    remaining += 1;
+                                }
+                            } else {
+                                remaining += 1;
+                            }
+                        }
+                    }
+
+                    if remaining == 0 {
+                        zombie.state = ZombieState::FollowingPlayer;
+                    }
                 }
             }
             ZombieState::FollowingPlayer | ZombieState::FindingEnterace => {
@@ -298,7 +347,7 @@ pub fn system_zombie_game(
     mut config: ResMut<ZombieSpawnerConfig>,
 
     query_spawner: Query<&MapElementPosition, With<ZombieSpawner>>,
-    query_window: Query<&MapElementPosition, With<Window>>,
+    query_window: Query<(&MapElementPosition, Entity), With<Window>>,
 
     weapons: Res<WeaponAssetState>,
 ) {
@@ -357,12 +406,14 @@ pub fn system_zombie_game(
                         let mut closest_window = MapElementPosition {
                             ..MapElementPosition::default()
                         };
+                        let mut closest_window_entity: Entity = Entity::from_raw(0);
                         let mut closest_window_dst = 90000.;
-                        for w in query_window.iter() {
+                        for (w, entity) in query_window.iter() {
                             let distance = position.distance(w.position);
                             if distance < closest_window_dst {
                                 closest_window_dst = distance;
                                 closest_window = w.clone();
+                                closest_window_entity = entity;
                             }
                         }
 
@@ -402,6 +453,7 @@ pub fn system_zombie_game(
                             },
                             BotDestination {
                                 destination: closest_window.clone(),
+                                entity: closest_window_entity.id(),
                                 path: result,
                             },
                         ));

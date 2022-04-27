@@ -18,7 +18,7 @@ use shared::{
         ZombieGameState, ZombieLevelAsset, ZombieLevelAssetLoader, ZombieLevelAssetState, ZombieGamePlugin, LevelMapRequested,
     },
     player::{
-        apply_velocity, input_player, movement_projectile, setup_players
+        apply_velocity, input_player, movement_projectile, setup_players, system_interaction_player
     }, weapons::weapons::{handle_weapon_input},
 };
 use shared::map::MapPlugin;
@@ -65,6 +65,7 @@ fn main() {
                 .with_system(system_zombie_game)
                 .with_system(apply_velocity)
                 .with_system(input_player)
+                .with_system(system_interaction_player)
                 .with_system(handle_weapon_input)
                 .with_system(movement_projectile)
                 .with_system(react_level_data)

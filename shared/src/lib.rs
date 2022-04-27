@@ -5,6 +5,7 @@ pub mod map;
 pub mod player;
 pub mod weapons;
 pub mod utils;
+pub mod health;
 
 use bevy::prelude::*;
 use bevy_networking_turbulence::{

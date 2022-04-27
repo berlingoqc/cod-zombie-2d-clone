@@ -3,8 +3,8 @@ use bevy::{prelude::*, sprite::collide_aabb::collide};
 use crate::{
     collider::{MovementCollider, ProjectileCollider},
     game::{Zombie, ZombieGame},
-    map::MapElementPosition,
-    weapons::{weapons::{Projectile, Weapon, WeaponState, WeaponBundle, AmmunitionState, WeaponCurrentAction}, loader::WeaponAssetState}
+    map::{MapElementPosition, WindowPanel, Window, Size},
+    weapons::{weapons::{Projectile, Weapon, WeaponState, WeaponBundle, AmmunitionState, WeaponCurrentAction}, loader::WeaponAssetState}, health::Health
 };
 
 
@@ -13,12 +13,35 @@ const TIME_STEP: f32 = 1.0 / 60.0;
 #[derive(Default, Component)]
 pub struct Player {}
 
+#[derive(Default, Component)]
+pub struct PlayerCurrentInteraction {
+    pub interaction: bool,
+    pub interaction_cooldown_at: f32,
+    pub entity: u32,
+    pub interaction_type: PlayerInteractionType,
+}
+
+
+
+#[derive(Default, Clone, Copy)]
+pub enum PlayerInteractionType {
+    #[default]
+    None = 0,
+
+    RepairWindow,
+}
+
+#[derive(Default, Component)]
+pub struct PlayerInteraction {
+    pub interaction_type: PlayerInteractionType
+}
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
     pub player: Player,
     #[bundle] 
     pub sprite: SpriteBundle,
+    pub interaction: PlayerCurrentInteraction,
 }
 
 impl PlayerBundle {
@@ -36,6 +59,12 @@ impl PlayerBundle {
                     ..Transform::default()
                 },
                 ..SpriteBundle::default()
+            },
+            interaction: PlayerCurrentInteraction {
+                interaction: false,
+                interaction_cooldown_at: 0.,
+                entity: 0,
+                interaction_type: PlayerInteractionType::None
             }
         }
     }
@@ -143,6 +172,59 @@ pub fn movement_projectile(
     }
 }
 
+pub fn system_interaction_player(
+    mut commands: Commands,
+    mut query_player: Query<(&Transform, &mut PlayerCurrentInteraction), With<Player>>,
+    interaction_query: Query<
+        (Entity, &Transform, &MapElementPosition, &PlayerInteraction),
+        (
+            With<MapElementPosition>,
+            Without<Player>,
+        ),
+    >,
+
+    keyboard_input: Res<Input<KeyCode>>,
+
+    query_window: Query<(&Window, &Children)>,
+    mut query_panel: Query<(&mut WindowPanel, &Size, &mut Health, &mut Sprite)>
+) {
+
+    for (player_transform, mut interaction) in query_player.iter_mut() {
+        for (entity, transform, info, player_interaction) in interaction_query.iter() {
+            let collision = collide(player_transform.translation, Vec2::new(25., 25.), info.position.extend(10.), info.size * 2.);
+            if collision.is_some() {
+                // notify use that key perform action
+                interaction.interaction = true;
+                interaction.entity = entity.id();
+                interaction.interaction_type = player_interaction.interaction_type;
+            } else {
+                if entity.id() == interaction.entity {
+                    interaction.interaction = false;
+                }
+            }
+        } 
+
+
+        if interaction.interaction && keyboard_input.pressed(KeyCode::F) {
+            match interaction.interaction_type {
+                PlayerInteractionType::RepairWindow => {
+                    let (_, children) = query_window.get(Entity::from_raw(interaction.entity)).unwrap();
+                    for &child_entity in children.iter() {
+                        let (_,size, mut health, mut sprite) = query_panel.get_mut(child_entity).unwrap();
+                        if health.current_health <= 0. {
+                            sprite.custom_size = Some(size.0);
+                            health.current_health = 1.;
+                            break;
+                        }
+                    }
+                },
+                _ => {}
+            }
+        }
+    }
+
+}
+
 pub fn input_player(
     mut commands: Commands,
     time: Res<Time>,
@@ -158,6 +240,7 @@ pub fn input_player(
         ),
     >,
 ) {
+
     for mut player_transform in query.iter_mut() {
 
         let mut movement = Vec3::default();
