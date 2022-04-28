@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use rand::prelude::SliceRandom;
 
-use crate::{utils::{get_cursor_location, vec2_perpendicular_counter_clockwise, vec2_perpendicular_clockwise}, collider::ProjectileCollider, player::{Velocity, ExpiringComponent, MainCamera}};
+use crate::{utils::{get_cursor_location, vec2_perpendicular_counter_clockwise, vec2_perpendicular_clockwise}, collider::ProjectileCollider, player::{Velocity, ExpiringComponent, MainCamera, LookingDirection}};
 
 use super::loader::WeaponsAsset;
 
@@ -192,6 +192,7 @@ pub fn handle_weapon_input(
 
             let mouse_location = get_cursor_location(&wnds, &q_camera);
             let parent_location = q_parent.get(parent.0).unwrap().translation;
+
 
             let mut diff = Vec2::new(mouse_location.x - parent_location.x, mouse_location.y - parent_location.y).normalize();
 

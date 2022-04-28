@@ -48,30 +48,36 @@ pub struct PlayerInteraction {
     pub interaction_timeout: f32
 }
 
+
+#[derive(Default, Component)]
+pub struct LookingDirection(pub Vec2);
+
+#[derive(Component, Deref, DerefMut)]
+pub struct AnimationTimer(Timer);
+
 #[derive(Bundle)]
 pub struct PlayerBundle {
     pub player: Player,
     #[bundle] 
-    pub sprite: SpriteBundle,
+    pub sprite: SpriteSheetBundle,
     pub interaction: PlayerCurrentInteraction,
+    pub looking_direction: LookingDirection,
+    pub animation_timer: AnimationTimer,
 }
 
 impl PlayerBundle {
     fn new() -> PlayerBundle {
         PlayerBundle { 
             player: Player{},
-            sprite : SpriteBundle {
-                sprite: Sprite {
-                    color: Color::rgb(0.25, 0.25, 0.75),
-                    custom_size: Some(Vec2::new(25.0, 25.0)),
-                    ..Sprite::default()
-                },
+            sprite : SpriteSheetBundle {
                 transform: Transform {
                     translation: Vec3::new(0., 0., 10.),
                     ..Transform::default()
                 },
-                ..SpriteBundle::default()
+                ..default()
             },
+            looking_direction: LookingDirection(Vec2::new(0., 0.)),
+            animation_timer: AnimationTimer(Timer::from_seconds(0.1, true)),
             interaction: PlayerCurrentInteraction {
                 interaction: false,
                 interacting: false,
@@ -87,7 +93,6 @@ impl PlayerBundle {
 
 pub fn setup_players(
     mut commands: Commands,
-
     zombie_game: &ResMut<ZombieGame>,
     weapons: &Res<WeaponAssetState>,
 ) {

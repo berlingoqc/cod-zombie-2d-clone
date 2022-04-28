@@ -22,7 +22,7 @@ use shared::{
     }, weapons::weapons::{handle_weapon_input},
 };
 use shared::map::MapPlugin;
-use crate::plugins::frame_cnt::FPSPlugin;
+use crate::{plugins::frame_cnt::FPSPlugin, player::{CharacterTextureHandle, setup_character_texture, system_animation}};
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
@@ -50,6 +50,8 @@ fn main() {
     if opts.host == "" {
         info!("Startin single player mode");
         app
+        .init_resource::<CharacterTextureHandle>()
+        .add_startup_system(setup_character_texture)
         .add_system_set(
             SystemSet::on_enter(GameState::PlayingZombie)
                 .with_system(player::setup_player_camera)
@@ -61,6 +63,7 @@ fn main() {
                 .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
                 .with_system(ingameui::system_ingame_ui)
                 .with_system(ingameui::system_weapon_ui)
+                .with_system(system_animation)
                 .with_system(system_zombie_handle)
                 .with_system(system_zombie_game)
                 .with_system(apply_velocity)

@@ -382,6 +382,9 @@ pub fn system_zombie_game(
 
     mut zombie_game: ResMut<ZombieGame>,
 
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+
     //mut query: Query<&mut Text>,
     zombie_query: Query<&Zombie>,
 

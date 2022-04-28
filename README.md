@@ -20,6 +20,7 @@ i tend to right summary to help me focusing.
 * [Setuping the base of the server project](./logs/2022-04-23.md)
 * [Implementing weapons](./logs/2022-04-25.md)
 * [More weapon and starting windows](./logs/2022-04-26.md)
+* [Cleaning in asset and better live reloading](./logs/2022-04-27.md)
 
 ## Compile and run the game locally
 
