@@ -1,11 +1,12 @@
-(
-    configuration: (
-        starting_zombie: 2,
+ZombieLevelAsset(
+    configuration: MapRoundConfiguration(
+        starting_zombie: 10,
         round_increments: 5,
         initial_timeout:  2,
+    ),
+    starting_weapons: (
         starting_weapon: "tec9",
         starting_alternate_weapon: Some("pistol")
-    ),
-    level_path: "isometric-sheet.png"
+    )
 )
 

@@ -4,7 +4,7 @@ use crate::health::Health;
 use crate::map::{WindowPanel, Window};
 use crate::player::setup_players;
 use crate::weapons::loader::{WeaponAssetPlugin, WeaponAssetState, WeaponsAsset, WeaponAssetLoader};
-use crate::weapons::weapons::{WeaponState, WeaponCurrentAction};
+use crate::weapons::weapons::{WeaponState, WeaponCurrentAction, Weapon};
 
 use super::collider::{MovementCollider, ProjectileCollider};
 use super::map::{MapElementPosition,  ZombieSpawner};
@@ -53,9 +53,14 @@ pub struct MapRoundConfiguration {
     pub starting_zombie: i32,
     pub round_increments: i32,
     pub initial_timeout: u64,
+}
+
+#[derive(Default, Deserialize, Clone)]
+pub struct StartingWeapons {
     pub starting_weapon: String,
     pub starting_alternate_weapon: Option<String>,
 }
+
 
 #[derive(Default)]
 pub struct CurrentRoundInfo {
@@ -81,10 +86,15 @@ pub struct ZombieGame {
     pub round: i32,
     pub state: i32, //ZombieGameState,
     pub current_round: CurrentRoundInfo,
+
     pub configuration: MapRoundConfiguration,
+    pub starting_weapons: StartingWeapons,
 
     pub players: Vec<ZombiePlayerInformation>
 }
+
+
+pub struct ZombieGameStateChangeEvent {}
 
 #[derive(Component)]
 pub struct Zombie {
@@ -114,6 +124,7 @@ pub struct ZombieBundle {
 #[uuid = "39cadc56-aa9c-4543-8640-a018b74b5023"]
 pub struct ZombieLevelAsset {
     pub configuration: MapRoundConfiguration,
+    pub starting_weapons: StartingWeapons,
 }
 
 #[derive(Default)]
@@ -139,7 +150,7 @@ impl AssetLoader for ZombieLevelAssetLoader {
     }
 
     fn extensions(&self) -> &[&str] {
-        &["level"]
+        &["level.ron"]
     }
 }
 
@@ -189,9 +200,13 @@ impl Plugin for ZombieGamePlugin {
     fn build(&self, app: &mut App) {
         app
             .add_plugin(WeaponAssetPlugin{})
+            .add_event::<ZombieGameStateChangeEvent>()
             .init_resource::<Game>()
             .init_resource::<ZombieGame>()
             .init_resource::<ZombieLevelAssetState>()
+
+
+            .add_system(change_game_state_event)
 
             .add_asset::<ZombieLevelAsset>()
             .init_asset_loader::<ZombieLevelAssetLoader>()
@@ -253,7 +268,14 @@ pub fn system_zombie_handle(
                     pos.translation.y = el.1 as f32;
                 } else {
 
-                    let (window, entity, children): (&Window, Entity, &Children) = query_windows.get(Entity::from_raw(dest.entity)).unwrap();
+                    let d = query_windows.get(Entity::from_raw(dest.entity));
+
+                    if d.is_err() {
+                        // windows no longer exists , find again
+                        continue;
+                    }
+
+                    let (window, entity, children): (&Window, Entity, &Children) = d.unwrap();
 
                     let mut attack = false;
                     let mut remaining = 0;
@@ -370,6 +392,7 @@ pub fn system_zombie_game(
 
             zombie_game.round = 1;
             zombie_game.configuration = data_asset.configuration.clone();
+            zombie_game.starting_weapons = data_asset.starting_weapons.clone();
             zombie_game.current_round = CurrentRoundInfo {
                 total_zombie: zombie_game.configuration.starting_zombie,
                 zombie_remaining: zombie_game.configuration.starting_zombie,
@@ -484,19 +507,43 @@ pub fn system_zombie_game(
 
 pub fn react_level_data(
     mut asset_events: EventReader<AssetEvent<ZombieLevelAsset>>,
-    mut zombie_game: ResMut<ZombieGame>,
-    mut commands: Commands,
-    query_zombies: Query<Entity, With<Zombie>>,
+    mut ev_state_change: EventWriter<ZombieGameStateChangeEvent>,
+
+    keyboard_input: Res<Input<KeyCode>>,
 ) {
     for event in asset_events.iter() {
         match event {
-            AssetEvent::Modified { .. } => {
-                zombie_game.state = ZombieGameState::Starting as i32;
-                for z in query_zombies.iter() {
-                    commands.entity(z).despawn();
-                }
-            }
+           AssetEvent::Modified { .. } => {
+               ev_state_change.send(ZombieGameStateChangeEvent {  });
+           }
             _ => {}
+        }
+    }
+    if keyboard_input.just_pressed(KeyCode::F1) {
+        ev_state_change.send(ZombieGameStateChangeEvent {  });
+    }
+}
+
+pub fn change_game_state_event(
+
+    mut ev_change_state: EventReader<ZombieGameStateChangeEvent>,
+
+    mut commands: Commands,
+    mut zombie_game: ResMut<ZombieGame>,
+    query_zombies: Query<Entity, With<Zombie>>,
+    query_player: Query<Entity, With<Player>>,
+    query_weapons: Query<Entity, With<Weapon>>
+) {
+    for _ in ev_change_state.iter() {
+        zombie_game.state = ZombieGameState::Initializing as i32;
+        for z in query_zombies.iter() {
+            commands.entity(z).despawn();
+        }
+        for z in query_player.iter() {
+            commands.entity(z).despawn();
+        }
+        for z in query_weapons.iter() {
+            commands.entity(z).despawn();
         }
     }
 }

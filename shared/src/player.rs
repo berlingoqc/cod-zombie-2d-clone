@@ -97,7 +97,7 @@ pub fn setup_players(
     // to select your color and where your spawn
 
     // get the default weapon for the map
-    let default_weapon_name = zombie_game.configuration.starting_weapon.as_str();
+    let default_weapon_name = zombie_game.starting_weapons.starting_weapon.as_str();
 
     let weapon = weapons.weapons.iter().find(|w| w.name.eq(default_weapon_name)).unwrap().clone();
 
@@ -109,7 +109,7 @@ pub fn setup_players(
     commands.entity(player).add_child(weapon);
 
 
-    if let Some(alternate_weapon) = &zombie_game.configuration.starting_alternate_weapon {
+    if let Some(alternate_weapon) = &zombie_game.starting_weapons.starting_alternate_weapon {
         let weapon = weapons.weapons.iter().find(|w| w.name.eq(alternate_weapon.as_str())).unwrap().clone();
         let weapon = commands.spawn()
             .insert_bundle(WeaponBundle::new(weapon, false)).id();
@@ -253,7 +253,6 @@ pub fn system_interaction_player(
                                 let (_,size, _ , mut sprite) = query_panel.get_mut(Entity::from_raw(interaction.child_entity)).unwrap();
                                 let time_diff = time_since_startup - (interaction.interaction_trigger_at + interaction.interaction_cooldown);
                                 let percentage_time_diff_cooldown = 1. - (time_diff / interaction.interaction_cooldown);
-                                println!("{}", percentage_time_diff_cooldown);
                                 sprite.custom_size = Some(size.0 / percentage_time_diff_cooldown);
                             }
                         } else {

@@ -67,7 +67,7 @@ pub fn setup_ingame_ui(
                     size: Size::new(Val::Px(25.), Val::Auto),
                     ..default()
                 },
-                image: UiImage(asset_server.load("weapons/pistol.png")),
+                //image: UiImage(asset_server.load("weapons/pistol.png")),
                 ..default()
             }).insert(WeaponUiImage{});
         });

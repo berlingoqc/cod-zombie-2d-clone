@@ -31,7 +31,6 @@ impl AssetLoader for WeaponAssetLoader {
     ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
         Box::pin(async move {
             let map_data_asset = ron::de::from_bytes::<WeaponsAsset>(bytes)?;
-            println!("LOADED");
             load_context.set_default_asset(LoadedAsset::new(map_data_asset));
             Ok(())
         })
@@ -47,7 +46,7 @@ pub fn setup_weapons_asset(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 ) {
-    let handle: Handle<WeaponsAsset> = asset_server.load("weapons/list.ron");
+    let handle: Handle<WeaponsAsset> = asset_server.load("weapons/weapons.ron");
     state.handle = handle;
     state.loaded = false;
 }

@@ -2,7 +2,7 @@ WeaponsAsset(
 	weapons: [
 		Weapon(
 			name: "pistol",
-			asset_name: "weapons/pistol-gun.png",
+			asset_name: "weapons/pistol/pistol-gun.png",
 			ammunition: Ammunition(
 				magasin_size: 8,
 				magasin_limit: 10,
@@ -16,7 +16,7 @@ WeaponsAsset(
 		),
 		Weapon(
 			name: "tec9",
-			asset_name: "weapons/tec-9.png",
+			asset_name: "weapons/tec9/tec-9.png",
 			ammunition: Ammunition(
 				magasin_size: 36,
 				magasin_limit: 8,
@@ -24,17 +24,18 @@ WeaponsAsset(
 				duration: 2.
 			),
 			offset: 15,
-			firing_rate: 0.05,
+			firing_rate: 0.1,
 			reloading_time: 0.9,
 			automatic: true
 		),
 		Weapon(
 			name: "doublebarrel",
-			asset_name: "weapons/sawed-off-shotgun.png",
+			asset_name: "weapons/doublebarrel/sawed-off-shotgun.png",
 			ammunition: Ammunition(
 				magasin_size: 2,
 				magasin_limit: 40,
 				magasin_nbr_starting: 10,
+
 				duration: 0.20,
 				sprite_config: AmmunitionSpriteConfig(
 					size: (10., 10.)

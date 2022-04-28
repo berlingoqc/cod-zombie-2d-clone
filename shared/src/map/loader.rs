@@ -23,6 +23,6 @@ impl AssetLoader for MapDataAssetLoader {
     }
 
     fn extensions(&self) -> &[&str] {
-        &["custom"]
+        &["asset.ron"]
     }
 }

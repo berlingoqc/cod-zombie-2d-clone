@@ -20,10 +20,10 @@ pub struct Opts {
     #[structopt(short, long, default_value = "0")]
     pub port: i32,
 
-    #[structopt(short, long, default_value = "level_1.custom")]
+    #[structopt(short, long, default_value = "maps/map_iso/iso_map.asset.ron")]
     pub map: String,
 
-    #[structopt(short, long, default_value = "level_1.level")]
+    #[structopt(short, long, default_value = "game/easy.level.ron")]
     pub level: String
 }
 
