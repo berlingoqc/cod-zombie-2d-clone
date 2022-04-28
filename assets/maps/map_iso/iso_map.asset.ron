@@ -1,0 +1,77 @@
+MapDataAsset(
+    tiled: (
+        path: "maps/map_iso/iso_map.tmx",
+        transform: (100., 00., 0.)
+    ),
+    spawners: [
+        MapElementPosition(
+            position: (550., 120.),
+            size: (10., 10.),
+            rotation: 1,
+        ),
+        MapElementPosition(
+            position: (-600., 90.),
+            size: (10., 10.),
+            rotation: 1,
+        ),
+    ],
+    windows: [
+       MapElementPosition(
+            position: (200., 75.),
+            size: (10., 60.),
+            rotation: 1,
+       ),
+       MapElementPosition(
+            position: (-200., -80.),
+            size: (10., 70.),
+            rotation: 1,
+       ),
+       MapElementPosition(
+            position: (50., -200.),
+            size: (90., 10.),
+            rotation: 1,
+       ),
+    ],
+    walls: [
+        // Mur droite
+        MapElementPosition(
+            position: (200., 155.),
+            size: (25., 100.),
+            rotation: 1,
+        ),
+        MapElementPosition(
+            position: (200., -80.),
+            size: (25., 250.),
+            rotation: 1,
+        ),
+        // Mur gauche
+        MapElementPosition(
+            position: (-200., 80.),
+            size: (25., 250.),
+            rotation: 1,
+        ),
+        MapElementPosition(
+            position: (-200., -160.),
+            size: (25., 90.),
+            rotation: 1,
+        ),
+        // Mur haut
+        MapElementPosition(
+            position: (0., 200.),
+            size: (400., 25.),
+            rotation: 1,
+        ),
+        // Mur bas
+        MapElementPosition(
+            position: (-95., -200.),
+            size: (200., 25.),
+            rotation: 1,
+        ),
+        MapElementPosition(
+            position: (145., -200.),
+            size: (110., 25.),
+            rotation: 1,
+        )
+ 
+    ]
+)
