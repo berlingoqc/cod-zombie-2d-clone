@@ -7,6 +7,13 @@ ZombieLevelAsset(
     starting_weapons: (
         starting_weapon: "tec9",
         starting_alternate_weapon: Some("pistol")
+    ),
+    window_panel: (
+        interaction_timeout: 0.7,
+        spacing: 20.,
+        health: 1.,
+        nbr: 3
+
     )
 )
 

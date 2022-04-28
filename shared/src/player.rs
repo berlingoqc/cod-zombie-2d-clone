@@ -13,15 +13,15 @@ const TIME_STEP: f32 = 1.0 / 60.0;
 #[derive(Default, Component)]
 pub struct Player {}
 
-#[derive(Default, Component)]
+#[derive(Component)]
 pub struct PlayerCurrentInteraction {
     // tell if or not there is an interaction available for the user
     pub interaction: bool,
     // cooldown between each interaction
     pub interaction_cooldown: f32,
     // entity that has the interaction component
-    pub entity: u32,
-    pub child_entity: u32,
+    pub entity: Entity,
+    pub child_entity: Entity,
     // type of interaction
     pub interaction_type: PlayerInteractionType,
 
@@ -76,8 +76,8 @@ impl PlayerBundle {
                 interaction: false,
                 interacting: false,
                 interaction_cooldown: 0.,
-                entity: 0,
-                child_entity: 0,
+                entity: Entity::from_raw(0),
+                child_entity: Entity::from_raw(0),
                 interaction_type: PlayerInteractionType::None,
                 interaction_trigger_at: 0.
             }
@@ -211,16 +211,16 @@ pub fn system_interaction_player(
             if collision.is_some() {
                 // notify use that key perform action
                 interaction.interaction = true;
-                interaction.entity = entity.id();
+                interaction.entity = entity.clone();
                 interaction.interaction_type = player_interaction.interaction_type;
                 interaction.interaction_cooldown = player_interaction.interaction_timeout;
             } else {
-                if entity.id() == interaction.entity {
+                if entity.id() == interaction.entity.id() {
                     match interaction.interaction_type {
                         PlayerInteractionType::RepairWindow => {
                             if interaction.interacting == true {
                                 // TODO : duplicatate code
-                                let (_,size, mut health, mut sprite) = query_panel.get_mut(Entity::from_raw(interaction.child_entity)).unwrap();
+                                let (_,size, mut health, mut sprite) = query_panel.get_mut(interaction.child_entity).unwrap();
                                 interaction.interacting = false;
                                 health.current_health = 0.;
                                 sprite.custom_size = Some(Vec2::new(0.,0.));
@@ -231,7 +231,7 @@ pub fn system_interaction_player(
 
                     interaction.interaction = false;
                     interaction.interacting = false;
-                    interaction.entity = 0;
+                    interaction.entity = Entity::from_raw(0);
                 }
             }
         } 
@@ -245,25 +245,25 @@ pub fn system_interaction_player(
                             // repair the window
                             let time_since_startup = time.time_since_startup().as_secs_f32();
                             if interaction.interaction_trigger_at + interaction.interaction_cooldown <= time_since_startup {
-                                let (_,size, mut health, mut sprite) = query_panel.get_mut(Entity::from_raw(interaction.child_entity)).unwrap();
+                                let (_,size, mut health, mut sprite) = query_panel.get_mut(interaction.child_entity).unwrap();
                                 sprite.custom_size = Some(size.0);
                                 health.current_health = 1.;
                                 interaction.interacting = false;
                             } else {
-                                let (_,size, _ , mut sprite) = query_panel.get_mut(Entity::from_raw(interaction.child_entity)).unwrap();
+                                let (_,size, _ , mut sprite) = query_panel.get_mut(interaction.child_entity).unwrap();
                                 let time_diff = time_since_startup - (interaction.interaction_trigger_at + interaction.interaction_cooldown);
                                 let percentage_time_diff_cooldown = 1. - (time_diff / interaction.interaction_cooldown);
                                 sprite.custom_size = Some(size.0 / percentage_time_diff_cooldown);
                             }
                         } else {
-                            let (_, children) = query_window.get(Entity::from_raw(interaction.entity)).unwrap();
+                            let (_, children) = query_window.get(interaction.entity).unwrap();
 
                             for &child_entity in children.iter() {
                                 let (_,size, mut health, mut sprite) = query_panel.get_mut(child_entity).unwrap();
                                 if health.current_health <= 0. {
                                     // there is a panel to repair
                                     interaction.interacting = true;
-                                    interaction.child_entity = child_entity.id();
+                                    interaction.child_entity = child_entity.clone();
                                     interaction.interaction_trigger_at = time.time_since_startup().as_secs_f32();
                                     break;
                                 }
@@ -277,7 +277,7 @@ pub fn system_interaction_player(
                     interaction.interacting = false;
                     match interaction.interaction_type {
                         PlayerInteractionType::RepairWindow => {
-                            let (_,size, mut health, mut sprite) = query_panel.get_mut(Entity::from_raw(interaction.child_entity)).unwrap();
+                            let (_,size, mut health, mut sprite) = query_panel.get_mut(interaction.child_entity).unwrap();
                             health.current_health = 0.;
                             sprite.custom_size = Some(Vec2::new(0.,0.));
                         },

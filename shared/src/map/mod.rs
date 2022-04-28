@@ -144,7 +144,7 @@ impl WindowBundle {
 }
 
 impl WindowPanelBundle {
-    pub fn new(parent: MapElementPosition, index: u32, offset: f32) -> WindowPanelBundle {
+    pub fn new(parent: MapElementPosition, health: f32,  index: u32, offset: f32) -> WindowPanelBundle {
         // need to find the direction vector of the window
         let (direction, size)  = if parent.size.x > parent.size.y { // horizontal
             (Vec2::new(1., 0.), Vec2::new(10., 20.))
@@ -169,7 +169,7 @@ impl WindowPanelBundle {
             collider: MovementCollider {  },
             panel: WindowPanel {},
             size: Size(size),
-            health: Health { current_health: 1., max_health: 1. }
+            health: Health { current_health: health, max_health: health }
         }
     }
 }

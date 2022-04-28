@@ -66,11 +66,6 @@ impl MapDataAsset {
                 .spawn()
                 .insert(MapElement {})
                 .insert_bundle(WindowBundle::new(w.clone())).id();
-
-            for i in 0..3 {
-                let panel = command.spawn().insert_bundle(WindowPanelBundle::new(w.clone(), i, 20.)).id();
-                command.entity(entity).add_child(panel);
-            }
         }
     }
 }
