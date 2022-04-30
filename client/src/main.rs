@@ -25,6 +25,7 @@ use shared::{
 };
 use shared::map::MapPlugin;
 use crate::{plugins::frame_cnt::FPSPlugin, character_animation::CharacterAnimationPlugin};
+use bevy_kira_audio::{Audio, AudioChannel, AudioPlugin, AudioSource};
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
@@ -46,6 +47,7 @@ fn main() {
     .insert_resource(LevelMapRequested{map: opts.map, level: opts.level})
     .add_plugins(DefaultPlugins)
     .add_plugin(CharacterAnimationPlugin{ })
+    .add_plugin(AudioPlugin{})
     .add_plugin(MapPlugin {});
 
     app.add_plugin(ZombieGamePlugin{});

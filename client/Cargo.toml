@@ -8,7 +8,7 @@ edition = "2021"
 default = [
     "bevy/bevy_winit",
     "bevy/render",
-    "bevy/png"
+    "bevy/png",
 ]
 
 native = [
@@ -32,6 +32,7 @@ shared = { path = "../shared" }
 
 bevy = {version = "0.7.0", default-features=false, features = ["bevy_render","bevy_core_pipeline","bevy_sprite"]}
 bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap/", rev = "91d44605888421d5f020d0f4004848e71ff4853d"}
+bevy_kira_audio = { git = "https://github.com/NiklasEi/bevy_kira_audio", branch = "main", features = ["ogg"] }
 
 turbulence = "0.3"
 bevy_networking_turbulence = { git = "https://github.com/berlingoqc/bevy_networking_turbulence/", branch = "master", default_features = false, features = ["use-webrtc"] }

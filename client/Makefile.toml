@@ -3,7 +3,7 @@ ENV_DIR = {source="${CARGO_MAKE_PROFILE}", default_value = "debug", mapping = {r
 TARGET_DIR = "target"
 PUBLIC_DIR = "./public"
 CARGO_TARGET_DIR = {value = "${TARGET_DIR}", condition = {env_not_set = ["CARGO_TARGET_DIR"]}}
-CARGO_WASM_PATH = "${CARGO_TARGET_DIR}/wasm32-unknown-unknown/release/${CARGO_MAKE_CRATE_NAME}.wasm"
+CARGO_WASM_PATH = "${CARGO_TARGET_DIR}/wasm32-unknown-unknown/debug/${CARGO_MAKE_CRATE_NAME}.wasm"
 CARGO_PROFILE = "dev"
 CARGO_MANIFEST_DIR = "${CARGO_MAKE_WORKING_DIRECTORY}"
 
@@ -24,7 +24,7 @@ install_crate = {crate_name = "wasm-bindgen-cli", binary = "wasm-bindgen", test_
 install_crate = {crate_name = "basic-http-server", binary = "basic-http-server", test_arg="--help"}
 
 [tasks.cargo-build-web]
-args = ["build", "--target", "wasm32-unknown-unknown", "--features", "atlas", "--release", "@@split(CARGO_RELEASE_ARGS, )"]
+args = ["build", "--target", "wasm32-unknown-unknown", "--features", "bevy_ecs_tilemap/atlas" , "@@split(CARGO_RELEASE_ARGS, )"]
 command = "cargo"
 dependencies = ["env", "install-wasm-target"]
 
