@@ -21,6 +21,7 @@ i tend to right summary to help me focusing.
 * [Implementing weapons](./logs/2022-04-25.md)
 * [More weapon and starting windows](./logs/2022-04-26.md)
 * [Cleaning in asset and better live reloading](./logs/2022-04-27.md)
+* [Character animation with sprite sheet](./logs/2022-04-28.md)
 
 ## Compile and run the game locally
 

@@ -7,7 +7,6 @@ mod client;
 mod ingameui;
 mod player;
 mod character_animation;
-mod map;
 
 use bevy::{
     core::FixedTimestep, prelude::*, window::WindowDescriptor, asset::AssetServerSettings,
