@@ -1,7 +1,7 @@
 MapDataAsset(
     tiled: (
-        path: "maps/map_iso/iso_map.tmx",
-        transform: (100., 00., 0.)
+        path: "maps/map_iso/test.tmx",
+        transform: (-450., -375., 0.)
     ),
     spawners: [
         MapElementPosition(

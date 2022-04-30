@@ -29,7 +29,7 @@ command = "cargo"
 dependencies = ["env", "install-wasm-target"]
 
 [tasks.build-web]
-args = ["--out-dir", "${PUBLIC_DIR}", "--out-name", "wasm", "--target", "--no-typescript", "${CARGO_WASM_PATH}"]
+args = ["--out-dir", "${PUBLIC_DIR}", "--out-name", "wasm", "--target", "web", "${CARGO_WASM_PATH}"]
 command = "wasm-bindgen"
 dependencies = ["cargo-build-web", "install-wasm-bindgen-cli", "cp-assets-public"]
 

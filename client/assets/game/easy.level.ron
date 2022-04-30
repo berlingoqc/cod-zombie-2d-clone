@@ -1,6 +1,6 @@
 ZombieLevelAsset(
     configuration: MapRoundConfiguration(
-        starting_zombie: 10,
+        starting_zombie: 5,
         round_increments: 5,
         initial_timeout:  2,
     ),
