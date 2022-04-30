@@ -1,17 +1,29 @@
-use bevy::{prelude::*, sprite::collide_aabb::collide};
+use bevy::{prelude::*, sprite::collide_aabb::collide, reflect::TypeUuid, asset::{LoadContext, AssetLoader, BoxedFuture, LoadedAsset}};
+use serde::Deserialize;
 
 use crate::{
     collider::{MovementCollider, ProjectileCollider},
     game::{Zombie, ZombieGame},
     map::{MapElementPosition, WindowPanel, Window, Size},
-    weapons::{weapons::{Projectile, Weapon, WeaponState, WeaponBundle, AmmunitionState, WeaponCurrentAction}, loader::WeaponAssetState}, health::Health
+    weapons::{weapons::{Projectile, Weapon, WeaponState, WeaponBundle, AmmunitionState, WeaponCurrentAction}, loader::WeaponAssetState}, health::Health, animation::{SpriteSheetAnimationsConfiguration, SpriteSheetConfiguration}, utils::get_cursor_location
 };
 
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
+
+
+
 #[derive(Default, Component)]
-pub struct Player {}
+pub struct CharacterMovementState {
+    pub state: String,
+    pub sub_state: String,
+}
+
+#[derive(Default, Component)]
+pub struct Player {
+    pub active_weapon_name: String,
+}
 
 #[derive(Component)]
 pub struct PlayerCurrentInteraction {
@@ -50,10 +62,16 @@ pub struct PlayerInteraction {
 
 
 #[derive(Default, Component)]
-pub struct LookingDirection(pub Vec2);
+pub struct LookingAt(pub Vec2);
 
-#[derive(Component, Deref, DerefMut)]
-pub struct AnimationTimer(Timer);
+#[derive(Component)]
+pub struct AnimationTimer {
+    pub timer: Timer,
+    pub index: usize,
+    pub offset: usize,
+    pub asset_type: String,
+    pub current_state: String,
+}
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
@@ -61,14 +79,18 @@ pub struct PlayerBundle {
     #[bundle] 
     pub sprite: SpriteSheetBundle,
     pub interaction: PlayerCurrentInteraction,
-    pub looking_direction: LookingDirection,
+    pub looking_direction: LookingAt,
     pub animation_timer: AnimationTimer,
+    pub character_movement_state: CharacterMovementState,
 }
 
 impl PlayerBundle {
-    fn new() -> PlayerBundle {
+    fn new(starting_weapon_name: &str) -> PlayerBundle {
         PlayerBundle { 
-            player: Player{},
+            player: Player{
+                active_weapon_name: starting_weapon_name.to_string(),
+                ..default()
+            },
             sprite : SpriteSheetBundle {
                 transform: Transform {
                     translation: Vec3::new(0., 0., 10.),
@@ -76,8 +98,15 @@ impl PlayerBundle {
                 },
                 ..default()
             },
-            looking_direction: LookingDirection(Vec2::new(0., 0.)),
-            animation_timer: AnimationTimer(Timer::from_seconds(0.1, true)),
+            character_movement_state: CharacterMovementState { state: String::from("walking"), sub_state: "".to_string() },
+            looking_direction: LookingAt(Vec2::new(0., 0.)),
+            animation_timer: AnimationTimer{ 
+                timer: Timer::from_seconds(0.1, true),
+                index: 0,
+                offset: 0,
+                asset_type: "player".to_string(),
+                current_state: "".to_string(),
+            },
             interaction: PlayerCurrentInteraction {
                 interaction: false,
                 interacting: false,
@@ -106,7 +135,7 @@ pub fn setup_players(
 
     let weapon = weapons.weapons.iter().find(|w| w.name.eq(default_weapon_name)).unwrap().clone();
 
-    let player = commands.spawn_bundle(PlayerBundle::new()).id();
+    let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name)).id();
         
     let weapon = commands.spawn()
         .insert_bundle(WeaponBundle::new(weapon, true)).id();
@@ -300,7 +329,7 @@ pub fn input_player(
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
     buttons: Res<Input<MouseButton>>,
-    mut query: Query<&mut Transform, With<Player>>,
+    mut query: Query<(&mut Transform, &mut Player, &mut CharacterMovementState, &mut LookingAt)>,
     collider_query: Query<
         (Entity, &Transform, &MapElementPosition),
         (
@@ -309,9 +338,15 @@ pub fn input_player(
             Without<Player>,
         ),
     >,
+    wnds: Res<Windows>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
 ) {
 
-    for mut player_transform in query.iter_mut() {
+
+    // TODO : split player input and movement (IF I WANT TO NETWORK AT SOME POINT)
+    for (mut player_transform, mut player, mut character_movement_state, mut looking_at) in query.iter_mut() {
+
+        looking_at.0 = get_cursor_location(&wnds, &q_camera);
 
         let mut movement = Vec3::default();
         let mut moved = false;
@@ -334,8 +369,11 @@ pub fn input_player(
         }
         
         if !moved {
+            character_movement_state.state = "standing".to_string();
             return;
         }
+
+        character_movement_state.state = "walking".to_string();
 
         let dest = player_transform.translation + (movement * 3.);
 
@@ -350,6 +388,7 @@ pub fn input_player(
         if save_move {
             player_transform.translation = dest;
         }
+
     }
 }
 

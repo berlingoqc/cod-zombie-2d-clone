@@ -6,6 +6,7 @@ pub mod player;
 pub mod weapons;
 pub mod utils;
 pub mod health;
+pub mod animation;
 
 use bevy::prelude::*;
 use bevy_networking_turbulence::{

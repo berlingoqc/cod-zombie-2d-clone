@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use rand::prelude::SliceRandom;
 
-use crate::{utils::{get_cursor_location, vec2_perpendicular_counter_clockwise, vec2_perpendicular_clockwise}, collider::ProjectileCollider, player::{Velocity, ExpiringComponent, MainCamera, LookingDirection}};
+use crate::{utils::{get_cursor_location, vec2_perpendicular_counter_clockwise, vec2_perpendicular_clockwise}, collider::ProjectileCollider, player::{Velocity, ExpiringComponent, MainCamera, LookingAt, Player, CharacterMovementState, AnimationTimer}};
 
 use super::loader::WeaponsAsset;
 
@@ -38,7 +38,9 @@ pub struct Weapon {
     #[serde(default = "default_firing_ammunition")]
     pub spreading_ammunition: u32,
     pub offset: i32,
-	pub automatic: bool
+	pub automatic: bool,
+
+    pub sprite_sheet_offset: usize
 }
 
 #[derive(Default, Clone, Deserialize)]
@@ -113,6 +115,10 @@ pub fn handle_weapon_input(
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
 
 	q_parent: Query<&GlobalTransform>,
+
+    mut q_movement_player: Query<(&mut CharacterMovementState, &mut AnimationTimer), With<Player>>,
+
+    mut q_player: Query<&mut Player>,
 ) {
 
     if keyboard_input.just_pressed(KeyCode::Tab) {
@@ -123,11 +129,16 @@ pub fn handle_weapon_input(
                 return;
             }
         }
-        for (_, mut weapon_state, w, _) in query_player_weapon.iter_mut() {
+        for (_, mut weapon_state, w, parent) in query_player_weapon.iter_mut() {
             if weapon_state.state == WeaponCurrentAction::Firing {
                 weapon_state.state = WeaponCurrentAction::Hide;
             } else if weapon_state.state == WeaponCurrentAction::Hide {
                 weapon_state.state = WeaponCurrentAction::Firing;
+
+                // CODE FOR THE ANIMATION
+                let (mut movement_state, mut timer) = q_movement_player.get_mut(parent.0).unwrap();
+                movement_state.sub_state = w.name.clone();
+                timer.offset = w.sprite_sheet_offset;
             }
         }
 

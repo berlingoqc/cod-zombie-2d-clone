@@ -12,7 +12,8 @@ WeaponsAsset(
 			firing_rate: 0.25,
 			offset: 0,
 			reloading_time: 0.9,
-			automatic: false
+			automatic: false,
+			sprite_sheet_offset: 12
 		),
 		Weapon(
 			name: "tec9",
@@ -26,7 +27,8 @@ WeaponsAsset(
 			offset: 15,
 			firing_rate: 0.1,
 			reloading_time: 0.9,
-			automatic: true
+			automatic: true,
+			sprite_sheet_offset: 0
 		),
 		Weapon(
 			name: "doublebarrel",
@@ -46,7 +48,8 @@ WeaponsAsset(
 			firing_ammunition: 1,
 			spreading_ammunition: 8,
 			reloading_time: 1.0,
-			automatic: false
+			automatic: false,
+			sprite_sheet_offset: 0
 		)
 	]
 )

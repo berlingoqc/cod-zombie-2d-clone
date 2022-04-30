@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::health::Health;
 use crate::map::{WindowPanel, Window, WindowPanelBundle};
-use crate::player::{setup_players, PlayerInteraction};
+use crate::player::{setup_players, PlayerInteraction, AnimationTimer, LookingAt, CharacterMovementState };
 use crate::weapons::loader::{WeaponAssetPlugin, WeaponAssetState, WeaponsAsset, WeaponAssetLoader};
 use crate::weapons::weapons::{WeaponState, WeaponCurrentAction, Weapon};
 
@@ -133,13 +133,16 @@ pub struct BotDestination {
 #[derive(Bundle)]
 pub struct ZombieBundle {
     #[bundle]
-    sprite_bundle: SpriteBundle,
+    sprite_bundle: SpriteSheetBundle,
     collider: MovementCollider,
     destination: BotDestination,
     projectile_collider: ProjectileCollider,
     info: MapElementPosition,
     zombie: Zombie,
     weapon_state: WeaponState,
+    animation_timer: AnimationTimer,
+    looking_at: LookingAt,
+    chracter_movement_state: CharacterMovementState,
 }
 
 
@@ -174,25 +177,28 @@ impl AssetLoader for ZombieLevelAssetLoader {
 impl ZombieBundle {
     pub fn new(info: MapElementPosition, dest: BotDestination) -> ZombieBundle {
         ZombieBundle {
-            sprite_bundle: SpriteBundle {
-                sprite: Sprite {
-                    color: Color::rgb(1., 1., 1.),
-                    custom_size: Some(info.size),
-                    ..Sprite::default()
-                },
-                transform: Transform {
+            sprite_bundle: SpriteSheetBundle {
+               transform: Transform {
                     translation: info.position.extend(10.0),
                     scale: Vec3::new(0., 0., 0.),
                     ..Transform::default()
                 },
-
-                ..SpriteBundle::default()
+                ..default()
             },
             collider: MovementCollider {},
             projectile_collider: ProjectileCollider {},
             zombie: Zombie {
                 state: ZombieState::AwakingFromTheDead,
             },
+            chracter_movement_state: CharacterMovementState { state: "rising".to_string(), sub_state: "".to_string() },
+            animation_timer: AnimationTimer {
+                timer: Timer::from_seconds(0.1, true),
+                index: 0,
+                offset: 0,
+                current_state: "".to_string(),
+                asset_type: "zombie".to_string(),
+            },
+            looking_at: LookingAt(dest.destination.position),
             info,
             destination: dest,
             weapon_state: WeaponState { fired_at: 0., state: WeaponCurrentAction::Firing }
@@ -222,7 +228,7 @@ impl Plugin for ZombieGamePlugin {
             .init_resource::<Game>()
             .init_resource::<ZombieGame>()
             .init_resource::<ZombieLevelAssetState>()
-
+            
 
             .add_system(change_game_state_event)
             .add_system(system_panel_event)
@@ -257,7 +263,7 @@ pub fn system_zombie_handle(
     mut commands: Commands,
     query_player: Query<&Transform, (With<Player>, Without<Zombie>)>,
     mut config: ResMut<ZombieSpawnerConfig>,
-    mut query_zombies: Query<(&mut Transform, &mut BotDestination, &mut Zombie, &mut WeaponState), With<Zombie>>,
+    mut query_zombies: Query<(&mut Transform, &mut BotDestination, &mut Zombie, &mut WeaponState, &mut LookingAt, &mut CharacterMovementState), With<Zombie>>,
     mut query_windows: Query<(&Window, Entity, &Children)>,
     mut query_panel: Query<(&WindowPanel, &mut Sprite, &mut Health)>,
 
@@ -268,17 +274,18 @@ pub fn system_zombie_handle(
         return;
     }
     let player = player.unwrap();
-    for (mut pos, mut dest, mut zombie, mut weapon_state) in query_zombies.iter_mut() {
+    for (mut pos, mut dest, mut zombie, mut weapon_state, mut looking_at, mut movement_state) in query_zombies.iter_mut() {
         match zombie.state {
             ZombieState::AwakingFromTheDead => {
                 if pos.scale.x < 1.0 {
                     let mut rng = rand::thread_rng();
                     config.nums_ndg.shuffle(&mut rng);
                     pos.scale += Vec3::new(0.01, 0.01, 0.01);
-                    pos.rotation = Quat::from_rotation_z(config.nums_ndg[75] / 10.);
+                    //pos.rotation = Quat::from_rotation_z(config.nums_ndg[75] / 10.);
                 } else {
                     pos.rotation = Quat::from_rotation_z(0.);
                     zombie.state = ZombieState::FindingEnterace;
+                    movement_state.state = "walking".to_string();
                 }
             }
             ZombieState::FindingEnterace => {
@@ -335,6 +342,7 @@ pub fn system_zombie_handle(
                 if dest.path.len() == 0 {
                     // change target for the user
                     let goal = (player.translation.x as i32, player.translation.y as i32);
+                    looking_at.0 = player.translation.truncate();
                     let mut result = astar(
                         &(pos.translation.x as i32, pos.translation.y as i32),
                         |&(x, y)| {
