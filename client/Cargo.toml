@@ -16,7 +16,7 @@ native = [
     "bevy/filesystem_watcher"
 ]
 
-web = []
+atlas = []
 
 audio = [
     "bevy/bevy_audio",
@@ -31,7 +31,7 @@ directory = "vendor"
 shared = { path = "../shared" }
 
 bevy = {version = "0.7.0", default-features=false, features = ["bevy_render","bevy_core_pipeline","bevy_sprite"]}
-bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap/", branch = "main"}
+bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap/", rev = "91d44605888421d5f020d0f4004848e71ff4853d"}
 
 turbulence = "0.3"
 bevy_networking_turbulence = { git = "https://github.com/berlingoqc/bevy_networking_turbulence/", branch = "master", default_features = false, features = ["use-webrtc"] }
@@ -40,7 +40,7 @@ approx = "0.5.1"
 
 ron = "0.7.0"
 serde = { version = "1", features = ["derive"] }
-tiled = { version = "0.9", default-features=false}
+tiled = { version = "0.10.1", default-features=false}
 rand = "0.8.5"
 structopt = "0.3"
 uuid = "=0.8.1"

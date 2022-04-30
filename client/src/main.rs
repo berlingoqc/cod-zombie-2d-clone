@@ -7,11 +7,13 @@ mod client;
 mod ingameui;
 mod player;
 mod character_animation;
+mod map;
 
 use bevy::{
-    core::FixedTimestep, prelude::*, window::WindowDescriptor,
+    core::FixedTimestep, prelude::*, window::WindowDescriptor, asset::AssetServerSettings,
 };
 
+use bevy_ecs_tilemap::{TilemapPlugin, Map};
 use shared::{
     game::{
         react_level_data, setup_zombie_game, system_zombie_game, system_zombie_handle, ZombieGame,
