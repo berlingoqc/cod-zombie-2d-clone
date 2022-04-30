@@ -23,7 +23,7 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: nightly-2022-04-13
           override: true
       - name: Add cargo make
         run: cargo install --force cargo-make
@@ -40,7 +40,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: rustup
-      run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && rustup default nightly && cargo install --force cargo-make && cd client && cargo make build-native
+      run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && rustup default nightly-2022-04-13 && cargo install --force cargo-make && cd client && cargo make build-native
     - name: Create release folder
       run: mkdir -p release && cp ./client/target/debug/cod-zombie-2d-clone ./release
     - uses: "marvinpinto/action-automatic-releases@latest"
