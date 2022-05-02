@@ -122,8 +122,6 @@ pub fn system_animation_character(
     mut player_config_state: ResMut<CharacterAnimationConfigurationState>,
 
     time: Res<Time>,
-   
-    weapon_config: Res<WeaponAssetState>
 ) {
 
     for (movement_state, mut atlas_sprite, mut timer, mut handle, mut looking_at, mut transform) in q_player.iter_mut() {
