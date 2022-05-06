@@ -20,16 +20,14 @@ pub fn setup_zombie_game(
     mut state: ResMut<ZombieLevelAssetState>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    //mut zombie_game: ResMut<ZombieGame>,
+    mut config_spawner: ResMut<ZombieSpawnerConfig>,
 ) {
     let handle: Handle<ZombieLevelAsset> = asset_server.load("level_1.level");
     state.handle = handle;
     state.loaded = false;
 
-    commands.insert_resource(ZombieSpawnerConfig {
-        timer: Timer::new(Duration::from_secs(5), true),
-        nums_ndg: (-50..50).map(|x| x as f32).collect(),
-    });
+    config_spawner.timer = Timer::new(Duration::from_secs(5), true);
+    config_spawner.nums_ndg = (-50..50).map(|x| x as f32).collect();
 }
 
 pub fn system_zombie_game(

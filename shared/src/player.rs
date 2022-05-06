@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use crate::{
     collider::{MovementCollider, ProjectileCollider},
-    game::{Zombie, ZombieGame},
+    game::{Zombie, ZombieGame, GameState},
     map::{MapElementPosition, WindowPanel, Window, Size},
     weapons::{weapons::{Projectile, Weapon, WeaponState, WeaponBundle, AmmunitionState, WeaponCurrentAction}, loader::WeaponAssetState}, health::Health, animation::{SpriteSheetAnimationsConfiguration, SpriteSheetConfiguration}, utils::get_cursor_location
 };
@@ -141,7 +141,6 @@ pub fn setup_players(
         .insert_bundle(WeaponBundle::new(weapon, true)).id();
 
     commands.entity(player).add_child(weapon);
-
 
     if let Some(alternate_weapon) = &zombie_game.starting_weapons.starting_alternate_weapon {
         let weapon = weapons.weapons.iter().find(|w| w.name.eq(alternate_weapon.as_str())).unwrap().clone();
@@ -340,8 +339,9 @@ pub fn input_player(
     >,
     wnds: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-) {
 
+    mut game_state: ResMut<State<GameState>>
+) {
 
     // TODO : split player input and movement (IF I WANT TO NETWORK AT SOME POINT)
     for (mut player_transform, mut player, mut character_movement_state, mut looking_at) in query.iter_mut() {
@@ -350,6 +350,12 @@ pub fn input_player(
 
         let mut movement = Vec3::default();
         let mut moved = false;
+
+
+        if keyboard_input.pressed(KeyCode::F2) {
+            game_state.set(GameState::Menu).unwrap();
+            return;
+        }
 
         if keyboard_input.pressed(KeyCode::W) {
             movement += Vec3::new(0., 1., 0.);
@@ -389,6 +395,15 @@ pub fn input_player(
             player_transform.translation = dest;
         }
 
+    }
+}
+
+pub fn system_unload_players(
+    mut commands: Commands,
+    q_player: Query<Entity, With<Player>>
+) {
+    for entity in q_player.iter() {
+        commands.entity(entity).despawn_recursive();
     }
 }
 

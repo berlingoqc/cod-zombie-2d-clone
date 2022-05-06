@@ -30,7 +30,11 @@ pub struct MapDataAsset {
 }
 
 impl MapDataAsset {
-    pub fn render(&self, command: &mut Commands, asset_server: &AssetServer) {
+    pub fn render(
+        &self,
+        command: &mut Commands,
+        asset_server: &AssetServer
+    ) {
         let handle: Handle<TiledMap> = asset_server.load(self.tiled.path.as_str());
 
         let map_entity = command.spawn().id();
@@ -67,6 +71,8 @@ impl MapDataAsset {
                 .insert(MapElement {})
                 .insert_bundle(WindowBundle::new(w.clone())).id();
         }
+
+        // Send event map loaded
     }
 }
 
@@ -124,5 +130,19 @@ pub fn react_event_scene(
             }
             _ => {}
         }
+    }
+}
+
+// unload the map and the map entity
+pub fn system_unload_map(
+    mut commands: Commands,
+    q_map_element: Query<Entity, With<MapElementPosition>>,
+    q_map: Query<Entity, With<Map>>,
+) {
+    for entity in q_map_element.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+    for entity in q_map.iter() {
+        commands.entity(entity).despawn_recursive();
     }
 }

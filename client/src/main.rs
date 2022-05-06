@@ -5,27 +5,30 @@ mod config;
 mod plugins;
 mod client;
 mod ingameui;
+mod homemenu;
 mod player;
 mod character_animation;
 
 use bevy::{
-    core::FixedTimestep, prelude::*, window::WindowDescriptor, asset::AssetServerSettings,
+    core::FixedTimestep, prelude::*, window::WindowDescriptor
 };
 
-use bevy_ecs_tilemap::{TilemapPlugin, Map};
 use shared::{
     game::{
-        react_level_data, setup_zombie_game, system_zombie_game, system_zombie_handle, ZombieGame,
-        Game, GameState,
-        ZombieGameState, ZombieLevelAsset, ZombieLevelAssetLoader, ZombieLevelAssetState, ZombieGamePlugin, LevelMapRequested,
+        react_level_data, setup_zombie_game, system_zombie_game, system_zombie_handle,
+        GameState, ZombieGamePlugin, LevelMapRequested, system_unload_zombie_game,
     },
     player::{
-        apply_velocity, input_player, movement_projectile, setup_players, system_interaction_player
-    }, weapons::weapons::{handle_weapon_input},
+        apply_velocity, input_player, movement_projectile, system_interaction_player, system_unload_players
+    }, weapons::weapons::{handle_weapon_input}, map::render::system_unload_map,
 };
 use shared::map::MapPlugin;
-use crate::{plugins::frame_cnt::FPSPlugin, character_animation::CharacterAnimationPlugin};
-use bevy_kira_audio::{Audio, AudioChannel, AudioPlugin, AudioSource};
+use crate::{
+    plugins::frame_cnt::FPSPlugin,
+    character_animation::CharacterAnimationPlugin,
+    homemenu::HomeMenuPlugin, ingameui::system_clear_ingame_ui
+};
+use bevy_kira_audio::AudioPlugin;
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
@@ -51,19 +54,20 @@ fn main() {
     .add_plugin(MapPlugin {});
 
     app.add_plugin(ZombieGamePlugin{});
+    app.add_plugin(HomeMenuPlugin{});
+
+    app.add_startup_system(player::setup_player_camera);
 
     if opts.host == "" {
         info!("Startin single player mode");
         app
         .add_system_set(
             SystemSet::on_enter(GameState::PlayingZombie)
-                .with_system(player::setup_player_camera)
                 .with_system(ingameui::setup_ingame_ui)
                 .with_system(setup_zombie_game),
         )
         .add_system_set(
             SystemSet::on_update(GameState::PlayingZombie)
-                .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
                 .with_system(ingameui::system_ingame_ui)
                 .with_system(ingameui::system_weapon_ui)
                 .with_system(system_zombie_handle)
@@ -74,6 +78,13 @@ fn main() {
                 .with_system(handle_weapon_input)
                 .with_system(movement_projectile)
                 .with_system(react_level_data)
+        )
+        .add_system_set(
+            SystemSet::on_exit(GameState::PlayingZombie)
+                .with_system(system_unload_map)
+                .with_system(system_clear_ingame_ui)
+                .with_system(system_unload_players)
+                .with_system(system_unload_zombie_game)
         );
     } else {
         info!("Startin multiplayer mode");

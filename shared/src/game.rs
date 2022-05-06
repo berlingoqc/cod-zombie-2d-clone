@@ -3,11 +3,11 @@ use std::time::Duration;
 use crate::health::Health;
 use crate::map::{WindowPanel, Window, WindowPanelBundle};
 use crate::player::{setup_players, PlayerInteraction, AnimationTimer, LookingAt, CharacterMovementState };
-use crate::weapons::loader::{WeaponAssetPlugin, WeaponAssetState, WeaponsAsset, WeaponAssetLoader};
+use crate::weapons::loader::{WeaponAssetPlugin, WeaponAssetState};
 use crate::weapons::weapons::{WeaponState, WeaponCurrentAction, Weapon};
 
 use super::collider::{MovementCollider, ProjectileCollider};
-use super::map::{MapElementPosition,  ZombieSpawner};
+use super::map::{MapElementPosition,  ZombieSpawner, render::MapDataState};
 use super::player::Player;
 use bevy::asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset};
 use bevy::prelude::*;
@@ -26,7 +26,7 @@ pub struct Game {
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub enum GameState {
-    //Menu,
+    Menu,
     PlayingZombie,
     //GameOver,
 }
@@ -217,6 +217,15 @@ pub struct ZombieSpawnerConfig {
     pub nums_ndg: Vec<f32>,
 }
 
+impl FromWorld for ZombieSpawnerConfig {
+    fn from_world(world: &mut World) -> Self {
+        ZombieSpawnerConfig{
+            timer: Timer::new(Duration::from_secs(5), true),
+            nums_ndg: (-50..50).map(|x| x as f32).collect()
+        }
+    }
+}
+
 pub struct ZombieGamePlugin {}
 
 impl Plugin for ZombieGamePlugin {
@@ -228,7 +237,7 @@ impl Plugin for ZombieGamePlugin {
             .init_resource::<Game>()
             .init_resource::<ZombieGame>()
             .init_resource::<ZombieLevelAssetState>()
-            
+            .init_resource::<ZombieSpawnerConfig>()
 
             .add_system(change_game_state_event)
             .add_system(system_panel_event)
@@ -236,8 +245,7 @@ impl Plugin for ZombieGamePlugin {
             .add_asset::<ZombieLevelAsset>()
             .init_asset_loader::<ZombieLevelAssetLoader>()
 
-            .add_state(GameState::PlayingZombie)
-            .add_state(ZombieGameState::Starting);
+            .add_state(GameState::Menu);
     }
 }
 
@@ -247,16 +255,11 @@ pub fn setup_zombie_game(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     requested_level: Res<LevelMapRequested>
-    //mut zombie_game: ResMut<ZombieGame>,
 ) {
     let handle: Handle<ZombieLevelAsset> = asset_server.load(requested_level.level.as_str());
     state.handle = handle;
     state.loaded = false;
 
-    commands.insert_resource(ZombieSpawnerConfig {
-        timer: Timer::new(Duration::from_secs(5), true),
-        nums_ndg: (-50..50).map(|x| x as f32).collect(),
-    });
 }
 
 pub fn system_zombie_handle(
@@ -387,19 +390,17 @@ pub fn system_zombie_game(
     level_asset_state: Res<ZombieLevelAssetState>,
     custom_assets: ResMut<Assets<ZombieLevelAsset>>,
     weapon_state: Res<WeaponAssetState>,
+    map_state: Res<MapDataState>,
 
     mut zombie_game: ResMut<ZombieGame>,
 
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-
-    //mut query: Query<&mut Text>,
     zombie_query: Query<&Zombie>,
 
     time: Res<Time>,
     mut config: ResMut<ZombieSpawnerConfig>,
 
     mut ev_panel_event: EventWriter<ZombieGamePanelEvent>,
+    
 
     query_spawner: Query<&MapElementPosition, With<ZombieSpawner>>,
     query_window: Query<(&MapElementPosition, Entity), With<Window>>,
@@ -418,6 +419,10 @@ pub fn system_zombie_game(
                 return;
             }
             if weapon_state.loaded == false {
+                return;
+            }
+            if map_state.rendered == false {
+                println!("waiting for map");
                 return;
             }
             let data_asset = data_asset.unwrap();
@@ -612,4 +617,10 @@ pub fn system_panel_event(
         }
     }
 
+}
+
+pub fn system_unload_zombie_game(
+    mut zombie_game: ResMut<ZombieGame>,
+) {
+    zombie_game.state = 0;
 }

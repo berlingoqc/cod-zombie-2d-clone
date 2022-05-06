@@ -4,6 +4,9 @@ use bevy::prelude::*;
 use shared::{game::{Zombie, ZombieGame}, weapons::weapons::{AmmunitionState, Weapon, WeaponState, WeaponCurrentAction}, player::Player};
 
 #[derive(Component)]
+pub struct InGameUI;
+
+#[derive(Component)]
 pub struct RoundText;
 
 #[derive(Component)]
@@ -17,7 +20,7 @@ pub fn setup_ingame_ui(
     asset_server: Res<AssetServer>,
 ) {
     // Text bundle for the round info 
-	  commands.spawn_bundle(TextBundle {
+	  commands.spawn().insert(InGameUI{}).insert_bundle(TextBundle {
         text: Text {
             sections: vec![
                 TextSection {
@@ -44,7 +47,7 @@ pub fn setup_ingame_ui(
 
     // Text bundle for the ammunition
 
-    commands.spawn_bundle(NodeBundle {
+    commands.spawn().insert(InGameUI{}).insert_bundle(NodeBundle {
          style: Style {
                 align_self: AlignSelf::FlexEnd,
                 position_type: PositionType::Absolute,
@@ -97,7 +100,6 @@ pub fn system_ingame_ui(
     zombie_game: Res<ZombieGame>,
     zombie_query: Query<&Zombie>,
     mut query_round: Query<&mut Text, With<RoundText>>,
-    asset_server: Res<AssetServer>,
 ) {
     let mut nbr_zombie = 0;
     for _ in zombie_query.iter() {
@@ -113,7 +115,6 @@ pub fn system_ingame_ui(
 }
 
 pub fn system_weapon_ui(
-	zombie_game: Res<ZombieGame>,
 	query_player_weapon: Query<(&AmmunitionState, &Weapon, &WeaponState)>,
     mut query_ammo_text: Query<&mut Text, With<WeaponText>>,
 
@@ -131,5 +132,14 @@ pub fn system_weapon_ui(
             let mut weapon_image = query_weapon_image.single_mut();
             weapon_image.0 = asset_server.load(weapon.asset_name.as_str());
         }
+    }
+}
+
+pub fn system_clear_ingame_ui(
+    mut commands: Commands,
+    q_ingame_ui: Query<Entity, With<InGameUI>>
+) {
+    for entity in q_ingame_ui.iter() {
+        commands.entity(entity).despawn_recursive();
     }
 }

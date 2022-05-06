@@ -1,6 +1,6 @@
 mod loader;
-mod render;
 mod tiled_map;
+pub mod render;
 
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
@@ -12,7 +12,7 @@ use tiled_map::{
 
 use serde::Deserialize;
 
-use crate::{collider::*, health::Health, player::PlayerInteraction};
+use crate::{collider::*, health::Health, player::PlayerInteraction, game::GameState};
 use loader::*;
 use render::*;
 
@@ -26,11 +26,18 @@ impl Plugin for MapPlugin {
             .init_resource::<MapDataState>()
             .add_asset::<MapDataAsset>()
             .init_asset_loader::<MapDataAssetLoader>()
-            .add_startup_system(load_scene_system)
-            .add_system(react_event_scene)
-            .add_system(render_scene)
-            .add_system(set_texture_filters_to_nearest);
-    }
+
+            .add_system_set(
+                SystemSet::on_enter(GameState::PlayingZombie)
+                    .with_system(load_scene_system)
+            )
+            .add_system_set(
+                SystemSet::on_update(GameState::PlayingZombie)
+                    .with_system(react_event_scene)
+                    .with_system(render_scene)
+                    .with_system(set_texture_filters_to_nearest)
+            );
+   }
 }
 
 
