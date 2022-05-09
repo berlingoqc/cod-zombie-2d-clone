@@ -56,10 +56,15 @@ pub enum PlayerInteractionType {
 
 #[derive(Default, Component)]
 pub struct PlayerInteraction {
+    pub interaction_available: bool,
+    // the type of interaction , use to find the right handler for the action
     pub interaction_type: PlayerInteractionType,
+    // the size of the zone where the player can trigger the animatin arround
+    // the position of the interaction entity
+    pub interaction_size: Vec2,
+    // timeout before the interaction can be trigger again
     pub interaction_timeout: f32
 }
-
 
 #[derive(Default, Component)]
 pub struct LookingAt(pub Vec2);
@@ -221,7 +226,6 @@ pub fn movement_projectile(
 }
 
 pub fn system_interaction_player(
-    mut commands: Commands,
     mut query_player: Query<(&Transform, &mut PlayerCurrentInteraction), With<Player>>,
     time: Res<Time>,
     interaction_query: Query<
@@ -240,8 +244,8 @@ pub fn system_interaction_player(
 
     for (player_transform, mut interaction) in query_player.iter_mut() {
         for (entity, transform, info, player_interaction) in interaction_query.iter() {
-            let collision = collide(player_transform.translation, Vec2::new(25., 25.), info.position.extend(10.), info.size * 2.);
-            if collision.is_some() {
+            let collision = collide(player_transform.translation, Vec2::new(25., 25.), info.position.extend(10.),  player_interaction.interaction_size);
+            if collision.is_some() && player_interaction.interaction_available {
                 // notify use that key perform action
                 interaction.interaction = true;
                 interaction.entity = entity.clone();
@@ -324,10 +328,7 @@ pub fn system_interaction_player(
 }
 
 pub fn input_player(
-    mut commands: Commands,
-    time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
-    buttons: Res<Input<MouseButton>>,
     mut query: Query<(&mut Transform, &mut Player, &mut CharacterMovementState, &mut LookingAt)>,
     collider_query: Query<
         (Entity, &Transform, &MapElementPosition),

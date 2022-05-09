@@ -143,7 +143,9 @@ impl WindowBundle {
             info,
             window: Window {},
             interaction: PlayerInteraction {
+                interaction_available: true,
                 interaction_type: crate::player::PlayerInteractionType::RepairWindow,
+                interaction_size: Vec2::new(150., 150.),
                 interaction_timeout: 1.2
             }
         }

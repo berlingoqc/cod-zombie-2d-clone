@@ -70,6 +70,7 @@ fn main() {
             SystemSet::on_update(GameState::PlayingZombie)
                 .with_system(ingameui::system_ingame_ui)
                 .with_system(ingameui::system_weapon_ui)
+                .with_system(player::system_player_added)
                 .with_system(system_zombie_handle)
                 .with_system(system_zombie_game)
                 .with_system(apply_velocity)

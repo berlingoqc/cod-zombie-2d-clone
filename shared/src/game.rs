@@ -297,14 +297,14 @@ pub fn system_zombie_handle(
                     pos.translation.y = el.1 as f32;
                 } else {
 
-                    let d = query_windows.get(Entity::from_raw(dest.entity));
+                    let d = query_windows.get_mut(Entity::from_raw(dest.entity));
 
                     if d.is_err() {
                         // windows no longer exists , find again
                         continue;
                     }
 
-                    let (window, entity, children): (&Window, Entity, &Children) = d.unwrap();
+                    let (window, entity, children) = d.unwrap();
 
                     let mut attack = false;
                     let mut remaining = 0;
@@ -322,6 +322,7 @@ pub fn system_zombie_handle(
                                     sprite.custom_size = Some(Vec2::new(0., 0.));
 
                                     weapon_state.fired_at = current_time;
+
                                 } else {
                                     remaining += 1;
                                 }
