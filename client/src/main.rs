@@ -10,7 +10,7 @@ mod player;
 mod character_animation;
 
 use bevy::{
-    core::FixedTimestep, prelude::*, window::WindowDescriptor
+    core::FixedTimestep, prelude::*, window::WindowDescriptor, ecs::schedule::ShouldRun
 };
 
 use shared::{
@@ -68,6 +68,15 @@ fn main() {
         )
         .add_system_set(
             SystemSet::on_update(GameState::PlayingZombie)
+                .with_run_criteria(FixedTimestep::step(TIME_STEP as f64).chain(
+                        (|In(input): In<ShouldRun>, state: Res<State<GameState>>| {
+                            if state.current() == &GameState::PlayingZombie {
+                                input
+                            } else {
+                                ShouldRun::No
+                            }
+                        })
+                ))
                 .with_system(ingameui::system_ingame_ui)
                 .with_system(ingameui::system_weapon_ui)
                 .with_system(player::system_player_added)
