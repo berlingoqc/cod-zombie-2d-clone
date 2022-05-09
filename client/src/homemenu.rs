@@ -20,23 +20,22 @@ pub enum ButtonActions {
 #[derive(Component, Default)]
 pub struct ActionButtonComponent(ButtonActions);
 
-pub fn setup_home_menu(
-    mut commands: Commands, asset_server: Res<AssetServer>
+
+fn add_button(
+    action: ActionButtonComponent,
+    text: &str,
+    parent: &mut ChildBuilder,
+    asset_server: &Res<AssetServer>,
 ) {
-    commands
-        .spawn()
-        .insert(ActionButtonComponent(ButtonActions::StartLocalGame))
+    parent.spawn()
         .insert(MenuComponent{})
+        .insert(action)
         .insert_bundle(ButtonBundle {
             style: Style {
                 size: Size::new(Val::Px(400.0), Val::Px(65.0)),
-                // center button
-                margin: Rect::all(Val::Auto),
-                // horizontally center child text
                 justify_content: JustifyContent::Center,
-                // vertically center child text
                 align_items: AlignItems::Center,
-                ..default()
+               ..default()
             },
             color: Color::rgb(0.15,0.15,0.15).into(),
             ..default()
@@ -44,7 +43,7 @@ pub fn setup_home_menu(
         .with_children(|parent| {
             parent.spawn_bundle(TextBundle {
                 text: Text::with_section(
-                    "Start a single player game",
+                    text,
                     TextStyle {
                         font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                         font_size: 40.0,
@@ -54,6 +53,38 @@ pub fn setup_home_menu(
                 ),
                 ..default()
             });
+        });
+}
+
+pub fn setup_home_menu(
+    mut commands: Commands, asset_server: Res<AssetServer>
+) {
+    commands
+        .spawn()
+        .insert(MenuComponent{})
+        .insert_bundle(NodeBundle{
+            style: Style {
+                // center button
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                margin: Rect::all(Val::Auto),
+               ..default()
+            },
+            ..default()
+        })
+        .with_children(|parent| {
+            parent
+                .spawn()
+                .insert_bundle(NodeBundle {
+                    style: Style {
+                        flex_direction: FlexDirection::Column,
+                        ..default()
+                    },
+                    ..default()
+                }).with_children(|parent| {
+                    add_button(ActionButtonComponent(ButtonActions::QuitApplication), "Close", parent, &asset_server);
+                    add_button(ActionButtonComponent(ButtonActions::StartLocalGame), "Start single player game", parent, &asset_server);
+                });
         });
 }
 

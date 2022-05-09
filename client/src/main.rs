@@ -1,5 +1,5 @@
 #![feature(stmt_expr_attributes)]
-
+#![feature(derive_default_enum)]
 
 mod config;
 mod plugins;
