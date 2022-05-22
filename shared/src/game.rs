@@ -17,6 +17,18 @@ use serde::{Deserialize, Serialize};
 
 use pathfinding::prelude::astar;
 
+#[derive(Component)]
+pub struct GameSpeed(pub f32);
+
+impl Default for GameSpeed {
+    fn default() -> Self {
+        #[cfg(target_arch = "wasm32")]
+        return GameSpeed(1.0 / 30.0);
+        #[cfg(not(target_arch = "wasm32"))]
+        return GameSpeed(1.0 / 60.0);
+    }
+}
+
 #[derive(Default)]
 pub struct Game {
     pub player: Player,
@@ -234,6 +246,7 @@ impl Plugin for ZombieGamePlugin {
             .add_plugin(WeaponAssetPlugin{})
             .add_event::<ZombieGameStateChangeEvent>()
             .add_event::<ZombieGamePanelEvent>()
+            .init_resource::<GameSpeed>()
             .init_resource::<Game>()
             .init_resource::<ZombieGame>()
             .init_resource::<ZombieLevelAssetState>()
@@ -339,6 +352,7 @@ pub fn system_zombie_handle(
             }
             ZombieState::FollowingPlayer | ZombieState::FindingEnterace => {
                 if let Some(el) = dest.path.pop() {
+                    // They should have movement speed instead of using the point as next location
                     pos.translation.x = el.0 as f32;
                     pos.translation.y = el.1 as f32;
                 }

@@ -1,17 +1,12 @@
-use bevy::{prelude::*, sprite::collide_aabb::collide, reflect::TypeUuid, asset::{LoadContext, AssetLoader, BoxedFuture, LoadedAsset}};
-use serde::Deserialize;
+use bevy::{prelude::*, sprite::collide_aabb::collide};
 
 use crate::{
     collider::{MovementCollider, ProjectileCollider},
-    game::{Zombie, ZombieGame, GameState},
+    game::{Zombie, ZombieGame, GameState, GameSpeed},
     map::{MapElementPosition, WindowPanel, Window, Size},
-    weapons::{weapons::{Projectile, Weapon, WeaponState, WeaponBundle, AmmunitionState, WeaponCurrentAction}, loader::WeaponAssetState}, health::Health, animation::{SpriteSheetAnimationsConfiguration, SpriteSheetConfiguration}, utils::get_cursor_location
+    health::Health,
+    utils::get_cursor_location, weapons::{weapons::{WeaponBundle, Projectile}, loader::WeaponAssetState}
 };
-
-
-const TIME_STEP: f32 = 1.0 / 60.0;
-
-
 
 
 #[derive(Default, Component)]
@@ -86,6 +81,7 @@ pub struct PlayerBundle {
     pub interaction: PlayerCurrentInteraction,
     pub looking_direction: LookingAt,
     pub animation_timer: AnimationTimer,
+    //pub velocity: Velocity,
     pub character_movement_state: CharacterMovementState,
 }
 
@@ -103,6 +99,7 @@ impl PlayerBundle {
                 },
                 ..default()
             },
+            // velocity: Velocity { v: Vec2::new(0.,0.)},
             character_movement_state: CharacterMovementState { state: String::from("walking"), sub_state: "".to_string() },
             looking_direction: LookingAt(Vec2::new(0., 0.)),
             animation_timer: AnimationTimer{ 
@@ -174,10 +171,12 @@ pub struct MainCamera;
 pub fn apply_velocity(
     mut commands: Commands,
     mut query: Query<(&mut Transform, &Velocity, Entity)>,
+
+    game_speed: Res<GameSpeed>
 ) {
     for (mut transform, velocity, entity) in query.iter_mut() {
-        let x_vel = velocity.v.x * TIME_STEP;
-        let y_vel = velocity.v.y * TIME_STEP;
+        let x_vel = velocity.v.x * game_speed.0;
+        let y_vel = velocity.v.y * game_speed.0;
         if x_vel == 0. && y_vel == 0. {
             commands.entity(entity).despawn();
             continue;
@@ -341,6 +340,8 @@ pub fn input_player(
     wnds: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
 
+    game_speed: Res<GameSpeed>,
+
     mut game_state: ResMut<State<GameState>>
 ) {
 
@@ -382,7 +383,7 @@ pub fn input_player(
 
         character_movement_state.state = "walking".to_string();
 
-        let dest = player_transform.translation + (movement * 3.);
+        let dest = player_transform.translation + (movement * game_speed.0 * 125.);
 
         let mut save_move = true;
         for (_, transform, info) in collider_query.iter() {
