@@ -12,7 +12,7 @@ use tiled_map::{
 
 use serde::Deserialize;
 
-use crate::{collider::*, health::Health, player::PlayerInteraction, game::GameState};
+use crate::{collider::*, health::Health, game::GameState, player::interaction::{PlayerInteraction, PlayerInteractionType}};
 use loader::*;
 use render::*;
 
@@ -144,7 +144,7 @@ impl WindowBundle {
             window: Window {},
             interaction: PlayerInteraction {
                 interaction_available: true,
-                interaction_type: crate::player::PlayerInteractionType::RepairWindow,
+                interaction_type: PlayerInteractionType::RepairWindow,
                 interaction_size: Vec2::new(150., 150.),
                 interaction_timeout: 1.2
             }

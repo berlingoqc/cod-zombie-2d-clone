@@ -3137,19 +3137,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "server"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy_networking_turbulence",
- "pathfinding",
- "rand 0.8.5",
- "serde",
- "shared",
- "turbulence",
-]
-
-[[package]]
 name = "sha1"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

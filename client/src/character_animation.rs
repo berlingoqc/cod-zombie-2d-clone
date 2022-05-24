@@ -2,8 +2,9 @@
 use bevy::{prelude::*, reflect::TypeUuid, asset::{LoadContext, AssetLoader, BoxedFuture, LoadedAsset}, utils::HashMap};
 use serde::Deserialize;
 
-use shared::{animation::{SpriteSheetAnimationsConfiguration, SpriteSheetConfiguration}, game::Zombie};
-use shared::{player::{MainCamera, Player, LookingAt, AnimationTimer, CharacterMovementState}, utils::get_cursor_location, weapons::{weapons::WeaponState, loader::WeaponAssetState}};
+use shared::{
+    animation::{SpriteSheetAnimationsConfiguration, SpriteSheetConfiguration, AnimationTimer}, character::{CharacterMovementState, LookingAt},
+};
 
 #[derive(Deserialize, TypeUuid, Default, Component, Clone)]
 #[uuid = "39cadc56-aa9c-4543-8640-a018b74b5011"]

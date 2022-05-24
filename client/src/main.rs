@@ -15,18 +15,21 @@ use bevy::{
 
 use shared::{
     game::{
-        react_level_data, setup_zombie_game, system_zombie_game, system_zombie_handle,
+        react_level_data, setup_zombie_game, system_zombie_game,
         GameState, ZombieGamePlugin, LevelMapRequested, system_unload_zombie_game,
     },
-    player::{
-        apply_velocity, input_player, movement_projectile, system_interaction_player, system_unload_players
-    }, weapons::weapons::{handle_weapon_input}, map::render::system_unload_map,
+    zombies::zombie::system_zombie_handle,
+    player::{input_player, interaction::system_interaction_player, system_unload_players
+    }, weapons::{weapons::{handle_weapon_input}, ammunition::{apply_velocity, movement_projectile}}, map::render::system_unload_map,
 };
 use shared::map::MapPlugin;
 use crate::{
-    plugins::frame_cnt::FPSPlugin,
+    plugins::{
+        frame_cnt::FPSPlugin,
+        web::WebPlugin,
+    },
     character_animation::CharacterAnimationPlugin,
-    homemenu::HomeMenuPlugin, ingameui::system_clear_ingame_ui
+    homemenu::HomeMenuPlugin, ingameui::system_clear_ingame_ui, player::system_player_added
 };
 use bevy_kira_audio::AudioPlugin;
 
@@ -79,7 +82,7 @@ fn main() {
                 ))
                 .with_system(ingameui::system_ingame_ui)
                 .with_system(ingameui::system_weapon_ui)
-                .with_system(player::system_player_added)
+                .with_system(system_player_added)
                 .with_system(system_zombie_handle)
                 .with_system(system_zombie_game)
                 .with_system(apply_velocity)
@@ -105,31 +108,8 @@ fn main() {
       app.add_plugin(FPSPlugin{});
     }
 
-    #[cfg(target_arch = "wasm32")]
-    app.add_system(update_window_size);
+    app.add_plugin(WebPlugin{});
 
     app.run();
 }
 
-
-#[cfg(target_arch = "wasm32")]
-fn update_window_size(mut windows: ResMut<Windows>) {
-    //See: https://github.com/rust-windowing/winit/issues/1491
-    // TODO: use window resize event instead of polling
-    use approx::relative_eq;
-    let web_window = web_sys::window().unwrap();
-    let width = web_window.inner_width().unwrap().as_f64().unwrap() as f32;
-    let height = web_window.inner_height().unwrap().as_f64().unwrap() as f32;
-
-    let window = windows.get_primary_mut().unwrap();
-    if relative_eq!(width, window.width()) && relative_eq!(height, window.height()) {
-        return;
-    }
-
-    info!(
-        "resizing canvas {:?}, old size {:?}",
-        (width, height),
-        (window.width(), window.height())
-    );
-    window.set_resolution(width, height);
-}

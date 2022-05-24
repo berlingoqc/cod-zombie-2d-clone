@@ -1,14 +1,19 @@
 use std::time::Duration;
 
-use crate::health::Health;
-use crate::map::{WindowPanel, Window, WindowPanelBundle};
-use crate::player::{setup_players, PlayerInteraction, AnimationTimer, LookingAt, CharacterMovementState };
+use crate::map::{Window, WindowPanelBundle};
+use crate::player::{
+    setup_players,
+    interaction::PlayerInteraction
+};
 use crate::weapons::loader::{WeaponAssetPlugin, WeaponAssetState};
-use crate::weapons::weapons::{WeaponState, WeaponCurrentAction, Weapon};
+use crate::weapons::weapons::Weapon;
 
-use super::collider::{MovementCollider, ProjectileCollider};
 use super::map::{MapElementPosition,  ZombieSpawner, render::MapDataState};
 use super::player::Player;
+use super::zombies::spawner::*;
+use super::zombies::zombie::*;
+
+
 use bevy::asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset};
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
@@ -53,30 +58,22 @@ pub enum ZombieGameState {
     Over,
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
-pub enum ZombieState {
-    AwakingFromTheDead,
-    FindingEnterace,
-    FollowingPlayer,
-}
 
 
-
-
-#[derive(Default, Deserialize, Clone)]
+#[derive(Default, Deserialize, Clone, Debug)]
 pub struct MapRoundConfiguration {
     pub starting_zombie: i32,
     pub round_increments: i32,
     pub initial_timeout: u64,
 }
 
-#[derive(Default, Deserialize, Clone)]
+#[derive(Default, Deserialize, Clone, Debug)]
 pub struct StartingWeapons {
     pub starting_weapon: String,
     pub starting_alternate_weapon: Option<String>,
 }
 
-#[derive(Default, Deserialize, Clone)]
+#[derive(Default, Deserialize, Clone, Debug)]
 pub struct WindowPanelConfiguration {
     pub interaction_timeout: f32,
     pub spacing: f32,
@@ -94,7 +91,7 @@ pub struct ZombieLevelAsset {
 }
 
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct CurrentRoundInfo {
     pub total_zombie: i32,
     pub zombie_remaining: i32,
@@ -108,12 +105,13 @@ pub struct EntityId(pub u32);
 pub struct ZombiePlayer {}
 
 
+#[derive(Debug)]
 pub struct ZombiePlayerInformation {
     pub handle: u32,
     pub entity: u32
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct ZombieGame {
     pub round: i32,
     pub state: i32, //ZombieGameState,
@@ -129,36 +127,6 @@ pub struct ZombieGame {
 
 pub struct ZombieGameStateChangeEvent {}
 pub struct ZombieGamePanelEvent {}
-
-#[derive(Component)]
-pub struct Zombie {
-    pub state: ZombieState,
-}
-
-#[derive(Component, Default)]
-pub struct BotDestination {
-    pub destination: MapElementPosition,
-    pub path: Vec<(i32, i32)>,
-    pub entity: u32
-}
-
-#[derive(Bundle)]
-pub struct ZombieBundle {
-    #[bundle]
-    sprite_bundle: SpriteSheetBundle,
-    collider: MovementCollider,
-    destination: BotDestination,
-    projectile_collider: ProjectileCollider,
-    info: MapElementPosition,
-    zombie: Zombie,
-    weapon_state: WeaponState,
-    animation_timer: AnimationTimer,
-    looking_at: LookingAt,
-    chracter_movement_state: CharacterMovementState,
-}
-
-
-
 #[derive(Default)]
 pub struct ZombieLevelAssetState {
     pub handle: Handle<ZombieLevelAsset>,
@@ -185,57 +153,10 @@ impl AssetLoader for ZombieLevelAssetLoader {
         &["level.ron"]
     }
 }
-
-impl ZombieBundle {
-    pub fn new(info: MapElementPosition, dest: BotDestination) -> ZombieBundle {
-        ZombieBundle {
-            sprite_bundle: SpriteSheetBundle {
-               transform: Transform {
-                    translation: info.position.extend(10.0),
-                    scale: Vec3::new(0., 0., 0.),
-                    ..Transform::default()
-                },
-                ..default()
-            },
-            collider: MovementCollider {},
-            projectile_collider: ProjectileCollider {},
-            zombie: Zombie {
-                state: ZombieState::AwakingFromTheDead,
-            },
-            chracter_movement_state: CharacterMovementState { state: "rising".to_string(), sub_state: "".to_string() },
-            animation_timer: AnimationTimer {
-                timer: Timer::from_seconds(0.1, true),
-                index: 0,
-                offset: 0,
-                current_state: "".to_string(),
-                asset_type: "zombie".to_string(),
-            },
-            looking_at: LookingAt(dest.destination.position),
-            info,
-            destination: dest,
-            weapon_state: WeaponState { fired_at: 0., state: WeaponCurrentAction::Firing }
-        }
-    }
-}
-
 #[derive(Default)]
 pub struct LevelMapRequested {
     pub map: String,
     pub level: String
-}
-
-pub struct ZombieSpawnerConfig {
-    pub timer: Timer,
-    pub nums_ndg: Vec<f32>,
-}
-
-impl FromWorld for ZombieSpawnerConfig {
-    fn from_world(world: &mut World) -> Self {
-        ZombieSpawnerConfig{
-            timer: Timer::new(Duration::from_secs(5), true),
-            nums_ndg: (-50..50).map(|x| x as f32).collect()
-        }
-    }
 }
 
 pub struct ZombieGamePlugin {}
@@ -265,7 +186,7 @@ impl Plugin for ZombieGamePlugin {
 // make on client and server side ....
 pub fn setup_zombie_game(
     mut state: ResMut<ZombieLevelAssetState>,
-    mut commands: Commands,
+    //mut commands: Commands,
     asset_server: Res<AssetServer>,
     requested_level: Res<LevelMapRequested>
 ) {
@@ -274,131 +195,6 @@ pub fn setup_zombie_game(
     state.loaded = false;
 
 }
-
-pub fn system_zombie_handle(
-    mut commands: Commands,
-    query_player: Query<&Transform, (With<Player>, Without<Zombie>)>,
-    mut config: ResMut<ZombieSpawnerConfig>,
-    mut query_zombies: Query<(&mut Transform, &mut BotDestination, &mut Zombie, &mut WeaponState, &mut LookingAt, &mut CharacterMovementState), With<Zombie>>,
-    mut query_windows: Query<(&Window, Entity, &Children)>,
-    mut query_panel: Query<(&WindowPanel, &mut Sprite, &mut Health)>,
-
-    time: Res<Time>
-) {
-    let player = query_player.get_single();
-    if player.is_err() {
-        return;
-    }
-    let player = player.unwrap();
-    for (mut pos, mut dest, mut zombie, mut weapon_state, mut looking_at, mut movement_state) in query_zombies.iter_mut() {
-        match zombie.state {
-            ZombieState::AwakingFromTheDead => {
-                if pos.scale.x < 1.0 {
-                    let mut rng = rand::thread_rng();
-                    config.nums_ndg.shuffle(&mut rng);
-                    pos.scale += Vec3::new(0.01, 0.01, 0.01);
-                    //pos.rotation = Quat::from_rotation_z(config.nums_ndg[75] / 10.);
-                } else {
-                    pos.rotation = Quat::from_rotation_z(0.);
-                    zombie.state = ZombieState::FindingEnterace;
-                    movement_state.state = "walking".to_string();
-                }
-            }
-            ZombieState::FindingEnterace => {
-                if let Some(el) = dest.path.pop() {
-                    pos.translation.x = el.0 as f32;
-                    pos.translation.y = el.1 as f32;
-                } else {
-
-                    let d = query_windows.get_mut(Entity::from_raw(dest.entity));
-
-                    if d.is_err() {
-                        // windows no longer exists , find again
-                        continue;
-                    }
-
-                    let (window, entity, children) = d.unwrap();
-
-                    let mut attack = false;
-                    let mut remaining = 0;
-                    for &panel_entity in children.iter() {
-                        let (pannel, mut sprite, mut health) = query_panel.get_mut(panel_entity).unwrap();
-                        if health.current_health > 0. {
-                            if !attack {
-                                let current_time = time.time_since_startup().as_secs_f32();
-                                // TODO : NOT HARDCODE
-                                if !(current_time < weapon_state.fired_at + 1.) {
-
-                                    health.current_health = 0.;
-                                    attack = true;
-
-                                    sprite.custom_size = Some(Vec2::new(0., 0.));
-
-                                    weapon_state.fired_at = current_time;
-
-                                } else {
-                                    remaining += 1;
-                                }
-                            } else {
-                                remaining += 1;
-                            }
-                        }
-                    }
-
-                    if remaining == 0 {
-                        zombie.state = ZombieState::FollowingPlayer;
-                    }
-                }
-            }
-            ZombieState::FollowingPlayer | ZombieState::FindingEnterace => {
-                if let Some(el) = dest.path.pop() {
-                    // They should have movement speed instead of using the point as next location
-                    pos.translation.x = el.0 as f32;
-                    pos.translation.y = el.1 as f32;
-                }
-
-                if dest.path.len() == 0 {
-                    // change target for the user
-                    let goal = (player.translation.x as i32, player.translation.y as i32);
-                    looking_at.0 = player.translation.truncate();
-                    let mut result = astar(
-                        &(pos.translation.x as i32, pos.translation.y as i32),
-                        |&(x, y)| {
-                            vec![
-                                (x + 1, y + 2),
-                                (x + 1, y - 2),
-                                (x - 1, y + 2),
-                                (x - 1, y - 2),
-                                (x + 2, y + 1),
-                                (x + 2, y - 1),
-                                (x - 2, y + 1),
-                                (x - 2, y - 1),
-                            ]
-                            .into_iter()
-                            .map(|p| (p, 1))
-                        },
-                        |&(x, y)| (goal.0.abs_diff(x) + goal.1.abs_diff(y)) / 3,
-                        |&p| p == goal,
-                    )
-                    .unwrap()
-                    .0;
-
-                    result.reverse();
-                    let len = result.len() as f32;
-                    dest.path = if len >= 10. {
-                        let len_taken = (len * 0.25).ceil() as usize;
-                        let start = result.len() - 1 - len_taken;
-                        let end = result.len() - 1;
-                        result[start..end].to_vec()
-                    } else {
-                        result
-                    };
-                }
-            }
-        }
-    }
-}
-
 pub fn system_zombie_game(
     mut commands: Commands,
 
@@ -451,9 +247,11 @@ pub fn system_zombie_game(
                 zombie_remaining: zombie_game.configuration.starting_zombie,
             };
             config.timer = Timer::new(
-                Duration::from_secs(zombie_game.configuration.initial_timeout),
+                Duration::from_millis(zombie_game.configuration.initial_timeout),
                 true,
             );
+
+            info!("{:?}", zombie_game);
 
             // creating event
             ev_panel_event.send(ZombieGamePanelEvent{});
@@ -542,6 +340,8 @@ pub fn system_zombie_game(
                         ));
 
                         zombie_game.current_round.zombie_remaining -= 1;
+
+                        info!("Spawning zombie , {} remaining", zombie_game.current_round.zombie_remaining);
                     }
                 }
             }
@@ -555,6 +355,7 @@ pub fn system_zombie_game(
                 total_zombie: zombie_count,
             };
             zombie_game.state = ZombieGameState::Round as i32;
+            config.timer.reset();
         }
         ZombieGameState::Over => {}
     }

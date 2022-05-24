@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use serde::Deserialize;
 
+
 #[derive(Component, Reflect, Default, Deserialize, Clone)]
 #[reflect(Component)]
 pub struct MovementCollider {}

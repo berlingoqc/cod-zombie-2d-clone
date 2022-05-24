@@ -3,10 +3,12 @@ pub mod collider;
 pub mod game;
 pub mod map;
 pub mod player;
+pub mod zombies;
 pub mod weapons;
 pub mod utils;
 pub mod health;
 pub mod animation;
+pub mod character;
 
 use bevy::prelude::*;
 use bevy_networking_turbulence::{

@@ -3,7 +3,11 @@ use bevy::{
     prelude::*,
 };
 
-fn counter_system(diagnostics: Res<Diagnostics>, mut query: Query<&mut Text>) {
+
+#[derive(Component)]
+pub struct FPSTextComponent();
+
+fn counter_system(diagnostics: Res<Diagnostics>, mut query: Query<&mut Text, With<FPSTextComponent>>) {
     if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
         if let Some(average) = fps.average() {
             for mut text in query.iter_mut() {
@@ -14,7 +18,7 @@ fn counter_system(diagnostics: Res<Diagnostics>, mut query: Query<&mut Text>) {
 }
 
 fn setup_counter_text(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn_bundle(TextBundle {
+    commands.spawn().insert(FPSTextComponent{}).insert_bundle(TextBundle {
         text: Text {
             sections: vec![TextSection {
                 value: "\nAverage FPS: ".to_string(),

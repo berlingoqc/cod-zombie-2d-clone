@@ -2,7 +2,7 @@ ZombieLevelAsset(
     configuration: MapRoundConfiguration(
         starting_zombie: 5,
         round_increments: 5,
-        initial_timeout:  2,
+        initial_timeout:  3000,
     ),
     starting_weapons: (
         starting_weapon: "tec9",

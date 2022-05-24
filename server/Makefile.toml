@@ -1,3 +1,0 @@
-[tasks.run-dyn]
-command = "cargo"
-args = ["run", "--features", "bevy/dynamic", "--features", "bevy/filesystem_watcher"]

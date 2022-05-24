@@ -1,7 +1,11 @@
 
 
 use bevy::prelude::*;
-use shared::{game::{Zombie, ZombieGame}, weapons::weapons::{AmmunitionState, Weapon, WeaponState, WeaponCurrentAction}, player::Player};
+use shared::{
+    game::ZombieGame,
+    weapons::weapons::{AmmunitionState, Weapon, WeaponState, WeaponCurrentAction},
+    zombies::zombie::Zombie,
+};
 
 #[derive(Component)]
 pub struct InGameUI;

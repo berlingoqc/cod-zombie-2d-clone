@@ -1,12 +1,13 @@
 use bevy::{prelude::*, sprite::{SpriteBundle, Sprite}, math::Vec2};
 use serde::Deserialize;
-use std::time::Duration;
 
 use rand::prelude::SliceRandom;
 
-use crate::{utils::{get_cursor_location, vec2_perpendicular_counter_clockwise, vec2_perpendicular_clockwise}, collider::ProjectileCollider, player::{Velocity, ExpiringComponent, MainCamera, LookingAt, Player, CharacterMovementState, AnimationTimer}};
-
-use super::loader::WeaponsAsset;
+use crate::{
+    utils::{get_cursor_location, vec2_perpendicular_counter_clockwise, vec2_perpendicular_clockwise},
+    collider::ProjectileCollider,
+    animation::AnimationTimer, player::{MainCamera, Player}, character::{CharacterMovementState, Velocity}
+};
 
 
 fn default_firing_ammunition() -> u32 {
@@ -17,6 +18,12 @@ fn default_ammo_sprite_config() -> AmmunitionSpriteConfig {
     AmmunitionSpriteConfig { 
         size: Vec2::new(5., 5.)
     }
+}
+
+#[derive(Default, Component)]
+pub struct ExpiringComponent {
+    pub created_at: f32,
+    pub duration: f32,
 }
 
 

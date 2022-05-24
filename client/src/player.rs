@@ -1,7 +1,5 @@
-use std::f32::consts::FRAC_PI_2;
-
 use bevy::{prelude::*, text::Text2dBounds};
-use shared::{player::{MainCamera, Player, PlayerInteraction, PlayerCurrentInteraction}, utils::get_cursor_location, weapons::{weapons::WeaponState, loader::WeaponAssetState}};
+use shared::{player::{MainCamera, Player, interaction::PlayerCurrentInteraction}};
 
 
 #[derive(Default, Component)]
