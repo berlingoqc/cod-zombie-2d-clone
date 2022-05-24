@@ -44,6 +44,7 @@ impl Plugin for MapPlugin {
 
 #[derive(Component, Default)]
 pub struct Size(pub Vec2);
+
 #[derive(Bundle)]
 pub struct WallBundle {
     #[bundle]
@@ -73,7 +74,6 @@ pub struct WindowPanel {}
 pub struct WindowPanelBundle {
     #[bundle]
     sprite_bundle: SpriteBundle,
-    collider: MovementCollider,
     panel: WindowPanel,
     health: Health,
     size: Size,
@@ -139,7 +139,9 @@ impl WindowBundle {
                 },
                 ..SpriteBundle::default()
             },
-            collider: MovementCollider {},
+            collider: MovementCollider {
+                size: info.size,
+            },
             info,
             window: Window {},
             interaction: PlayerInteraction {
@@ -175,7 +177,9 @@ impl WindowPanelBundle {
                 },
                 ..SpriteBundle::default()
             },
-            collider: MovementCollider {  },
+            //collider: MovementCollider {
+            //    size: Vec2::new(0., 0.)
+            //},
             panel: WindowPanel {},
             size: Size(size),
             health: Health { current_health: health, max_health: health }
@@ -198,7 +202,9 @@ impl WallBundle {
                 },
                 ..SpriteBundle::default()
             },
-            collider: MovementCollider {},
+            collider: MovementCollider {
+                size: info.size,
+            },
             projectile_collider: ProjectileCollider {},
             info,
         }

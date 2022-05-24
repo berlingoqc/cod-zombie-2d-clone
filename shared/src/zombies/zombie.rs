@@ -1,19 +1,19 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, math::const_vec2};
 
 use crate::{
     map::{MapElementPosition, WindowPanel, Window},
-    collider::{MovementCollider, ProjectileCollider},
+    collider::{MovementCollider, ProjectileCollider, is_colliding},
     weapons::weapons::{WeaponState, WeaponCurrentAction},
-    player::Player,
+    player::{Player, MainCamera},
     health::Health, animation::AnimationTimer, character::{LookingAt, CharacterMovementState}
 };
 
 use rand::seq::SliceRandom;
 use pathfinding::prelude::astar;
 
-
 use super::spawner::ZombieSpawnerConfig;
 
+pub const ZOMBIE_SIZE: Vec2 = const_vec2!([25. , 25. ]);
 
 // bot destination is a component
 // to register and apply the target of a bot
@@ -74,7 +74,9 @@ impl ZombieBundle {
                 },
                 ..default()
             },
-            collider: MovementCollider {},
+            collider: MovementCollider {
+                size: ZOMBIE_SIZE,
+            },
             projectile_collider: ProjectileCollider {},
             zombie: Zombie {
                 state: ZombieState::AwakingFromTheDead,
@@ -95,6 +97,7 @@ impl ZombieBundle {
     }
 }
 
+
 pub fn system_zombie_handle(
     // mut commands: Commands,
     query_player: Query<&Transform, (With<Player>, Without<Zombie>)>,
@@ -102,6 +105,11 @@ pub fn system_zombie_handle(
     mut query_zombies: Query<(&mut Transform, &mut BotDestination, &mut Zombie, &mut WeaponState, &mut LookingAt, &mut CharacterMovementState), With<Zombie>>,
     mut query_windows: Query<(&Window, Entity, &Children)>,
     mut query_panel: Query<(&WindowPanel, &mut Sprite, &mut Health)>,
+
+    collider_query: Query<
+        (Entity, &Transform, &MovementCollider),
+        Without<Zombie>
+    >,
 
     time: Res<Time>
 ) {
@@ -126,8 +134,12 @@ pub fn system_zombie_handle(
             }
             ZombieState::FindingEnterace => {
                 if let Some(el) = dest.path.pop() {
-                    pos.translation.x = el.0 as f32;
-                    pos.translation.y = el.1 as f32;
+                    if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, &collider_query) {
+                        pos.translation.x = el.0 as f32;
+                        pos.translation.y = el.1 as f32;
+                    } else {
+                        continue;
+                    }
                 } else {
 
                     let d = query_windows.get_mut(Entity::from_raw(dest.entity));
@@ -170,10 +182,14 @@ pub fn system_zombie_handle(
                     }
                 }
             }
-            ZombieState::FollowingPlayer | ZombieState::FindingEnterace => {
+            ZombieState::FollowingPlayer => {
                 if let Some(el) = dest.path.pop() {
-                    pos.translation.x = el.0 as f32;
-                    pos.translation.y = el.1 as f32;
+                    if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, &collider_query) {
+                        pos.translation.x = el.0 as f32;
+                        pos.translation.y = el.1 as f32;
+                    } else {
+                        continue;
+                    }
                 }
 
                 if dest.path.len() == 0 {
@@ -210,7 +226,8 @@ pub fn system_zombie_handle(
                         let end = result.len() - 1;
                         result[start..end].to_vec()
                     } else {
-                        result
+                        let end = (len as usize) - 1;
+                        result[0..end].to_vec()
                     };
                 }
             }

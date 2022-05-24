@@ -1,15 +1,18 @@
 pub mod interaction;
 
-use bevy::{prelude::*, sprite::collide_aabb::collide};
+use bevy::{prelude::*, math::const_vec2};
 
 use crate::{
-    collider::{MovementCollider},
+    collider::{MovementCollider, is_colliding},
     game::{ZombieGame, GameState, GameSpeed},
     map::{MapElementPosition},
     utils::get_cursor_location, weapons::{weapons::{WeaponBundle}, loader::WeaponAssetState}, animation::AnimationTimer, character::{LookingAt, CharacterMovementState}
 };
 
 use self::interaction::{PlayerCurrentInteraction, PlayerInteractionType};
+
+
+pub const PLAYER_SIZE: Vec2 = const_vec2!([25., 25.]);
 
 #[derive(Component)]
 pub struct MainCamera;
@@ -27,6 +30,8 @@ pub struct PlayerBundle {
     pub interaction: PlayerCurrentInteraction,
     pub looking_direction: LookingAt,
     pub animation_timer: AnimationTimer,
+    pub map_element_position: MapElementPosition,
+    pub movement_collider: MovementCollider,
     //pub velocity: Velocity,
     pub character_movement_state: CharacterMovementState,
 }
@@ -45,6 +50,10 @@ impl PlayerBundle {
                 },
                 ..default()
             },
+            movement_collider: MovementCollider {
+                size: PLAYER_SIZE,
+            },
+            map_element_position: MapElementPosition { position: Vec2::new(0.0, 0.), size: Vec2::new(50., 50.), rotation: 0 },
             // velocity: Velocity { v: Vec2::new(0.,0.)},
             character_movement_state: CharacterMovementState { state: String::from("walking"), sub_state: "".to_string() },
             looking_direction: LookingAt(Vec2::new(0., 0.)),
@@ -103,12 +112,8 @@ pub fn input_player(
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<(&mut Transform, &mut Player, &mut CharacterMovementState, &mut LookingAt)>,
     collider_query: Query<
-        (Entity, &Transform, &MapElementPosition),
-        (
-            With<MovementCollider>,
-            With<MapElementPosition>,
-            Without<Player>,
-        ),
+        (Entity, &Transform, &MovementCollider),
+        Without<Player>,
     >,
     wnds: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
@@ -158,15 +163,7 @@ pub fn input_player(
 
         let dest = player_transform.translation + (movement * game_speed.0 * 125.);
 
-        let mut save_move = true;
-        for (_, transform, info) in collider_query.iter() {
-            let collision = collide(dest, Vec2::new(25., 25.), transform.translation, info.size);
-            if collision.is_some() {
-                save_move = false;
-            }
-        }
-
-        if save_move {
+        if !is_colliding(dest, PLAYER_SIZE, &collider_query) {
             player_transform.translation = dest;
         }
 
