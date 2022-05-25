@@ -11,18 +11,7 @@ Trying to make a cod-zombie 2d clone playable in multiplayer in the browser , mo
 Here is a list of my development entry , when i code or work on the project
 i tend to right summary to help me focusing.
 
-* [First day, just thinking](./logs/2022-04-13.md)
-* [Starting the project](./logs/2022-04-14.md)
-* [Trying to integrate a tiled library](./logs/2022-04-15.md)
-* [Implementing the base of the game](./logs/2022-04-18.md)
-* [Starting to look at the networking](./logs/2022-04-19.md)
-* [Regretting my life resplitting the code](./logs/2022-04-20.md)
-* [Setuping the base of the server project](./logs/2022-04-23.md)
-* [Implementing weapons](./logs/2022-04-25.md)
-* [More weapon and starting windows](./logs/2022-04-26.md)
-* [Cleaning in asset and better live reloading](./logs/2022-04-27.md)
-* [Character animation with sprite sheet](./logs/2022-04-28.md)
-* [Main menu and game stopping](./logs/2022-05-06.md)
+Its now on [my website](https://berlingoqc.github.io/public/cod-zombie-2d-clone/)
 
 ## Compile and run the game locally
 
