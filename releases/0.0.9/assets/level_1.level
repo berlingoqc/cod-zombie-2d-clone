@@ -1,0 +1,9 @@
+(
+    configuration: (
+        starting_zombie: 12,
+        round_increments: 5,
+        initial_timeout:  3
+    ),
+    level_path: "isometric-sheet.png"
+)
+
