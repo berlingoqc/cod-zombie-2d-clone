@@ -56,7 +56,7 @@ pub fn system_interaction_player(
 
     keyboard_input: Res<Input<KeyCode>>,
 
-    query_window: Query<(&Window, &Children)>,
+    mut query_window: Query<(&mut Window, &Children)>,
     mut query_panel: Query<(&mut WindowPanel, &Size, &mut Health, &mut Sprite)>
 ) {
 
@@ -104,6 +104,12 @@ pub fn system_interaction_player(
                                 sprite.custom_size = Some(size.0);
                                 health.current_health = 1.;
                                 interaction.interacting = false;
+
+                                if let Ok((mut window, _)) = query_window.get_mut(interaction.entity) {
+                                    if window.destroy {
+                                        window.destroy = false;
+                                    }
+                                }
                             } else {
                                 let (_,size, _ , mut sprite) = query_panel.get_mut(interaction.child_entity).unwrap();
                                 let time_diff = time_since_startup - (interaction.interaction_trigger_at + interaction.interaction_cooldown);

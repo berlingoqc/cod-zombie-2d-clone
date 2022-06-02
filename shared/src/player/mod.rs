@@ -52,6 +52,7 @@ impl PlayerBundle {
             },
             movement_collider: MovementCollider {
                 size: PLAYER_SIZE,
+                ..default()
             },
             map_element_position: MapElementPosition { position: Vec2::new(0.0, 0.), size: Vec2::new(50., 50.), rotation: 0 },
             // velocity: Velocity { v: Vec2::new(0.,0.)},
@@ -163,7 +164,7 @@ pub fn input_player(
 
         let dest = player_transform.translation + (movement * game_speed.0 * 125.);
 
-        if !is_colliding(dest, PLAYER_SIZE, &collider_query) {
+        if !is_colliding(dest, PLAYER_SIZE, "player",&collider_query) {
             player_transform.translation = dest;
         }
 

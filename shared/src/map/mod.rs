@@ -1,5 +1,6 @@
 mod loader;
 mod tiled_map;
+mod map_item_system;
 pub mod render;
 
 use bevy::prelude::*;
@@ -36,6 +37,7 @@ impl Plugin for MapPlugin {
                     .with_system(react_event_scene)
                     .with_system(render_scene)
                     .with_system(set_texture_filters_to_nearest)
+                    .with_system(map_item_system::system_window_panel_destroy)
             );
    }
 }
@@ -55,7 +57,9 @@ pub struct WallBundle {
 }
 
 #[derive(Component)]
-pub struct Window {}
+pub struct Window {
+    pub destroy: bool,
+}
 
 #[derive(Bundle)]
 pub struct WindowBundle {
@@ -75,6 +79,7 @@ pub struct WindowPanelBundle {
     #[bundle]
     sprite_bundle: SpriteBundle,
     panel: WindowPanel,
+    //collider: MovementCollider,
     health: Health,
     size: Size,
 }
@@ -141,9 +146,13 @@ impl WindowBundle {
             },
             collider: MovementCollider {
                 size: info.size,
+                //allowed_entity_type: vec!["zombie".to_string()],
+                ..default()
             },
             info,
-            window: Window {},
+            window: Window {
+                destroy: false,
+            },
             interaction: PlayerInteraction {
                 interaction_available: true,
                 interaction_type: PlayerInteractionType::RepairWindow,
@@ -178,7 +187,8 @@ impl WindowPanelBundle {
                 ..SpriteBundle::default()
             },
             //collider: MovementCollider {
-            //    size: Vec2::new(0., 0.)
+            //    size: Vec2::new(0., 0.),
+            //    ..default()
             //},
             panel: WindowPanel {},
             size: Size(size),
@@ -204,10 +214,10 @@ impl WallBundle {
             },
             collider: MovementCollider {
                 size: info.size,
+                ..default()
             },
             projectile_collider: ProjectileCollider {},
             info,
         }
     }
 }
-

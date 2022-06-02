@@ -76,6 +76,7 @@ impl ZombieBundle {
             },
             collider: MovementCollider {
                 size: ZOMBIE_SIZE,
+                ..default()
             },
             projectile_collider: ProjectileCollider {},
             zombie: Zombie {
@@ -103,7 +104,7 @@ pub fn system_zombie_handle(
     query_player: Query<&Transform, (With<Player>, Without<Zombie>)>,
     mut config: ResMut<ZombieSpawnerConfig>,
     mut query_zombies: Query<(&mut Transform, &mut BotDestination, &mut Zombie, &mut WeaponState, &mut LookingAt, &mut CharacterMovementState), With<Zombie>>,
-    mut query_windows: Query<(&Window, Entity, &Children)>,
+    mut query_windows: Query<(&mut Window, Entity, &Children)>,
     mut query_panel: Query<(&WindowPanel, &mut Sprite, &mut Health)>,
 
     collider_query: Query<
@@ -134,57 +135,53 @@ pub fn system_zombie_handle(
             }
             ZombieState::FindingEnterace => {
                 if let Some(el) = dest.path.pop() {
-                    if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, &collider_query) {
+                    if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, "zombie", &collider_query) {
                         pos.translation.x = el.0 as f32;
                         pos.translation.y = el.1 as f32;
                     } else {
                         continue;
                     }
                 } else {
+                    if let Ok((mut window, entity, children)) = query_windows.get_mut(Entity::from_raw(dest.entity)){
+                        let mut remaining = 0;
 
-                    let d = query_windows.get_mut(Entity::from_raw(dest.entity));
+                        if !window.destroy {
+                            let mut attack = false;
+                            for &panel_entity in children.iter() {
+                                let (pannel, mut sprite, mut health) = query_panel.get_mut(panel_entity).unwrap();
+                                if health.current_health > 0. {
+                                    if !attack {
+                                        let current_time = time.time_since_startup().as_secs_f32();
+                                        // TODO : NOT HARDCODE
+                                        if !(current_time < weapon_state.fired_at + 1.) {
 
-                    if d.is_err() {
-                        // windows no longer exists , find again
-                        continue;
-                    }
+                                            health.current_health = 0.;
+                                            attack = true;
 
-                    let (window, entity, children) = d.unwrap();
+                                            sprite.custom_size = Some(Vec2::new(0., 0.));
 
-                    let mut attack = false;
-                    let mut remaining = 0;
-                    for &panel_entity in children.iter() {
-                        let (pannel, mut sprite, mut health) = query_panel.get_mut(panel_entity).unwrap();
-                        if health.current_health > 0. {
-                            if !attack {
-                                let current_time = time.time_since_startup().as_secs_f32();
-                                // TODO : NOT HARDCODE
-                                if !(current_time < weapon_state.fired_at + 1.) {
+                                            weapon_state.fired_at = current_time;
 
-                                    health.current_health = 0.;
-                                    attack = true;
-
-                                    sprite.custom_size = Some(Vec2::new(0., 0.));
-
-                                    weapon_state.fired_at = current_time;
-
-                                } else {
-                                    remaining += 1;
+                                        } else {
+                                            remaining += 1;
+                                        }
+                                    } else {
+                                        remaining += 1;
+                                    }
                                 }
-                            } else {
-                                remaining += 1;
                             }
                         }
-                    }
 
-                    if remaining == 0 {
-                        zombie.state = ZombieState::FollowingPlayer;
+                        if remaining == 0 {
+                            window.destroy = true;
+                            zombie.state = ZombieState::FollowingPlayer;
+                        }
                     }
                 }
             }
             ZombieState::FollowingPlayer => {
                 if let Some(el) = dest.path.pop() {
-                    if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, &collider_query) {
+                    if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, "zombie", &collider_query) {
                         pos.translation.x = el.0 as f32;
                         pos.translation.y = el.1 as f32;
                     } else {
