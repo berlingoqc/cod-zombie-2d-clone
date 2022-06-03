@@ -46,7 +46,7 @@ pub struct Game {
 pub enum GameState {
     Menu,
     PlayingZombie,
-    //GameOver,
+    GameOver,
 }
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]

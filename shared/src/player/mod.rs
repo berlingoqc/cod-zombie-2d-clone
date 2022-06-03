@@ -6,7 +6,7 @@ use crate::{
     collider::{MovementCollider, is_colliding},
     game::{ZombieGame, GameState, GameSpeed},
     map::{MapElementPosition},
-    utils::get_cursor_location, weapons::{weapons::{WeaponBundle}, loader::WeaponAssetState}, animation::AnimationTimer, character::{LookingAt, CharacterMovementState}
+    utils::get_cursor_location, weapons::{weapons::{WeaponBundle}, loader::WeaponAssetState}, animation::AnimationTimer, character::{LookingAt, CharacterMovementState}, health::{Health, HealthChangeState, HealthRegeneration}
 };
 
 use self::interaction::{PlayerCurrentInteraction, PlayerInteractionType};
@@ -32,6 +32,8 @@ pub struct PlayerBundle {
     pub animation_timer: AnimationTimer,
     pub map_element_position: MapElementPosition,
     pub movement_collider: MovementCollider,
+    pub health: Health,
+    pub health_regeneration: HealthRegeneration,
     //pub velocity: Velocity,
     pub character_movement_state: CharacterMovementState,
 }
@@ -64,6 +66,12 @@ impl PlayerBundle {
                 offset: 0,
                 asset_type: "player".to_string(),
                 current_state: "".to_string(),
+            },
+            health: Health { current_health: 3., tmp_health: 3., max_health: 3., ..default() },
+            health_regeneration: HealthRegeneration{
+                timeout_regeneration: 2.,
+                regeneration_amount: 1.,
+                timer: None,
             },
             interaction: PlayerCurrentInteraction {
                 interaction: false,
@@ -168,6 +176,40 @@ pub fn input_player(
             player_transform.translation = dest;
         }
 
+    }
+}
+
+pub fn system_health_player(
+	mut q_player_health: Query<(Entity, &mut Health, &mut HealthRegeneration), (With<Player>)>,
+
+    mut game_state: ResMut<State<GameState>>,
+
+    mut commands: Commands,
+
+    time: Res<Time>
+
+) {
+    for (entity, mut health, mut regeneration) in q_player_health.iter_mut() {
+        match health.get_health_change_state() {
+            HealthChangeState::GainHealth => {
+                health.apply_change();
+                println!("Gaining health")
+            },
+            HealthChangeState::LostHealth => {
+                health.apply_change();
+                regeneration.on_health_change();
+                println!("Losing health")
+            },
+            HealthChangeState::Dead => {
+                println!("Your dead brah");
+                // TODO change to 
+                game_state.set(GameState::Menu).unwrap();
+                //commands.entity(entity).despawn();
+            },
+            _ => {
+                regeneration.apply_regeneration_if(time.delta(), &mut health)
+            },
+        }
     }
 }
 

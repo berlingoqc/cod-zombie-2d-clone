@@ -1,12 +1,51 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 
+
+#[derive(Component, Default)]
+pub struct HealthRegeneration {
+	pub timeout_regeneration: f32,
+	pub regeneration_amount: f32,
+	pub timer: Option<Timer>,
+}
+
+
+impl HealthRegeneration {
+
+	// call when the health is updated to calculate when i can regenerate
+	// start a new timer
+	pub fn on_health_change(&mut self) -> () {
+		self.timer = Some(Timer::from_seconds(self.timeout_regeneration, false));
+		println!("Regeneration timeout starting for {:?} seconds", self.timeout_regeneration);
+	}
+
+	// trigger each time to modify health if possible
+	// tick the timer
+	pub fn apply_regeneration_if(&mut self, delta: Duration, health: &mut Health) -> () {
+		if let Some(timer) = self.timer.as_mut() {
+			timer.tick(delta);
+			if timer.finished() {
+				println!("Regeneratting health");
+				health.tmp_health += self.regeneration_amount;
+				if health.tmp_health < health.max_health {
+					timer.reset();
+				} else {
+					self.timer = None;
+				}
+			}
+		};
+	}
+}
 
 #[derive(Component, Default)]
 pub struct Health {
 	pub current_health: f32,
 	pub tmp_health: f32,
-	pub max_health: f32
+	pub max_health: f32,
 }
+
+
 
 pub enum HealthChangeState {
 	GainHealth,
@@ -31,5 +70,9 @@ impl Health {
 			return HealthChangeState::GainHealth;
 		}
 		return HealthChangeState::LostHealth;
+	}
+
+	pub fn apply_change(&mut self) -> () {
+		self.current_health = self.tmp_health;
 	}
 }
