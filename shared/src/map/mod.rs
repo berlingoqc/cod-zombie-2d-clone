@@ -68,6 +68,7 @@ pub struct WindowBundle {
     info: MapElementPosition,
     collider: MovementCollider,
     window: Window,
+    health: Health,
     interaction: PlayerInteraction,
 }
 
@@ -79,8 +80,6 @@ pub struct WindowPanelBundle {
     #[bundle]
     sprite_bundle: SpriteBundle,
     panel: WindowPanel,
-    //collider: MovementCollider,
-    health: Health,
     size: Size,
 }
 
@@ -153,6 +152,7 @@ impl WindowBundle {
             window: Window {
                 destroy: false,
             },
+            health: Health { current_health: 0., max_health: 0., ..default() },
             interaction: PlayerInteraction {
                 interaction_available: true,
                 interaction_type: PlayerInteractionType::RepairWindow,
@@ -164,7 +164,7 @@ impl WindowBundle {
 }
 
 impl WindowPanelBundle {
-    pub fn new(parent: MapElementPosition, health: f32,  index: u32, offset: f32) -> WindowPanelBundle {
+    pub fn new(parent: MapElementPosition, index: u32, offset: f32) -> WindowPanelBundle {
         // need to find the direction vector of the window
         let (direction, size)  = if parent.size.x > parent.size.y { // horizontal
             (Vec2::new(1., 0.), Vec2::new(10., 20.))
@@ -186,13 +186,8 @@ impl WindowPanelBundle {
                 },
                 ..SpriteBundle::default()
             },
-            //collider: MovementCollider {
-            //    size: Vec2::new(0., 0.),
-            //    ..default()
-            //},
             panel: WindowPanel {},
             size: Size(size),
-            health: Health { current_health: health, max_health: health }
         }
     }
 }

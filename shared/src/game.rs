@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use crate::health::Health;
 use crate::map::{Window, WindowPanelBundle};
 use crate::player::{
     setup_players,
@@ -45,7 +46,7 @@ pub struct Game {
 pub enum GameState {
     Menu,
     PlayingZombie,
-    //GameOver,
+    GameOver,
 }
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
@@ -298,33 +299,11 @@ pub fn system_zombie_game(
                             }
                         }
 
-                        let goal = (
-                            closest_window.position.x as i32,
-                            closest_window.position.y as i32,
-                        );
-                        let mut result = astar(
-                            &(position.x as i32, position.y as i32),
-                            |&(x, y)| {
-                                vec![
-                                    (x + 1, y + 2),
-                                    (x + 1, y - 2),
-                                    (x - 1, y + 2),
-                                    (x - 1, y - 2),
-                                    (x + 2, y + 1),
-                                    (x + 2, y - 1),
-                                    (x - 2, y + 1),
-                                    (x - 2, y - 1),
-                                ]
-                                .into_iter()
-                                .map(|p| (p, 1))
-                            },
-                            |&(x, y)| (goal.0.abs_diff(x) + goal.1.abs_diff(y)) / 3,
-                            |&p| p == goal,
-                        )
-                        .unwrap()
-                        .0;
+                        let mut bot_destination = BotDestination{
+                            ..default()
+                        };
 
-                        result.reverse();
+                        bot_destination.set_destination(closest_window.position, position, closest_window_entity.id(), 0.);
 
                         commands.spawn().insert_bundle(ZombieBundle::new(
                             MapElementPosition {
@@ -332,11 +311,7 @@ pub fn system_zombie_game(
                                 size: Vec2::new(25., 25.),
                                 rotation: 0,
                             },
-                            BotDestination {
-                                destination: closest_window.clone(),
-                                entity: closest_window_entity.id(),
-                                path: result,
-                            },
+                            bot_destination,
                         ));
 
                         zombie_game.current_round.zombie_remaining -= 1;
@@ -417,19 +392,24 @@ pub fn system_panel_event(
 
     zombie_game: Res<ZombieGame>,
     
-    mut q_window: Query<(Entity, &mut PlayerInteraction, &MapElementPosition), With<Window>>,
+    mut q_window: Query<(Entity, &mut Health, &mut PlayerInteraction, &MapElementPosition), With<Window>>,
 ) {
 
+    let window_panel_health = 1.0;
+
     for _ in ev_change_state.iter() {
-        for (entity, mut p_interaction, w) in q_window.iter_mut() {
+        for (entity, mut health, mut p_interaction, w) in q_window.iter_mut() {
             p_interaction.interaction_timeout = zombie_game.window_panel.interaction_timeout;
             for i in 0..zombie_game.window_panel.nbr {
                 let panel = commands.spawn()
                     .insert_bundle(
-                        WindowPanelBundle::new(w.clone(), zombie_game.window_panel.health, i, zombie_game.window_panel.spacing)
+                        WindowPanelBundle::new(w.clone(), i, zombie_game.window_panel.spacing)
                     ).id();
                 commands.entity(entity).add_child(panel);
             }
+            health.max_health = window_panel_health * (zombie_game.window_panel.nbr as f32);
+            health.current_health = health.max_health;
+            health.tmp_health = health.max_health;
         }
     }
 
