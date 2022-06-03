@@ -29,6 +29,21 @@ pub struct BotDestination {
 
 impl BotDestination {
 
+    pub fn move_bot<T: Component>(&mut self, pos: &mut Transform, collider_query: &Query<
+        (Entity, &Transform, &MovementCollider),
+        Without<T>
+    >,) -> bool {
+        if let Some(el) = self.path.pop() {
+            if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, "zombie", &collider_query) {
+                pos.translation.x = el.0 as f32;
+                pos.translation.y = el.1 as f32;
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     // set_destination get a element position and entity id , keep it and recalculate the path required to get there
     pub fn set_destination(&mut self, position_dest: Vec2, bot_position: Vec2, entity: u32, path_max_length: f32) -> () {
         let goal = (position_dest.x as i32, position_dest.y as i32);
@@ -185,14 +200,7 @@ pub fn system_zombie_handle(
                 }
             }
             ZombieState::FindingEnterace => {
-                if let Some(el) = dest.path.pop() {
-                    if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, "zombie", &collider_query) {
-                        pos.translation.x = el.0 as f32;
-                        pos.translation.y = el.1 as f32;
-                    } else {
-                        continue;
-                    }
-                } else {
+                if !dest.move_bot(&mut pos, &collider_query) {
                     if let Ok((entity, mut health)) = query_ennemy.get_mut(Entity::from_raw(dest.entity)) {
                         if health.current_health > 0. {
                             let current_time = time.time_since_startup().as_secs_f32();
@@ -214,28 +222,12 @@ pub fn system_zombie_handle(
                 }
             }
             ZombieState::CrossingEntrance => {
-                if let Some(el) = dest.path.pop() {
-                    if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, "zombie", &collider_query) {
-                        pos.translation.x = el.0 as f32;
-                        pos.translation.y = el.1 as f32;
-                    } else {
-                        continue;
-                    }
-                } else {
+                if !dest.move_bot(&mut pos, &collider_query) {
                     zombie.state = ZombieState::FollowingPlayer;
                 }
             },
             ZombieState::FollowingPlayer => {
-                if let Some(el) = dest.path.pop() {
-                    if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, "zombie", &collider_query) {
-                        pos.translation.x = el.0 as f32;
-                        pos.translation.y = el.1 as f32;
-                    } else {
-                        continue;
-                    }
-                }
-
-                if dest.path.len() == 0 {
+                if !dest.move_bot(&mut pos, &collider_query) {
                     dest.set_destination(
                         player.translation.truncate(), 
                         pos.translation.truncate(), 
