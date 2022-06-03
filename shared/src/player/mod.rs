@@ -135,15 +135,12 @@ pub fn system_health_player(
         match health.get_health_change_state() {
             HealthChangeState::GainHealth => {
                 health.apply_change();
-                println!("Gaining health")
             },
             HealthChangeState::LostHealth => {
                 health.apply_change();
                 regeneration.on_health_change();
-                println!("Losing health")
             },
             HealthChangeState::Dead => {
-                println!("Your dead brah");
                 // TODO change to a end game menu end return to somewhere (home main menu for now)
                 // need to add another state with it's system , on top of the game
                 game_state.set(GameState::Menu).unwrap();

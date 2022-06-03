@@ -4,10 +4,10 @@ use shared::{player::{MainCamera, Player, interaction::PlayerCurrentInteraction}
 use crate::ingameui::InGameUI;
 
 
-#[derive(Default, Component)]
+#[derive(Component)]
 pub struct FollowingPlayer {
     pub offset: Vec2,
-    pub player: u32
+    pub player: Entity
 }
 
 #[derive(Default, Component)]
@@ -34,11 +34,19 @@ pub fn system_player_added(
 
     asset_server: Res<AssetServer>,
 
-    mut q_following_player: Query<(&FollowingPlayer, &mut Transform, &mut Text, Option<&HealthBar>, Option<&PlayerInteractionText>), Without<Player>>,
-    q_player: Query<(&Transform, &Health, &PlayerCurrentInteraction), With<Player>>
-) {
+    mut q_following_player: Query<(Entity, &FollowingPlayer, &mut Transform, &mut Text, Option<&HealthBar>, Option<&PlayerInteractionText>), Without<Player>>,
+    q_player: Query<(&Transform, &Health, &PlayerCurrentInteraction), With<Player>>,
 
+) {
+    let mut clear_up = false;
     for entity in query.iter() {
+        // TODO : better solution that this to reinitialize when game just reload directly
+        if !clear_up {
+            for (entity, _, _, _, _, _) in q_following_player.iter() {
+                commands.entity(entity).despawn_recursive();
+            }
+            clear_up = true;
+        }
         commands.spawn().insert_bundle(Text2dBundle {
                 text: Text::with_section(
                     "",
@@ -54,7 +62,7 @@ pub fn system_player_added(
                     size: Size::new(100.0, 30.0),
                 },
                 ..default()
-            }).insert(FollowingPlayer{ offset: Vec2::new(0., -50.), player: entity.id()}).insert(PlayerInteractionText{}).insert(InGameUI{});
+            }).insert(FollowingPlayer{ offset: Vec2::new(0., -50.), player: entity.clone()}).insert(PlayerInteractionText{}).insert(InGameUI{});
         commands.spawn().insert_bundle(Text2dBundle {
                 text: Text::with_section(
                     "",
@@ -70,13 +78,13 @@ pub fn system_player_added(
                     size: Size::new(100.0, 30.0),
                 },
                 ..default()
-            }).insert(FollowingPlayer{ offset: Vec2::new(0., 40.), player: entity.id()}).insert(HealthBar{}).insert(InGameUI{});
+            }).insert(FollowingPlayer{ offset: Vec2::new(0., 40.), player: entity.clone()}).insert(HealthBar{}).insert(InGameUI{});
     }
 
 
-    for (following_player, mut tranform, mut text, opt_healthbar, opt_interaction) in q_following_player.iter_mut() {
+    for (_, following_player, mut tranform, mut text, opt_healthbar, opt_interaction) in q_following_player.iter_mut() {
 
-        if let Ok((player_transform, health, player_interaction)) = q_player.get(Entity::from_raw(following_player.player)) {
+        if let Ok((player_transform, health, player_interaction)) = q_player.get(following_player.player) {
             tranform.translation = Vec3::new(
                 player_transform.translation.x + following_player.offset.x,
                 player_transform.translation.y + following_player.offset.y,

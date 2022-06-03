@@ -82,7 +82,6 @@ fn main() {
                 ))
                 .with_system(ingameui::system_ingame_ui)
                 .with_system(ingameui::system_weapon_ui)
-                .with_system(system_player_added)
                 .with_system(system_zombie_handle)
                 .with_system(system_zombie_game)
                 .with_system(apply_velocity)
@@ -91,6 +90,7 @@ fn main() {
                 .with_system(handle_weapon_input)
                 .with_system(movement_projectile)
                 .with_system(react_level_data)
+                .with_system(system_player_added)
                 .with_system(system_health_player)
         )
         .add_system_set(

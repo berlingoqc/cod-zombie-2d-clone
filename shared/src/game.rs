@@ -307,8 +307,6 @@ pub fn system_zombie_game(
 
                         bot_destination.set_destination(closest_window.position, position, closest_window_entity.clone(), 0.);
 
-                        println!("ENRIRTYT {:?}", bot_destination.entity);
-
                         commands.spawn().insert_bundle(ZombieBundle::new(
                             MapElementPosition {
                                 position,

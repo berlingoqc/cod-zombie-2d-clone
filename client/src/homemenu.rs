@@ -128,7 +128,6 @@ pub fn clear_home_menu(
         With<MenuComponent>,
     >,
 ) {
-    println!("Clearing ui");
     for entity in interaction_query.iter() {
         commands.entity(entity).despawn_recursive();
     }
