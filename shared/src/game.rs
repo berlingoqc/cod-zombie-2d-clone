@@ -299,33 +299,11 @@ pub fn system_zombie_game(
                             }
                         }
 
-                        let goal = (
-                            closest_window.position.x as i32,
-                            closest_window.position.y as i32,
-                        );
-                        let mut result = astar(
-                            &(position.x as i32, position.y as i32),
-                            |&(x, y)| {
-                                vec![
-                                    (x + 1, y + 2),
-                                    (x + 1, y - 2),
-                                    (x - 1, y + 2),
-                                    (x - 1, y - 2),
-                                    (x + 2, y + 1),
-                                    (x + 2, y - 1),
-                                    (x - 2, y + 1),
-                                    (x - 2, y - 1),
-                                ]
-                                .into_iter()
-                                .map(|p| (p, 1))
-                            },
-                            |&(x, y)| (goal.0.abs_diff(x) + goal.1.abs_diff(y)) / 3,
-                            |&p| p == goal,
-                        )
-                        .unwrap()
-                        .0;
+                        let mut bot_destination = BotDestination{
+                            ..default()
+                        };
 
-                        result.reverse();
+                        bot_destination.set_destination(closest_window.position, position, closest_window_entity.id(), 0.);
 
                         commands.spawn().insert_bundle(ZombieBundle::new(
                             MapElementPosition {
@@ -333,11 +311,7 @@ pub fn system_zombie_game(
                                 size: Vec2::new(25., 25.),
                                 rotation: 0,
                             },
-                            BotDestination {
-                                destination: closest_window.clone(),
-                                entity: closest_window_entity.id(),
-                                path: result,
-                            },
+                            bot_destination,
                         ));
 
                         zombie_game.current_round.zombie_remaining -= 1;

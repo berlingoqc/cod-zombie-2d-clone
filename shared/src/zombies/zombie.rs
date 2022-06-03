@@ -5,7 +5,7 @@ use crate::{
     collider::{MovementCollider, ProjectileCollider, is_colliding},
     weapons::weapons::{WeaponState, WeaponCurrentAction},
     player::{Player, MainCamera},
-    health::Health, animation::AnimationTimer, character::{LookingAt, CharacterMovementState}
+    health::Health, animation::AnimationTimer, character::{LookingAt, CharacterMovementState}, utils::vec2_perpendicular_counter_clockwise
 };
 
 use rand::seq::SliceRandom;
@@ -26,6 +26,55 @@ pub struct BotDestination {
     // entity trying to reach
     pub entity: u32
 }
+
+impl BotDestination {
+
+    // set_destination get a element position and entity id , keep it and recalculate the path required to get there
+    pub fn set_destination(&mut self, position_dest: Vec2, bot_position: Vec2, entity: u32, path_max_length: f32) -> () {
+        let goal = (position_dest.x as i32, position_dest.y as i32);
+        let mut result = astar(
+            &(bot_position.x as i32, bot_position.y as i32),
+            |&(x, y)| {
+                vec![
+                    (x + 1, y + 2),
+                    (x + 1, y - 2),
+                    (x - 1, y + 2),
+                    (x - 1, y - 2),
+                    (x + 2, y + 1),
+                    (x + 2, y - 1),
+                    (x - 2, y + 1),
+                    (x - 2, y - 1),
+                ]
+                .into_iter()
+                .map(|p| (p, 1))
+            },
+            |&(x, y)| (goal.0.abs_diff(x) + goal.1.abs_diff(y)) / 3,
+            |&p| p == goal,
+        )
+        .unwrap()
+        .0;
+
+        result.reverse();
+        
+        if path_max_length > 0. {
+            let len = result.len() as f32;
+            result = if len >= path_max_length  {
+                let len_taken = (len * 0.25).ceil() as usize;
+                let start = result.len() - 1 - len_taken;
+                let end = result.len() - 1;
+                result[start..end].to_vec()
+            } else {
+                let end = (len as usize) - 1;
+                result[0..end].to_vec()
+            };
+        }
+
+        self.destination.position = position_dest;
+        self.entity = entity;
+        self.path = result;
+    }
+}
+
 
 // the different state of a zombie
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -152,18 +201,20 @@ pub fn system_zombie_handle(
                                 weapon_state.fired_at = current_time;
                             }
                         } else {
-                            zombie.state = ZombieState::FollowingPlayer; 
-                            //zombie.state = ZombieState::CrossingEntrance;
-                            // p2 = looking_at.0;
-                            //let p1 = pos.translation.truncate();
-                            //let direction_cross = Vec2::new(p2.x - p1.x, p2.y - (p1.y * -1.)).normalize_or_zero();
-                            //println!("GO THIS WAY {:?}", direction_cross);
+                            zombie.state = ZombieState::CrossingEntrance;
+                            let p2 = looking_at.0;
+                            let p1 = pos.translation.truncate();
+                            let direction_cross = vec2_perpendicular_counter_clockwise(Vec2::new(p2.x - p1.x, p2.y - (p1.y * -1.)).normalize_or_zero());
+
+                            let destination = p1 + (direction_cross * 50.);
+                            looking_at.0 = destination;
+                            dest.set_destination(destination, p1, 0, 0.);
                         }
                     }
                 }
             }
             ZombieState::CrossingEntrance => {
-                /*if let Some(el) = dest.path.pop() {
+                if let Some(el) = dest.path.pop() {
                     if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, "zombie", &collider_query) {
                         pos.translation.x = el.0 as f32;
                         pos.translation.y = el.1 as f32;
@@ -172,7 +223,7 @@ pub fn system_zombie_handle(
                     }
                 } else {
                     zombie.state = ZombieState::FollowingPlayer;
-                }*/
+                }
             },
             ZombieState::FollowingPlayer => {
                 if let Some(el) = dest.path.pop() {
@@ -185,42 +236,12 @@ pub fn system_zombie_handle(
                 }
 
                 if dest.path.len() == 0 {
-                    // change target for the user
-                    let goal = (player.translation.x as i32, player.translation.y as i32);
-                    looking_at.0 = player.translation.truncate();
-                    let mut result = astar(
-                        &(pos.translation.x as i32, pos.translation.y as i32),
-                        |&(x, y)| {
-                            vec![
-                                (x + 1, y + 2),
-                                (x + 1, y - 2),
-                                (x - 1, y + 2),
-                                (x - 1, y - 2),
-                                (x + 2, y + 1),
-                                (x + 2, y - 1),
-                                (x - 2, y + 1),
-                                (x - 2, y - 1),
-                            ]
-                            .into_iter()
-                            .map(|p| (p, 1))
-                        },
-                        |&(x, y)| (goal.0.abs_diff(x) + goal.1.abs_diff(y)) / 3,
-                        |&p| p == goal,
-                    )
-                    .unwrap()
-                    .0;
-
-                    result.reverse();
-                    let len = result.len() as f32;
-                    dest.path = if len >= 10. {
-                        let len_taken = (len * 0.25).ceil() as usize;
-                        let start = result.len() - 1 - len_taken;
-                        let end = result.len() - 1;
-                        result[start..end].to_vec()
-                    } else {
-                        let end = (len as usize) - 1;
-                        result[0..end].to_vec()
-                    };
+                    dest.set_destination(
+                        player.translation.truncate(), 
+                        pos.translation.truncate(), 
+                        0, 10.
+                    );
+                    looking_at.0 = player.translation.truncate()
                 }
             }
         }
