@@ -17,14 +17,14 @@ pub const ZOMBIE_SIZE: Vec2 = const_vec2!([25. , 25. ]);
 
 // bot destination is a component
 // to register and apply the target of a bot
-#[derive(Component, Default)]
+#[derive(Component)]
 pub struct BotDestination {
     // Destination element
-    pub destination: MapElementPosition,
+    pub destination: Vec2,
     // Precalculate path to reach the target
     pub path: Vec<(i32, i32)>,
     // entity trying to reach
-    pub entity: u32
+    pub entity: Entity
 }
 
 impl BotDestination {
@@ -45,7 +45,7 @@ impl BotDestination {
     }
 
     // set_destination get a element position and entity id , keep it and recalculate the path required to get there
-    pub fn set_destination(&mut self, position_dest: Vec2, bot_position: Vec2, entity: u32, path_max_length: f32) -> () {
+    pub fn set_destination(&mut self, position_dest: Vec2, bot_position: Vec2, entity: Entity, path_max_length: f32) -> () {
         let goal = (position_dest.x as i32, position_dest.y as i32);
         let mut result = astar(
             &(bot_position.x as i32, bot_position.y as i32),
@@ -84,7 +84,7 @@ impl BotDestination {
             };
         }
 
-        self.destination.position = position_dest;
+        self.destination = position_dest;
         self.entity = entity;
         self.path = result;
     }
@@ -155,7 +155,7 @@ impl ZombieBundle {
                 current_state: "".to_string(),
                 asset_type: "zombie".to_string(),
             },
-            looking_at: LookingAt(dest.destination.position),
+            looking_at: LookingAt(dest.destination, false),
             info,
             destination: dest,
             weapon_state: WeaponState { fired_at: 0., state: WeaponCurrentAction::Firing }
@@ -192,7 +192,6 @@ pub fn system_zombie_handle(
                     let mut rng = rand::thread_rng();
                     config.nums_ndg.shuffle(&mut rng);
                     pos.scale += Vec3::new(0.01, 0.01, 0.01);
-                    //pos.rotation = Quat::from_rotation_z(config.nums_ndg[75] / 10.);
                 } else {
                     pos.rotation = Quat::from_rotation_z(0.);
                     zombie.state = ZombieState::FindingEnterace;
@@ -201,7 +200,7 @@ pub fn system_zombie_handle(
             }
             ZombieState::FindingEnterace => {
                 if !dest.move_bot(&mut pos, &collider_query) {
-                    if let Ok((entity, mut health)) = query_ennemy.get_mut(Entity::from_raw(dest.entity)) {
+                    if let Ok((entity, mut health)) = query_ennemy.get_mut(dest.entity) {
                         if health.current_health > 0. {
                             let current_time = time.time_since_startup().as_secs_f32();
                             if !(current_time < weapon_state.fired_at + 1.) {
@@ -219,8 +218,10 @@ pub fn system_zombie_handle(
 
                             let destination = p1 + (direction_cross * 50.);
                             looking_at.0 = destination;
-                            dest.set_destination(destination, p1, entity.id(), 0.);
+                            dest.set_destination(destination, p1, entity.clone(), 0.);
                         }
+                    } else {
+                        println!("ERROR FINDING THE SHIT");
                     }
                 }
             }
@@ -234,20 +235,18 @@ pub fn system_zombie_handle(
 
                     // Valid if i'm colliding with him.
                     if let Some(collision) = collide(pos.translation, ZOMBIE_SIZE * 2., player.translation, PLAYER_SIZE) {
-                        if let Ok((_, mut health)) = query_ennemy.get_mut(Entity::from_raw(dest.entity)) {
+                        if let Ok((_, mut health)) = query_ennemy.get_mut(dest.entity) {
                             let current_time = time.time_since_startup().as_secs_f32();
                             if !(current_time < weapon_state.fired_at + 1.) {
                                 health.tmp_health -= 1.;
                                 weapon_state.fired_at = current_time;
                             }
-                        } else {
-                            println!("COULD NOT FOUND TARGET HELAH");
                         }
                     } else {
                         dest.set_destination(
                             player.translation.truncate(), 
                             pos.translation.truncate(), 
-                            entity.id(), 10.
+                            entity.clone(), 10.
                         );
                         looking_at.0 = player.translation.truncate();
                     }

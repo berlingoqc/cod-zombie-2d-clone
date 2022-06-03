@@ -1,4 +1,5 @@
 #![feature(derive_default_enum)]
+#![feature(thread_local_internals)]
 pub mod collider;
 pub mod game;
 pub mod map;

@@ -8,6 +8,8 @@ mod ingameui;
 mod homemenu;
 mod player;
 mod character_animation;
+mod ui_utils;
+mod localmultiplayerui;
 
 use bevy::{
     core::FixedTimestep, prelude::*, window::WindowDescriptor, ecs::schedule::ShouldRun
@@ -19,7 +21,7 @@ use shared::{
         GameState, ZombieGamePlugin, LevelMapRequested, system_unload_zombie_game,
     },
     zombies::zombie::system_zombie_handle,
-    player::{input_player, interaction::system_interaction_player, system_unload_players, system_health_player
+    player::{input::{input_player, self}, interaction::system_interaction_player, system_unload_players, system_health_player
     }, weapons::{weapons::{handle_weapon_input}, ammunition::{apply_velocity, movement_projectile}}, map::render::system_unload_map,
 };
 use shared::map::MapPlugin;
@@ -51,6 +53,10 @@ fn main() {
         ..WindowDescriptor::default()
     })
     .insert_resource(LevelMapRequested{map: opts.map, level: opts.level})
+    .insert_resource(input::AvailableGameController{
+        keyboard_mouse: true,
+        gamepad: vec![]
+    })
     .add_plugins(DefaultPlugins)
     .add_plugin(CharacterAnimationPlugin{ })
     .add_plugin(AudioPlugin{})
@@ -58,6 +64,8 @@ fn main() {
 
     app.add_plugin(ZombieGamePlugin{});
     app.add_plugin(HomeMenuPlugin{});
+
+    app.add_system(input::system_gamepad_event);
 
     app.add_startup_system(player::setup_player_camera);
 
@@ -82,7 +90,6 @@ fn main() {
                 ))
                 .with_system(ingameui::system_ingame_ui)
                 .with_system(ingameui::system_weapon_ui)
-                .with_system(system_player_added)
                 .with_system(system_zombie_handle)
                 .with_system(system_zombie_game)
                 .with_system(apply_velocity)
@@ -91,6 +98,7 @@ fn main() {
                 .with_system(handle_weapon_input)
                 .with_system(movement_projectile)
                 .with_system(react_level_data)
+                .with_system(system_player_added)
                 .with_system(system_health_player)
         )
         .add_system_set(

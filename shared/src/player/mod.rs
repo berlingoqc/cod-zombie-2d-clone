@@ -1,4 +1,5 @@
 pub mod interaction;
+pub mod input;
 
 use bevy::{prelude::*, math::const_vec2};
 
@@ -9,7 +10,7 @@ use crate::{
     utils::get_cursor_location, weapons::{weapons::{WeaponBundle}, loader::WeaponAssetState}, animation::AnimationTimer, character::{LookingAt, CharacterMovementState}, health::{Health, HealthChangeState, HealthRegeneration}
 };
 
-use self::interaction::{PlayerCurrentInteraction, PlayerInteractionType};
+use self::{interaction::{PlayerCurrentInteraction, PlayerInteractionType}, input::{PlayerCurrentInput, AvailableGameController}};
 
 
 pub const PLAYER_SIZE: Vec2 = const_vec2!([25., 25.]);
@@ -34,17 +35,19 @@ pub struct PlayerBundle {
     pub movement_collider: MovementCollider,
     pub health: Health,
     pub health_regeneration: HealthRegeneration,
-    //pub velocity: Velocity,
     pub character_movement_state: CharacterMovementState,
+
+    pub player_current_input: PlayerCurrentInput,
 }
 
 impl PlayerBundle {
-    fn new(starting_weapon_name: &str) -> PlayerBundle {
+    fn new(starting_weapon_name: &str, input: PlayerCurrentInput) -> PlayerBundle {
         PlayerBundle { 
             player: Player{
                 active_weapon_name: starting_weapon_name.to_string(),
                 ..default()
             },
+            player_current_input: input,
             sprite : SpriteSheetBundle {
                 transform: Transform {
                     translation: Vec3::new(0., 0., 10.),
@@ -59,7 +62,7 @@ impl PlayerBundle {
             map_element_position: MapElementPosition { position: Vec2::new(0.0, 0.), size: Vec2::new(50., 50.), rotation: 0 },
             // velocity: Velocity { v: Vec2::new(0.,0.)},
             character_movement_state: CharacterMovementState { state: String::from("walking"), sub_state: "".to_string() },
-            looking_direction: LookingAt(Vec2::new(0., 0.)),
+            looking_direction: LookingAt(Vec2::new(0., 0.), false),
             animation_timer: AnimationTimer{ 
                 timer: Timer::from_seconds(0.1, true),
                 index: 0,
@@ -90,6 +93,7 @@ pub fn setup_players(
     mut commands: Commands,
     zombie_game: &ResMut<ZombieGame>,
     weapons: &Res<WeaponAssetState>,
+    controller: &Res<AvailableGameController>
 ) {
     // TODO: for multiplayer
     // Fetch the location of the player spawner in the map
@@ -101,8 +105,14 @@ pub fn setup_players(
 
     let weapon = weapons.weapons.iter().find(|w| w.name.eq(default_weapon_name)).unwrap().clone();
 
-    let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name)).id();
+
+    // IF SOLO PLAYER
+    let input = if controller.gamepad.len() > 0 {
+        PlayerCurrentInput{ input_source: input::SupportedController::Gamepad, gamepad: Some(controller.gamepad.get(0).unwrap().clone())}
+    } else { PlayerCurrentInput{ input_source: input::SupportedController::Keyboard, gamepad: None}};
         
+    let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name, input)).id();
+
     let weapon = commands.spawn()
         .insert_bundle(WeaponBundle::new(weapon, true)).id();
 
@@ -117,67 +127,6 @@ pub fn setup_players(
 }
 
 
-pub fn input_player(
-    keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(&mut Transform, &mut Player, &mut CharacterMovementState, &mut LookingAt)>,
-    collider_query: Query<
-        (Entity, &Transform, &MovementCollider),
-        Without<Player>,
-    >,
-    wnds: Res<Windows>,
-    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-
-    game_speed: Res<GameSpeed>,
-
-    mut game_state: ResMut<State<GameState>>
-) {
-
-    // TODO : split player input and movement (IF I WANT TO NETWORK AT SOME POINT)
-    for (mut player_transform, mut player, mut character_movement_state, mut looking_at) in query.iter_mut() {
-
-        looking_at.0 = get_cursor_location(&wnds, &q_camera);
-
-        let mut movement = Vec3::default();
-        let mut moved = false;
-
-
-        if keyboard_input.pressed(KeyCode::F2) {
-            game_state.set(GameState::Menu).unwrap();
-            return;
-        }
-
-        if keyboard_input.pressed(KeyCode::W) {
-            movement += Vec3::new(0., 1., 0.);
-            moved = true;
-        }
-        if keyboard_input.pressed(KeyCode::S) {
-            movement += Vec3::new(0., -1., 0.);
-            moved = true;
-        }
-        if keyboard_input.pressed(KeyCode::A) {
-            movement += Vec3::new(-1., 0., 0.);
-            moved = true;
-        }
-        if keyboard_input.pressed(KeyCode::D) {
-            movement += Vec3::new(1., 0., 0.);
-            moved = true;
-        }
-        
-        if !moved {
-            character_movement_state.state = "standing".to_string();
-            return;
-        }
-
-        character_movement_state.state = "walking".to_string();
-
-        let dest = player_transform.translation + (movement * game_speed.0 * 125.);
-
-        if !is_colliding(dest, PLAYER_SIZE, "player",&collider_query) {
-            player_transform.translation = dest;
-        }
-
-    }
-}
 
 pub fn system_health_player(
 	mut q_player_health: Query<(Entity, &mut Health, &mut HealthRegeneration), (With<Player>)>,
@@ -193,15 +142,12 @@ pub fn system_health_player(
         match health.get_health_change_state() {
             HealthChangeState::GainHealth => {
                 health.apply_change();
-                println!("Gaining health")
             },
             HealthChangeState::LostHealth => {
                 health.apply_change();
                 regeneration.on_health_change();
-                println!("Losing health")
             },
             HealthChangeState::Dead => {
-                println!("Your dead brah");
                 // TODO change to a end game menu end return to somewhere (home main menu for now)
                 // need to add another state with it's system , on top of the game
                 game_state.set(GameState::Menu).unwrap();

@@ -72,6 +72,7 @@ impl MapDataAsset {
                 .insert_bundle(WindowBundle::new(w.clone())).id();
         }
 
+
         // Send event map loaded
     }
 }
