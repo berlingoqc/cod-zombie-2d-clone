@@ -300,10 +300,14 @@ pub fn system_zombie_game(
                         }
 
                         let mut bot_destination = BotDestination{
-                            ..default()
+                            destination: Vec2::default(),
+                            entity: closest_window_entity.clone(),
+                            path: vec![],
                         };
 
-                        bot_destination.set_destination(closest_window.position, position, closest_window_entity.id(), 0.);
+                        bot_destination.set_destination(closest_window.position, position, closest_window_entity.clone(), 0.);
+
+                        println!("ENRIRTYT {:?}", bot_destination.entity);
 
                         commands.spawn().insert_bundle(ZombieBundle::new(
                             MapElementPosition {

@@ -1,6 +1,8 @@
 use bevy::{prelude::*, text::Text2dBounds, transform};
 use shared::{player::{MainCamera, Player, interaction::PlayerCurrentInteraction}, health::Health};
 
+use crate::ingameui::InGameUI;
+
 
 #[derive(Default, Component)]
 pub struct FollowingPlayer {
@@ -24,15 +26,6 @@ pub fn setup_player_camera(mut commands: Commands) {
     commands.spawn().insert_bundle(UiCameraBundle::default());
 }
 
-
-pub fn system_healthbar(
-    mut q_healthbar: Query<&mut Text, With<HealthBar>>,
-    q_player: Query<&Health, With<Player>>,
-) {
-    for health in q_player.iter() {
-        // Get le health bar for a player
-    }
-}
 
 
 pub fn system_player_added(
@@ -61,7 +54,7 @@ pub fn system_player_added(
                     size: Size::new(100.0, 30.0),
                 },
                 ..default()
-            }).insert(FollowingPlayer{ offset: Vec2::new(0., -50.), player: entity.id()}).insert(PlayerInteractionText{});
+            }).insert(FollowingPlayer{ offset: Vec2::new(0., -50.), player: entity.id()}).insert(PlayerInteractionText{}).insert(InGameUI{});
         commands.spawn().insert_bundle(Text2dBundle {
                 text: Text::with_section(
                     "",
@@ -77,7 +70,7 @@ pub fn system_player_added(
                     size: Size::new(100.0, 30.0),
                 },
                 ..default()
-            }).insert(FollowingPlayer{ offset: Vec2::new(0., 40.), player: entity.id()}).insert(HealthBar{});
+            }).insert(FollowingPlayer{ offset: Vec2::new(0., 40.), player: entity.id()}).insert(HealthBar{}).insert(InGameUI{});
     }
 
 
