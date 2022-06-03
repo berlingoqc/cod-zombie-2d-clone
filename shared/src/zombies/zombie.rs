@@ -1,4 +1,4 @@
-use bevy::{prelude::*, math::const_vec2};
+use bevy::{prelude::*, math::const_vec2, ecs::query};
 
 use crate::{
     map::{MapElementPosition, WindowPanel, Window},
@@ -27,7 +27,6 @@ pub struct BotDestination {
     pub entity: u32
 }
 
-
 // the different state of a zombie
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum ZombieState {
@@ -36,6 +35,8 @@ pub enum ZombieState {
     // When the zombie is outside the player area
     // and trying to get inside
     FindingEnterace,
+
+    CrossingEntrance,
     // When the zombie is inside the player area
     // and trying to reach a player
     FollowingPlayer,
@@ -104,8 +105,9 @@ pub fn system_zombie_handle(
     query_player: Query<&Transform, (With<Player>, Without<Zombie>)>,
     mut config: ResMut<ZombieSpawnerConfig>,
     mut query_zombies: Query<(&mut Transform, &mut BotDestination, &mut Zombie, &mut WeaponState, &mut LookingAt, &mut CharacterMovementState), With<Zombie>>,
-    mut query_windows: Query<(&mut Window, Entity, &Children)>,
-    mut query_panel: Query<(&WindowPanel, &mut Sprite, &mut Health)>,
+    //mut query_windows: Query<(&mut Window, Entity, &Children)>,
+    //mut query_panel: Query<(&WindowPanel, &mut Sprite, &mut Health)>,
+    mut query_ennemy: Query<(Entity, &mut Health), Without<Zombie>>,
 
     collider_query: Query<
         (Entity, &Transform, &MovementCollider),
@@ -142,43 +144,36 @@ pub fn system_zombie_handle(
                         continue;
                     }
                 } else {
-                    if let Ok((mut window, entity, children)) = query_windows.get_mut(Entity::from_raw(dest.entity)){
-                        let mut remaining = 0;
-
-                        if !window.destroy {
-                            let mut attack = false;
-                            for &panel_entity in children.iter() {
-                                let (pannel, mut sprite, mut health) = query_panel.get_mut(panel_entity).unwrap();
-                                if health.current_health > 0. {
-                                    if !attack {
-                                        let current_time = time.time_since_startup().as_secs_f32();
-                                        // TODO : NOT HARDCODE
-                                        if !(current_time < weapon_state.fired_at + 1.) {
-
-                                            health.current_health = 0.;
-                                            attack = true;
-
-                                            sprite.custom_size = Some(Vec2::new(0., 0.));
-
-                                            weapon_state.fired_at = current_time;
-
-                                        } else {
-                                            remaining += 1;
-                                        }
-                                    } else {
-                                        remaining += 1;
-                                    }
-                                }
+                    if let Ok((entity, mut health)) = query_ennemy.get_mut(Entity::from_raw(dest.entity)) {
+                        if health.current_health > 0. {
+                            let current_time = time.time_since_startup().as_secs_f32();
+                            if !(current_time < weapon_state.fired_at + 1.) {
+                                health.tmp_health -= 1.;
+                                weapon_state.fired_at = current_time;
                             }
-                        }
-
-                        if remaining == 0 {
-                            window.destroy = true;
-                            zombie.state = ZombieState::FollowingPlayer;
+                        } else {
+                            zombie.state = ZombieState::FollowingPlayer; 
+                            //zombie.state = ZombieState::CrossingEntrance;
+                            // p2 = looking_at.0;
+                            //let p1 = pos.translation.truncate();
+                            //let direction_cross = Vec2::new(p2.x - p1.x, p2.y - (p1.y * -1.)).normalize_or_zero();
+                            //println!("GO THIS WAY {:?}", direction_cross);
                         }
                     }
                 }
             }
+            ZombieState::CrossingEntrance => {
+                /*if let Some(el) = dest.path.pop() {
+                    if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, "zombie", &collider_query) {
+                        pos.translation.x = el.0 as f32;
+                        pos.translation.y = el.1 as f32;
+                    } else {
+                        continue;
+                    }
+                } else {
+                    zombie.state = ZombieState::FollowingPlayer;
+                }*/
+            },
             ZombieState::FollowingPlayer => {
                 if let Some(el) = dest.path.pop() {
                     if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, "zombie", &collider_query) {

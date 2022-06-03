@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use crate::health::Health;
 use crate::map::{Window, WindowPanelBundle};
 use crate::player::{
     setup_players,
@@ -417,19 +418,24 @@ pub fn system_panel_event(
 
     zombie_game: Res<ZombieGame>,
     
-    mut q_window: Query<(Entity, &mut PlayerInteraction, &MapElementPosition), With<Window>>,
+    mut q_window: Query<(Entity, &mut Health, &mut PlayerInteraction, &MapElementPosition), With<Window>>,
 ) {
 
+    let window_panel_health = 1.0;
+
     for _ in ev_change_state.iter() {
-        for (entity, mut p_interaction, w) in q_window.iter_mut() {
+        for (entity, mut health, mut p_interaction, w) in q_window.iter_mut() {
             p_interaction.interaction_timeout = zombie_game.window_panel.interaction_timeout;
             for i in 0..zombie_game.window_panel.nbr {
                 let panel = commands.spawn()
                     .insert_bundle(
-                        WindowPanelBundle::new(w.clone(), zombie_game.window_panel.health, i, zombie_game.window_panel.spacing)
+                        WindowPanelBundle::new(w.clone(), i, zombie_game.window_panel.spacing)
                     ).id();
                 commands.entity(entity).add_child(panel);
             }
+            health.max_health = window_panel_health * (zombie_game.window_panel.nbr as f32);
+            health.current_health = health.max_health;
+            health.tmp_health = health.max_health;
         }
     }
 
