@@ -17,7 +17,6 @@ impl HealthRegeneration {
 	// start a new timer
 	pub fn on_health_change(&mut self) -> () {
 		self.timer = Some(Timer::from_seconds(self.timeout_regeneration, false));
-		println!("Regeneration timeout starting for {:?} seconds", self.timeout_regeneration);
 	}
 
 	// trigger each time to modify health if possible
@@ -26,7 +25,6 @@ impl HealthRegeneration {
 		if let Some(timer) = self.timer.as_mut() {
 			timer.tick(delta);
 			if timer.finished() {
-				println!("Regeneratting health");
 				health.tmp_health += self.regeneration_amount;
 				if health.tmp_health < health.max_health {
 					timer.reset();

@@ -202,9 +202,9 @@ pub fn system_health_player(
             },
             HealthChangeState::Dead => {
                 println!("Your dead brah");
-                // TODO change to 
+                // TODO change to a end game menu end return to somewhere (home main menu for now)
+                // need to add another state with it's system , on top of the game
                 game_state.set(GameState::Menu).unwrap();
-                //commands.entity(entity).despawn();
             },
             _ => {
                 regeneration.apply_regeneration_if(time.delta(), &mut health)
