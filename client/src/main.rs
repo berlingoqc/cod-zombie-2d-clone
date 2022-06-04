@@ -19,7 +19,7 @@ use shared::{
         GameState, ZombieGamePlugin, LevelMapRequested, system_unload_zombie_game,
     },
     zombies::zombie::system_zombie_handle,
-    player::{input::input_player, interaction::system_interaction_player, system_unload_players, system_health_player
+    player::{input::{input_player, self}, interaction::system_interaction_player, system_unload_players, system_health_player
     }, weapons::{weapons::{handle_weapon_input}, ammunition::{apply_velocity, movement_projectile}}, map::render::system_unload_map,
 };
 use shared::map::MapPlugin;
@@ -80,6 +80,7 @@ fn main() {
                             }
                         })
                 ))
+                .with_system(input::system_gamepad_event)
                 .with_system(ingameui::system_ingame_ui)
                 .with_system(ingameui::system_weapon_ui)
                 .with_system(system_zombie_handle)
