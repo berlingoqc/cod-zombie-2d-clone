@@ -12,6 +12,7 @@ pub struct MenuComponent {}
 pub enum ButtonActions {
     #[default]
     StartLocalGame,
+    StartLocalMultiplayerGame,
     QuitApplication
 }
 

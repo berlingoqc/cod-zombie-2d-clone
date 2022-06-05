@@ -2,9 +2,9 @@ use std::time::Duration;
 
 use crate::health::Health;
 use crate::map::{Window, WindowPanelBundle};
-use crate::player::input::AvailableGameController;
+use crate::player::input::{AvailableGameController, PlayerCurrentInput};
 use crate::player::{
-    setup_players,
+    setup_player,
     interaction::PlayerInteraction
 };
 use crate::weapons::loader::{WeaponAssetPlugin, WeaponAssetState};
@@ -109,8 +109,8 @@ pub struct ZombiePlayer {}
 
 #[derive(Debug)]
 pub struct ZombiePlayerInformation {
-    pub handle: u32,
-    pub entity: u32
+    pub name: String,
+    pub controller: PlayerCurrentInput,
 }
 
 #[derive(Default, Debug)]
@@ -219,8 +219,6 @@ pub fn system_zombie_game(
     query_window: Query<(&MapElementPosition, Entity), With<Window>>,
 
     weapons: Res<WeaponAssetState>,
-
-    controller: Res<AvailableGameController>,
 ) {
     let mut nbr_zombie = 0;
     for _ in zombie_query.iter() {
@@ -261,7 +259,9 @@ pub fn system_zombie_game(
             ev_panel_event.send(ZombieGamePanelEvent{});
 
             // Spawn players
-            setup_players(commands, &zombie_game, &weapons, &controller);
+            for player in zombie_game.players.iter() {
+                setup_player(&mut commands, &zombie_game, &weapons, player);
+            }
 
             zombie_game.state = ZombieGameState::Round as i32;
         },

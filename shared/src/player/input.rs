@@ -9,14 +9,14 @@ use crate::{game::{GameState, GameSpeed}, character::{CharacterMovementState, Lo
 use super::{Player, MainCamera, PLAYER_SIZE};
 
 
-#[derive(Default, PartialEq)]
+#[derive(Default, PartialEq, Debug, Clone)]
 pub enum SupportedController {
 	#[default]
 	Keyboard,
 	Gamepad
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Debug, Clone)]
 pub struct PlayerCurrentInput {
 	pub input_source: SupportedController,
 

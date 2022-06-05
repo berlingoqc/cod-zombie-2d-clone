@@ -5,7 +5,7 @@ use bevy::{prelude::*, math::const_vec2};
 
 use crate::{
     collider::{MovementCollider, is_colliding},
-    game::{ZombieGame, GameState, GameSpeed},
+    game::{ZombieGame, GameState, GameSpeed, ZombiePlayerInformation},
     map::{MapElementPosition},
     utils::get_cursor_location, weapons::{weapons::{WeaponBundle}, loader::WeaponAssetState}, animation::AnimationTimer, character::{LookingAt, CharacterMovementState}, health::{Health, HealthChangeState, HealthRegeneration}
 };
@@ -89,11 +89,12 @@ impl PlayerBundle {
     }
 }
 
-pub fn setup_players(
-    mut commands: Commands,
+pub fn setup_player(
+    mut commands: &mut Commands,
     zombie_game: &ResMut<ZombieGame>,
     weapons: &Res<WeaponAssetState>,
-    controller: &Res<AvailableGameController>
+    
+    config: &ZombiePlayerInformation,
 ) {
     // TODO: for multiplayer
     // Fetch the location of the player spawner in the map
@@ -101,17 +102,14 @@ pub fn setup_players(
     // to select your color and where your spawn
 
     // get the default weapon for the map
+
+    info!("Initializing player {:?}", config.name);
     let default_weapon_name = zombie_game.starting_weapons.starting_weapon.as_str();
 
     let weapon = weapons.weapons.iter().find(|w| w.name.eq(default_weapon_name)).unwrap().clone();
 
 
-    // IF SOLO PLAYER
-    let input = if controller.gamepad.len() > 0 {
-        PlayerCurrentInput{ input_source: input::SupportedController::Gamepad, gamepad: Some(controller.gamepad.get(0).unwrap().clone())}
-    } else { PlayerCurrentInput{ input_source: input::SupportedController::Keyboard, gamepad: None}};
-        
-    let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name, input)).id();
+    let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name, config.controller.clone())).id();
 
     let weapon = commands.spawn()
         .insert_bundle(WeaponBundle::new(weapon, true)).id();

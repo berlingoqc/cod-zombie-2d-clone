@@ -182,6 +182,7 @@ pub fn system_zombie_handle(
 ) {
     let player = query_player.get_single();
     if player.is_err() {
+        println!("ERROR GET SINGLE DYUDE");
         return;
     }
     let (entity, player) = player.unwrap();

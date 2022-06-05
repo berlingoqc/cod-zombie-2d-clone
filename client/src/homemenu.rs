@@ -1,7 +1,7 @@
 use bevy::{prelude::*, app::AppExit};
 
 use crate::ui_utils::*;
-use shared::game::GameState;
+use shared::{game::{GameState, ZombieGame, ZombiePlayerInformation}, player::input::{AvailableGameController, PlayerCurrentInput, SupportedController}};
 
 
 pub fn setup_home_menu(
@@ -31,6 +31,7 @@ pub fn setup_home_menu(
                     ..default()
                 }).with_children(|parent| {
                     add_button(ActionButtonComponent(ButtonActions::QuitApplication), "Close", parent, &asset_server);
+                    add_button(ActionButtonComponent(ButtonActions::StartLocalMultiplayerGame), "Start multiplayer game", parent, &asset_server);
                     add_button(ActionButtonComponent(ButtonActions::StartLocalGame), "Start single player game", parent, &asset_server);
                 });
         });
@@ -43,7 +44,10 @@ pub fn system_button_handle(
     >,
 
     mut exit: EventWriter<AppExit>,
-    mut app_state: ResMut<State<GameState>>
+    mut app_state: ResMut<State<GameState>>,
+
+    mut zombie_game: ResMut<ZombieGame>,
+    controller: Res<AvailableGameController>
 ) {
     for (interaction, mut color, action) in interaction_query.iter_mut() {
         match *interaction {
@@ -51,6 +55,27 @@ pub fn system_button_handle(
                 *color = PRESSED_BUTTON.into();
                 match action.0 {
                     ButtonActions::StartLocalGame => {
+                        // Add player to the game
+                        zombie_game.players = vec![ZombiePlayerInformation {
+                            name: "Player 1".to_string(),
+                            controller: if controller.gamepad.len() > 0 {
+                                PlayerCurrentInput{ input_source: SupportedController::Gamepad, gamepad: Some(controller.gamepad.get(0).unwrap().clone())}
+                            } else { PlayerCurrentInput{ input_source: SupportedController::Keyboard, gamepad: None}}
+                        }];
+                        app_state.set(GameState::PlayingZombie).unwrap();
+                    },
+                    ButtonActions::StartLocalMultiplayerGame => {
+                        // Add a player with the keyboard and add one player by present input
+                        zombie_game.players = vec![ZombiePlayerInformation {
+                            name: "Player 1".to_string(),
+                            controller: PlayerCurrentInput { input_source: SupportedController::Keyboard, gamepad: None }
+                        }];
+                        for (i, gamepad) in controller.gamepad.iter().enumerate() {
+                            zombie_game.players.push(ZombiePlayerInformation {
+                                name: format!("Player {}", i + 2),
+                                controller: PlayerCurrentInput { input_source: SupportedController::Gamepad, gamepad: Some(gamepad.clone()) }
+                            })
+                        }
                         app_state.set(GameState::PlayingZombie).unwrap();
                     },
                     ButtonActions::QuitApplication => {
