@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use crate::health::Health;
 use crate::map::{Window, WindowPanelBundle};
+use crate::player::input::AvailableGameController;
 use crate::player::{
     setup_players,
     interaction::PlayerInteraction
@@ -218,6 +219,8 @@ pub fn system_zombie_game(
     query_window: Query<(&MapElementPosition, Entity), With<Window>>,
 
     weapons: Res<WeaponAssetState>,
+
+    controller: Res<AvailableGameController>,
 ) {
     let mut nbr_zombie = 0;
     for _ in zombie_query.iter() {
@@ -258,7 +261,7 @@ pub fn system_zombie_game(
             ev_panel_event.send(ZombieGamePanelEvent{});
 
             // Spawn players
-            setup_players(commands, &zombie_game, &weapons);
+            setup_players(commands, &zombie_game, &weapons, &controller);
 
             zombie_game.state = ZombieGameState::Round as i32;
         },

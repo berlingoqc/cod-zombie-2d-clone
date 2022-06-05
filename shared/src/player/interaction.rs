@@ -1,8 +1,8 @@
 use bevy::{prelude::*, sprite::collide_aabb::collide};
 
-use crate::{map::{MapElementPosition, Window, WindowPanel, Size}, health::Health};
+use crate::{map::{MapElementPosition, Window, WindowPanel, Size}, health::Health, weapons::weapons::{PlayerInputs, INTERACTION_BTN}};
 
-use super::Player;
+use super::{Player, input::PlayerCurrentInput};
 
 #[derive(Component)]
 pub struct PlayerCurrentInteraction {
@@ -44,7 +44,7 @@ pub struct PlayerInteraction {
 }
 
 pub fn system_interaction_player(
-    mut query_player: Query<(&Transform, &mut PlayerCurrentInteraction), With<Player>>,
+    mut query_player: Query<(&Transform, &mut PlayerCurrentInteraction, &PlayerCurrentInput), With<Player>>,
     time: Res<Time>,
     interaction_query: Query<
         (Entity, &Transform, &MapElementPosition, &PlayerInteraction),
@@ -54,14 +54,24 @@ pub fn system_interaction_player(
         ),
     >,
 
-    keyboard_input: Res<Input<KeyCode>>,
-
+     
+	keyboard_input: Res<Input<KeyCode>>,
+    buttons_mouse: Res<Input<MouseButton>>,
+    buttons_gamepad: Res<Input<GamepadButton>>,
 
     mut query_window: Query<(&mut Window, &mut Health, &Children)>,
     mut query_panel: Query<(&mut WindowPanel, &Size, &mut Sprite)>
 ) {
 
-    for (player_transform, mut interaction) in query_player.iter_mut() {
+    for (player_transform, mut interaction, current_input) in query_player.iter_mut() {
+        
+        let player_input = PlayerInputs {
+           keyboard_input: &keyboard_input,
+           buttons_mouse: &buttons_mouse,
+           buttons_gamepad: &buttons_gamepad,
+           current_controller: current_input,
+        };
+
         for (entity, transform, info, player_interaction) in interaction_query.iter() {
             let collision = collide(player_transform.translation, Vec2::new(25., 25.), info.position.extend(10.),  player_interaction.interaction_size);
             if collision.is_some() && player_interaction.interaction_available {
@@ -92,7 +102,7 @@ pub fn system_interaction_player(
 
 
         if interaction.interaction {
-            if keyboard_input.pressed(KeyCode::F) {
+            if player_input.pressed(&INTERACTION_BTN) {
                 match interaction.interaction_type {
                     PlayerInteractionType::RepairWindow => {
                         if interaction.interacting == true {

@@ -167,7 +167,9 @@ pub fn system_looking_at(
     mut q_character: Query<(&mut Transform, &mut LookingAt)>
 ) {
     for (mut transform, mut looking_at) in q_character.iter_mut() {
-        let diff = (looking_at.0 - transform.translation.truncate());
+        let diff = if !looking_at.1 { (looking_at.0 - transform.translation.truncate()) } else {
+            looking_at.0
+        };
         let angle = diff.y.atan2(diff.x);
 
         transform.rotation = Quat::from_axis_angle(Vec3::new(0., 0., 1.), angle);

@@ -1,3 +1,5 @@
+use std::thread::{__FastLocalKeyInner, __OsLocalKeyInner};
+
 use bevy::{prelude::*, sprite::{SpriteBundle, Sprite}, math::Vec2};
 use serde::Deserialize;
 
@@ -6,7 +8,7 @@ use rand::prelude::SliceRandom;
 use crate::{
     utils::{get_cursor_location, vec2_perpendicular_counter_clockwise, vec2_perpendicular_clockwise},
     collider::ProjectileCollider,
-    animation::AnimationTimer, player::{MainCamera, Player}, character::{CharacterMovementState, Velocity}
+    animation::AnimationTimer, player::{MainCamera, Player, input::{PlayerCurrentInput, SupportedController}}, character::{CharacterMovementState, Velocity, LookingAt}
 };
 
 
@@ -111,154 +113,197 @@ impl WeaponBundle {
 	}
 }
 
+pub type GameButton = (KeyCode, MouseButton, GamepadButtonType);
+
+pub const CHANGE_WEAPON_BTN: GameButton = (KeyCode::Tab, MouseButton::Middle, GamepadButtonType::North);
+pub const RELOAD_WEAPON_BTN: GameButton = (KeyCode::R, MouseButton::Right, GamepadButtonType::West);
+pub const FIRED_WEAPON_BTN: GameButton = (KeyCode::Space, MouseButton::Left, GamepadButtonType::RightTrigger);
+pub const INTERACTION_BTN: GameButton = (KeyCode::F, MouseButton::Other(0), GamepadButtonType::South);
+
+pub struct PlayerInputs<'a> {
+    pub keyboard_input: &'a Res<'a,Input<KeyCode>>,
+    pub buttons_mouse: &'a Res<'a, Input<MouseButton>>,
+    pub buttons_gamepad: &'a Res<'a, Input<GamepadButton>>,
+
+    pub current_controller: &'a PlayerCurrentInput,
+}
+
+impl <'a> PlayerInputs <'a> {
+
+    pub fn pressed(&self, button: &GameButton) -> bool {
+        return if self.current_controller.input_source == SupportedController::Keyboard {
+            return self.keyboard_input.pressed(button.0) || self.buttons_mouse.pressed(button.1);
+        } else {
+            let gamepad_button = GamepadButton(self.current_controller.gamepad.unwrap(), button.2);
+            return self.buttons_gamepad.pressed(gamepad_button);
+        }
+    }
+
+    pub fn just_pressed(&self, button: &GameButton) -> bool {
+        return if self.current_controller.input_source == SupportedController::Keyboard {
+            return self.keyboard_input.just_pressed(button.0) || self.buttons_mouse.just_pressed(button.1);
+        } else {
+            let gamepad_button = GamepadButton(self.current_controller.gamepad.unwrap(), button.2);
+            return self.buttons_gamepad.just_pressed(gamepad_button);
+        }
+    }
+}
+
+// get the input press for the player
+
 pub fn handle_weapon_input(
     mut commands: Commands,
     time: Res<Time>,
+    
 	keyboard_input: Res<Input<KeyCode>>,
-    buttons: Res<Input<MouseButton>>,
+    buttons_mouse: Res<Input<MouseButton>>,
+    buttons_gamepad: Res<Input<GamepadButton>>,
+
 	mut query_player_weapon: Query<(&mut AmmunitionState, &mut WeaponState, &Weapon, &Parent), With<WeaponState>>,
 	
-	wnds: Res<Windows>,
-    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-
-	q_parent: Query<&GlobalTransform>,
-
-    mut q_movement_player: Query<(&mut CharacterMovementState, &mut AnimationTimer), With<Player>>,
-
-    mut q_player: Query<&mut Player>,
+    mut q_player: Query<(&GlobalTransform, &PlayerCurrentInput, &LookingAt, &mut CharacterMovementState, &mut AnimationTimer, &Children), With<Player>>,
 ) {
+    for (player_global_transform, current_input, looking_at, mut movement_state, mut timer, childrens) in q_player.iter_mut() {
+        let player_input = PlayerInputs {
+           keyboard_input: &keyboard_input,
+           buttons_mouse: &buttons_mouse,
+           buttons_gamepad: &buttons_gamepad,
+           current_controller: current_input,
+        };
 
-    if keyboard_input.just_pressed(KeyCode::Tab) {
-        let mut i = 0;
-        // If one of the gun is being reload do do shit when ask to change weapon
-        for (_, weapon_state, _, _) in query_player_weapon.iter() {
+
+        if player_input.just_pressed(&CHANGE_WEAPON_BTN) {
+            let mut i = 0;
+            // If one of the gun is being reload do do shit when ask to change weapon
+            for (_, weapon_state, _, _) in query_player_weapon.iter() {
+                if weapon_state.state == WeaponCurrentAction::Reloading {
+                    return;
+                }
+            }
+            // need to only query the weapon of the current player,
+            for (_, mut weapon_state, w, parent) in query_player_weapon.iter_mut() {
+                if weapon_state.state == WeaponCurrentAction::Firing {
+                    weapon_state.state = WeaponCurrentAction::Hide;
+                } else if weapon_state.state == WeaponCurrentAction::Hide {
+                    weapon_state.state = WeaponCurrentAction::Firing;
+
+                    movement_state.sub_state = w.name.clone();
+                    timer.offset = w.sprite_sheet_offset;
+                }
+            }
+
+            return;
+        }
+
+
+        for (mut ammunition_state, mut weapon_state, weapon, parent) in query_player_weapon.iter_mut() {
+
+            if weapon_state.state == WeaponCurrentAction::Hide {
+                continue;
+            }
+
             if weapon_state.state == WeaponCurrentAction::Reloading {
-                return;
-            }
-        }
-        for (_, mut weapon_state, w, parent) in query_player_weapon.iter_mut() {
-            if weapon_state.state == WeaponCurrentAction::Firing {
-                weapon_state.state = WeaponCurrentAction::Hide;
-            } else if weapon_state.state == WeaponCurrentAction::Hide {
+                let current_time = time.time_since_startup().as_secs_f32();
+                if current_time < weapon_state.fired_at + weapon.reloading_time {
+                    continue;
+                } 
+                let diff = weapon.ammunition.magasin_size - ammunition_state.mag_remaining;
+                if diff > ammunition_state.remaining_ammunition {
+                    ammunition_state.mag_remaining = ammunition_state.remaining_ammunition;
+                    ammunition_state.remaining_ammunition = 0;
+                } else {
+                    ammunition_state.mag_remaining =  weapon.ammunition.magasin_size;
+                    ammunition_state.remaining_ammunition -= diff;
+                }
+
                 weapon_state.state = WeaponCurrentAction::Firing;
-
-                // CODE FOR THE ANIMATION
-                let (mut movement_state, mut timer) = q_movement_player.get_mut(parent.0).unwrap();
-                movement_state.sub_state = w.name.clone();
-                timer.offset = w.sprite_sheet_offset;
             }
-        }
 
-        return;
-	}
+            if player_input.just_pressed(&RELOAD_WEAPON_BTN) {
 
 
-    for (mut ammunition_state, mut weapon_state, weapon, parent) in query_player_weapon.iter_mut() {
+                if ammunition_state.mag_remaining < weapon.ammunition.magasin_size {
+                    weapon_state.state = WeaponCurrentAction::Reloading;
+                    weapon_state.fired_at = time.time_since_startup().as_secs_f32();
+                    continue;
+                }
+            }
 
-        if weapon_state.state == WeaponCurrentAction::Hide {
-            continue;
-        }
-
-        if weapon_state.state == WeaponCurrentAction::Reloading {
-            let current_time = time.time_since_startup().as_secs_f32();
-            if current_time < weapon_state.fired_at + weapon.reloading_time {
-                continue;
-            } 
-            let diff = weapon.ammunition.magasin_size - ammunition_state.mag_remaining;
-            if diff > ammunition_state.remaining_ammunition {
-                ammunition_state.mag_remaining = ammunition_state.remaining_ammunition;
-                ammunition_state.remaining_ammunition = 0;
+            let firing = if weapon.automatic {
+                player_input.pressed(&FIRED_WEAPON_BTN)
             } else {
-                ammunition_state.mag_remaining =  weapon.ammunition.magasin_size;
-                ammunition_state.remaining_ammunition -= diff;
-            }
-
-            weapon_state.state = WeaponCurrentAction::Firing;
-        }
-
-        if keyboard_input.just_pressed(KeyCode::R) {
-
-
-            if ammunition_state.mag_remaining < weapon.ammunition.magasin_size {
-                weapon_state.state = WeaponCurrentAction::Reloading;
-                weapon_state.fired_at = time.time_since_startup().as_secs_f32();
-                continue;
-            }
-        }
-
-		let firing = if weapon.automatic {
-			buttons.pressed(MouseButton::Left) || keyboard_input.pressed(KeyCode::Space)
-		} else {
-			buttons.just_pressed(MouseButton::Left) || keyboard_input.just_pressed(KeyCode::Space)
-		};
-
-        if firing {
-
-            if ammunition_state.mag_remaining == 0 {
-                weapon_state.state = WeaponCurrentAction::Reloading;
-                weapon_state.fired_at = time.time_since_startup().as_secs_f32();
-                continue;
-            }
-
-            let current_time = time.time_since_startup().as_secs_f32();
-
-            if current_time < weapon_state.fired_at + weapon.firing_rate {
-                continue;
-            }
-
-            weapon_state.fired_at = current_time;
-
-            let mouse_location = get_cursor_location(&wnds, &q_camera);
-            let parent_location = q_parent.get(parent.0).unwrap().translation;
-
-
-            let mut diff = Vec2::new(mouse_location.x - parent_location.x, mouse_location.y - parent_location.y).normalize();
-
-            if weapon.offset > 0 {
-                let bottom = weapon.offset * -1;
-                let top = weapon.offset * 1;
-
-                let mut ndg = rand::thread_rng();
-                let mut range: Vec<f32> = (bottom..top).map(|x| x as f32).collect();
-                range.shuffle(&mut ndg);
-                
-                diff.x += range[0] / 100.;
-                diff.y += range[1] / 100.;
-            }
-
-            let (starting_point, offset_each) = if weapon.firing_ammunition == 1 {
-                (parent_location, Vec2::new(0.,0.))
-            } else {
-                let counter_clock_perpenicular = vec2_perpendicular_counter_clockwise(diff);
-                let offset_scale = weapon.firing_ammunition / 2;
-
-                // not perfectly center
-                (
-                    (counter_clock_perpenicular * (offset_scale as f32) * weapon.ammunition.sprite_config.size.x).extend(10.) + parent_location,
-                    vec2_perpendicular_clockwise(diff) * weapon.ammunition.sprite_config.size.x
-                )
+                player_input.just_pressed(&FIRED_WEAPON_BTN)
             };
 
-            for i in (0..weapon.firing_ammunition) {
-                ammunition_state.mag_remaining -= 1;
-                
+            if firing {
 
-                if weapon.spreading_ammunition > 1 {
-                    for x in 0..weapon.spreading_ammunition/2 {
-                        let scale: f32 = if x % 2 == 0 { 1. } else { -1. };
-                        let angle: f32 = ((x as f32) / 20.) * scale;
+                if ammunition_state.mag_remaining == 0 {
+                    weapon_state.state = WeaponCurrentAction::Reloading;
+                    weapon_state.fired_at = time.time_since_startup().as_secs_f32();
+                    continue;
+                }
 
-                        let new_x = diff.x * angle.cos() - diff.y * angle.sin();
-                        let new_y = diff.x * angle.sin() + diff.y * angle.cos();
+                let current_time = time.time_since_startup().as_secs_f32();
 
-                        spawn_bullet(&mut commands, &weapon, &time, &starting_point, &offset_each, &Vec2::new(new_x, new_y), i);
-                    }
+                if current_time < weapon_state.fired_at + weapon.firing_rate {
+                    continue;
+                }
+
+                weapon_state.fired_at = current_time;
+
+                let parent_location = player_global_transform.translation;
+
+                let mut diff = if !looking_at.1 { 
+                    let mouse_location = looking_at.0;
+                    Vec2::new(mouse_location.x - parent_location.x, mouse_location.y - parent_location.y).normalize()
+                } else { looking_at.0 };
+
+                if weapon.offset > 0 {
+                    let bottom = weapon.offset * -1;
+                    let top = weapon.offset * 1;
+
+                    let mut ndg = rand::thread_rng();
+                    let mut range: Vec<f32> = (bottom..top).map(|x| x as f32).collect();
+                    range.shuffle(&mut ndg);
+                    
+                    diff.x += range[0] / 100.;
+                    diff.y += range[1] / 100.;
+                }
+
+                let (starting_point, offset_each) = if weapon.firing_ammunition == 1 {
+                    (parent_location, Vec2::new(0.,0.))
                 } else {
-                    spawn_bullet(&mut commands, &weapon, &time, &starting_point, &offset_each, &diff, i);
+                    let counter_clock_perpenicular = vec2_perpendicular_counter_clockwise(diff);
+                    let offset_scale = weapon.firing_ammunition / 2;
+
+                    // not perfectly center
+                    (
+                        (counter_clock_perpenicular * (offset_scale as f32) * weapon.ammunition.sprite_config.size.x).extend(10.) + parent_location,
+                        vec2_perpendicular_clockwise(diff) * weapon.ammunition.sprite_config.size.x
+                    )
+                };
+
+                for i in (0..weapon.firing_ammunition) {
+                    ammunition_state.mag_remaining -= 1;
+                    
+
+                    if weapon.spreading_ammunition > 1 {
+                        for x in 0..weapon.spreading_ammunition/2 {
+                            let scale: f32 = if x % 2 == 0 { 1. } else { -1. };
+                            let angle: f32 = ((x as f32) / 20.) * scale;
+
+                            let new_x = diff.x * angle.cos() - diff.y * angle.sin();
+                            let new_y = diff.x * angle.sin() + diff.y * angle.cos();
+
+                            spawn_bullet(&mut commands, &weapon, &time, &starting_point, &offset_each, &Vec2::new(new_x, new_y), i);
+                        }
+                    } else {
+                        spawn_bullet(&mut commands, &weapon, &time, &starting_point, &offset_each, &diff, i);
+                    }
+
                 }
 
             }
-
         }
     }
 }

@@ -8,6 +8,8 @@ mod ingameui;
 mod homemenu;
 mod player;
 mod character_animation;
+mod ui_utils;
+mod localmultiplayerui;
 
 use bevy::{
     core::FixedTimestep, prelude::*, window::WindowDescriptor, ecs::schedule::ShouldRun
@@ -51,6 +53,10 @@ fn main() {
         ..WindowDescriptor::default()
     })
     .insert_resource(LevelMapRequested{map: opts.map, level: opts.level})
+    .insert_resource(input::AvailableGameController{
+        keyboard_mouse: true,
+        gamepad: vec![]
+    })
     .add_plugins(DefaultPlugins)
     .add_plugin(CharacterAnimationPlugin{ })
     .add_plugin(AudioPlugin{})
@@ -58,6 +64,8 @@ fn main() {
 
     app.add_plugin(ZombieGamePlugin{});
     app.add_plugin(HomeMenuPlugin{});
+
+    app.add_system(input::system_gamepad_event);
 
     app.add_startup_system(player::setup_player_camera);
 
@@ -80,7 +88,6 @@ fn main() {
                             }
                         })
                 ))
-                .with_system(input::system_gamepad_event)
                 .with_system(ingameui::system_ingame_ui)
                 .with_system(ingameui::system_weapon_ui)
                 .with_system(system_zombie_handle)

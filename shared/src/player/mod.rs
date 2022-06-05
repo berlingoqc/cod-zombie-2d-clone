@@ -10,7 +10,7 @@ use crate::{
     utils::get_cursor_location, weapons::{weapons::{WeaponBundle}, loader::WeaponAssetState}, animation::AnimationTimer, character::{LookingAt, CharacterMovementState}, health::{Health, HealthChangeState, HealthRegeneration}
 };
 
-use self::{interaction::{PlayerCurrentInteraction, PlayerInteractionType}, input::PlayerCurrentInput};
+use self::{interaction::{PlayerCurrentInteraction, PlayerInteractionType}, input::{PlayerCurrentInput, AvailableGameController}};
 
 
 pub const PLAYER_SIZE: Vec2 = const_vec2!([25., 25.]);
@@ -41,13 +41,13 @@ pub struct PlayerBundle {
 }
 
 impl PlayerBundle {
-    fn new(starting_weapon_name: &str) -> PlayerBundle {
+    fn new(starting_weapon_name: &str, input: PlayerCurrentInput) -> PlayerBundle {
         PlayerBundle { 
             player: Player{
                 active_weapon_name: starting_weapon_name.to_string(),
                 ..default()
             },
-            player_current_input: PlayerCurrentInput { input_source: input::SupportedController::Keyboard, gamepad: None },
+            player_current_input: input,
             sprite : SpriteSheetBundle {
                 transform: Transform {
                     translation: Vec3::new(0., 0., 10.),
@@ -62,7 +62,7 @@ impl PlayerBundle {
             map_element_position: MapElementPosition { position: Vec2::new(0.0, 0.), size: Vec2::new(50., 50.), rotation: 0 },
             // velocity: Velocity { v: Vec2::new(0.,0.)},
             character_movement_state: CharacterMovementState { state: String::from("walking"), sub_state: "".to_string() },
-            looking_direction: LookingAt(Vec2::new(0., 0.)),
+            looking_direction: LookingAt(Vec2::new(0., 0.), false),
             animation_timer: AnimationTimer{ 
                 timer: Timer::from_seconds(0.1, true),
                 index: 0,
@@ -93,6 +93,7 @@ pub fn setup_players(
     mut commands: Commands,
     zombie_game: &ResMut<ZombieGame>,
     weapons: &Res<WeaponAssetState>,
+    controller: &Res<AvailableGameController>
 ) {
     // TODO: for multiplayer
     // Fetch the location of the player spawner in the map
@@ -104,8 +105,14 @@ pub fn setup_players(
 
     let weapon = weapons.weapons.iter().find(|w| w.name.eq(default_weapon_name)).unwrap().clone();
 
-    let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name)).id();
+
+    // IF SOLO PLAYER
+    let input = if controller.gamepad.len() > 0 {
+        PlayerCurrentInput{ input_source: input::SupportedController::Gamepad, gamepad: Some(controller.gamepad.get(0).unwrap().clone())}
+    } else { PlayerCurrentInput{ input_source: input::SupportedController::Keyboard, gamepad: None}};
         
+    let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name, input)).id();
+
     let weapon = commands.spawn()
         .insert_bundle(WeaponBundle::new(weapon, true)).id();
 

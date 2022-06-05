@@ -155,7 +155,7 @@ impl ZombieBundle {
                 current_state: "".to_string(),
                 asset_type: "zombie".to_string(),
             },
-            looking_at: LookingAt(dest.destination),
+            looking_at: LookingAt(dest.destination, false),
             info,
             destination: dest,
             weapon_state: WeaponState { fired_at: 0., state: WeaponCurrentAction::Firing }
