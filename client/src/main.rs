@@ -74,8 +74,8 @@ fn main() {
         app
         .add_system_set(
             SystemSet::on_enter(GameState::PlayingZombie)
-                .with_system(ingameui::setup_ingame_ui)
-                .with_system(setup_zombie_game),
+                .with_system(setup_zombie_game)
+                .with_system(ingameui::setup_ingame_ui),
         )
         .add_system_set(
             SystemSet::on_update(GameState::PlayingZombie)
