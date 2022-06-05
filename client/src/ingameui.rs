@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 use shared::{
     game::ZombieGame,
-    weapons::weapons::{AmmunitionState, Weapon, WeaponState, WeaponCurrentAction},
+    weapons::weapons::{AmmunitionState, Weapon, WeaponState, WeaponCurrentAction, ActiveWeapon},
     zombies::zombie::Zombie,
 };
 
@@ -119,7 +119,7 @@ pub fn system_ingame_ui(
 }
 
 pub fn system_weapon_ui(
-	query_player_weapon: Query<(&AmmunitionState, &Weapon, &WeaponState)>,
+	query_player_weapon: Query<(&AmmunitionState, &Weapon, &WeaponState), With<ActiveWeapon>>,
     mut query_ammo_text: Query<&mut Text, With<WeaponText>>,
 
     mut query_weapon_image: Query<&mut UiImage, With<WeaponUiImage>>,
@@ -130,12 +130,10 @@ pub fn system_weapon_ui(
     }
 	let mut text = query_ammo_text.single_mut();
     for (ammo_state, weapon, weapon_state) in query_player_weapon.iter() {
-        if weapon_state.state == WeaponCurrentAction::Firing {
-            text.sections[0].value = format!("{}\n-\n{}", ammo_state.mag_remaining, ammo_state.remaining_ammunition);
+        text.sections[0].value = format!("{}\n-\n{}", ammo_state.mag_remaining, ammo_state.remaining_ammunition);
 
-            let mut weapon_image = query_weapon_image.single_mut();
-            weapon_image.0 = asset_server.load(weapon.asset_name.as_str());
-        }
+        let mut weapon_image = query_weapon_image.single_mut();
+        weapon_image.0 = asset_server.load(weapon.asset_name.as_str());
     }
 }
 

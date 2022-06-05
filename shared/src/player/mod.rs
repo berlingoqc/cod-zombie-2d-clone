@@ -7,7 +7,7 @@ use crate::{
     collider::{MovementCollider, is_colliding},
     game::{ZombieGame, GameState, GameSpeed, ZombiePlayerInformation},
     map::{MapElementPosition},
-    utils::get_cursor_location, weapons::{weapons::{WeaponBundle}, loader::WeaponAssetState}, animation::AnimationTimer, character::{LookingAt, CharacterMovementState}, health::{Health, HealthChangeState, HealthRegeneration}
+    utils::get_cursor_location, weapons::{weapons::{WeaponBundle, ActiveWeapon}, loader::WeaponAssetState}, animation::AnimationTimer, character::{LookingAt, CharacterMovementState}, health::{Health, HealthChangeState, HealthRegeneration}
 };
 
 use self::{interaction::{PlayerCurrentInteraction, PlayerInteractionType}, input::{PlayerCurrentInput, AvailableGameController}};
@@ -112,14 +112,14 @@ pub fn setup_player(
     let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name, config.controller.clone())).id();
 
     let weapon = commands.spawn()
-        .insert_bundle(WeaponBundle::new(weapon, true)).id();
+        .insert_bundle(WeaponBundle::new(weapon)).insert(ActiveWeapon{}).id();
 
     commands.entity(player).add_child(weapon);
 
     if let Some(alternate_weapon) = &zombie_game.starting_weapons.starting_alternate_weapon {
         let weapon = weapons.weapons.iter().find(|w| w.name.eq(alternate_weapon.as_str())).unwrap().clone();
         let weapon = commands.spawn()
-            .insert_bundle(WeaponBundle::new(weapon, false)).id();
+            .insert_bundle(WeaponBundle::new(weapon)).id();
         commands.entity(player).add_child(weapon);
     }
 }
