@@ -180,12 +180,6 @@ pub fn system_zombie_handle(
 
     time: Res<Time>
 ) {
-    let player = query_player.get_single();
-    if player.is_err() {
-        println!("ERROR GET SINGLE DYUDE");
-        return;
-    }
-    let (entity, player) = player.unwrap();
     for (mut pos, mut dest, mut zombie, mut weapon_state, mut looking_at, mut movement_state) in query_zombies.iter_mut() {
         match zombie.state {
             ZombieState::AwakingFromTheDead => {
@@ -233,9 +227,23 @@ pub fn system_zombie_handle(
             },
             ZombieState::FollowingPlayer => {
                 if !dest.move_bot(&mut pos, &collider_query) {
+                    
+                    // Query the players to find the closest
+                    let mut distance = 50000.;
+                    let mut player_entity: Entity = Entity::from_raw(0);
+                    let mut player_translation: Vec3 = Vec3::default();
+
+                    for (entity, transform) in query_player.iter() {
+                        let dst = pos.translation.truncate().distance(transform.translation.truncate());
+                        if dst < distance {
+                            player_entity = entity.clone();
+                            player_translation = transform.translation;
+                            distance = dst;
+                        }
+                    }
 
                     // Valid if i'm colliding with him.
-                    if let Some(collision) = collide(pos.translation, ZOMBIE_SIZE * 2., player.translation, PLAYER_SIZE) {
+                    if let Some(collision) = collide(pos.translation, ZOMBIE_SIZE * 2., player_translation, PLAYER_SIZE) {
                         if let Ok((_, mut health)) = query_ennemy.get_mut(dest.entity) {
                             let current_time = time.time_since_startup().as_secs_f32();
                             if !(current_time < weapon_state.fired_at + 1.) {
@@ -244,12 +252,13 @@ pub fn system_zombie_handle(
                             }
                         }
                     } else {
+                        let player_translation = player_translation.truncate();
                         dest.set_destination(
-                            player.translation.truncate(), 
+                            player_translation, 
                             pos.translation.truncate(), 
-                            entity.clone(), 10.
+                            player_entity.clone(), 10.
                         );
-                        looking_at.0 = player.translation.truncate();
+                        looking_at.0 = player_translation;
                     }
                 }
             }
