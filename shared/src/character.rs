@@ -10,6 +10,10 @@ pub struct CharacterMovementState {
 pub struct LookingAt(pub Vec2, pub bool);
 
 
+#[derive(Default, Component)]
+pub struct Death {}
+
+
 #[derive(Component)]
 pub struct Velocity {
     pub v: Vec2,

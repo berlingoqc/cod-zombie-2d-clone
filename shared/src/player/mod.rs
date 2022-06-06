@@ -7,7 +7,7 @@ use crate::{
     collider::{MovementCollider, is_colliding},
     game::{ZombieGame, GameState, GameSpeed, ZombiePlayerInformation},
     map::{MapElementPosition},
-    utils::get_cursor_location, weapons::{weapons::{WeaponBundle, ActiveWeapon}, loader::WeaponAssetState}, animation::AnimationTimer, character::{LookingAt, CharacterMovementState}, health::{Health, HealthChangeState, HealthRegeneration}
+    utils::get_cursor_location, weapons::{weapons::{WeaponBundle, ActiveWeapon}, loader::WeaponAssetState}, animation::AnimationTimer, character::{LookingAt, CharacterMovementState, Death}, health::{Health, HealthChangeState, HealthRegeneration}
 };
 
 use self::{interaction::{PlayerCurrentInteraction, PlayerInteractionType}, input::{PlayerCurrentInput, AvailableGameController}};
@@ -21,6 +21,10 @@ pub struct MainCamera;
 #[derive(Default, Component)]
 pub struct Player {
     pub active_weapon_name: String,
+}
+
+pub struct PlayerDeadEvent {
+    pub player: Entity,
 }
 
 #[derive(Bundle)]
@@ -127,16 +131,18 @@ pub fn setup_player(
 
 
 pub fn system_health_player(
-	mut q_player_health: Query<(Entity, &mut Health, &mut HealthRegeneration), (With<Player>)>,
+	mut q_player_health: Query<(Entity, &mut Health, &mut HealthRegeneration, &mut CharacterMovementState, &mut Transform), (With<Player>)>,
 
     mut game_state: ResMut<State<GameState>>,
 
     mut commands: Commands,
 
-    time: Res<Time>
+    time: Res<Time>,
+
+    mut ev_player_dead: EventWriter<PlayerDeadEvent>,
 
 ) {
-    for (entity, mut health, mut regeneration) in q_player_health.iter_mut() {
+    for (entity, mut health, mut regeneration, mut character_movement_state, mut transform) in q_player_health.iter_mut() {
         match health.get_health_change_state() {
             HealthChangeState::GainHealth => {
                 health.apply_change();
@@ -146,9 +152,11 @@ pub fn system_health_player(
                 regeneration.on_health_change();
             },
             HealthChangeState::Dead => {
-                // TODO change to a end game menu end return to somewhere (home main menu for now)
-                // need to add another state with it's system , on top of the game
-                game_state.set(GameState::Menu).unwrap();
+                health.current_health = 0.;
+                character_movement_state.state = "dying".to_string();
+                transform.translation.z = 5.;
+                commands.entity(entity).insert(Death{});
+                ev_player_dead.send(PlayerDeadEvent { player: entity.clone() });
             },
             _ => {
                 regeneration.apply_regeneration_if(time.delta(), &mut health)

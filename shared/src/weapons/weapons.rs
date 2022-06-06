@@ -8,7 +8,7 @@ use rand::prelude::SliceRandom;
 use crate::{
     utils::{get_cursor_location, vec2_perpendicular_counter_clockwise, vec2_perpendicular_clockwise},
     collider::ProjectileCollider,
-    animation::AnimationTimer, player::{MainCamera, Player, input::{PlayerCurrentInput, SupportedController}}, character::{CharacterMovementState, Velocity, LookingAt}
+    animation::AnimationTimer, player::{MainCamera, Player, input::{PlayerCurrentInput, SupportedController}}, character::{CharacterMovementState, Velocity, LookingAt, Death}
 };
 
 
@@ -164,7 +164,7 @@ pub fn handle_weapon_input(
     query_unequiped_weapon: Query<(Entity, &Weapon), Without<ActiveWeapon>>,
 	mut query_player_weapon: Query<(Entity, &mut AmmunitionState, &mut WeaponState, &Weapon, &ActiveWeapon), With<WeaponState>>,
 	
-    mut q_player: Query<(&GlobalTransform, &PlayerCurrentInput, &LookingAt, &mut CharacterMovementState, &mut AnimationTimer, &Children), With<Player>>,
+    mut q_player: Query<(&GlobalTransform, &PlayerCurrentInput, &LookingAt, &mut CharacterMovementState, &mut AnimationTimer, &Children), (With<Player>, Without<Death>)>,
 ) {
     for (player_global_transform, current_input, looking_at, mut movement_state, mut timer, childrens) in q_player.iter_mut() {
         let player_input = PlayerInputs {

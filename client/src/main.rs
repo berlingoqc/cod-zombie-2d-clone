@@ -18,7 +18,7 @@ use bevy::{
 use shared::{
     game::{
         react_level_data, setup_zombie_game, system_zombie_game,
-        GameState, ZombieGamePlugin, LevelMapRequested, system_unload_zombie_game,
+        GameState, ZombieGamePlugin, LevelMapRequested, system_unload_zombie_game, system_end_game,
     },
     zombies::zombie::system_zombie_handle,
     player::{input::{input_player, self}, interaction::system_interaction_player, system_unload_players, system_health_player
@@ -100,6 +100,7 @@ fn main() {
                 .with_system(react_level_data)
                 .with_system(system_player_added)
                 .with_system(system_health_player)
+                .with_system(system_end_game)
         )
         .add_system_set(
             SystemSet::on_exit(GameState::PlayingZombie)

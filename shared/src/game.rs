@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use crate::health::Health;
 use crate::map::{Window, WindowPanelBundle};
+use crate::player::PlayerDeadEvent;
 use crate::player::input::{AvailableGameController, PlayerCurrentInput};
 use crate::player::{
     setup_player,
@@ -169,6 +170,7 @@ impl Plugin for ZombieGamePlugin {
             .add_plugin(WeaponAssetPlugin{})
             .add_event::<ZombieGameStateChangeEvent>()
             .add_event::<ZombieGamePanelEvent>()
+            .add_event::<PlayerDeadEvent>()
             .init_resource::<GameSpeed>()
             .init_resource::<Game>()
             .init_resource::<ZombieGame>()
@@ -195,6 +197,20 @@ pub fn setup_zombie_game(
     let handle: Handle<ZombieLevelAsset> = asset_server.load(requested_level.level.as_str());
     state.handle = handle;
     state.loaded = false;
+
+}
+
+pub fn system_end_game(
+    q_player: Query<&Health, With<Player>>,
+    mut ev_player_dead: EventReader<PlayerDeadEvent>,
+    mut game_state: ResMut<State<GameState>>,
+) {
+
+    for ev in ev_player_dead.iter() {
+        if q_player.iter().map(|x| x.current_health <= 0.).filter(|x| !x).count() == 0 {
+            game_state.set(GameState::Menu).unwrap();
+        }
+    }
 
 }
 pub fn system_zombie_game(

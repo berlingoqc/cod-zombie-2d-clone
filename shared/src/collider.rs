@@ -17,13 +17,13 @@ pub struct ProjectileCollider {}
 pub struct CollisionEvent {}
 
 
-pub fn is_colliding<T : Component>(
+pub fn is_colliding<T : Component, R : Component>(
     destination: Vec3,
     size: Vec2,
     character_type: &str,
     collider_query: &Query<
         (Entity, &Transform, &MovementCollider),
-        Without<T>
+        (Without<T>, Without<R>)
     >,
 ) -> bool {
     for (_, transform, collider) in collider_query.iter() {

@@ -4,7 +4,7 @@ use bevy::{
     prelude::*
 };
 
-use crate::{game::{GameState, GameSpeed}, character::{CharacterMovementState, LookingAt}, collider::{MovementCollider, is_colliding}, utils::get_cursor_location};
+use crate::{game::{GameState, GameSpeed}, character::{CharacterMovementState, LookingAt, Death}, collider::{MovementCollider, is_colliding}, utils::get_cursor_location};
 
 use super::{Player, MainCamera, PLAYER_SIZE};
 
@@ -112,10 +112,10 @@ pub fn input_player(
     keyboard_input: Res<Input<KeyCode>>,
     axes: Res<Axis<GamepadAxis>>,
 
-    mut query: Query<(&mut Transform, &mut Player, &mut CharacterMovementState, &mut LookingAt, &PlayerCurrentInput)>,
+    mut query: Query<(&mut Transform, &mut Player, &mut CharacterMovementState, &mut LookingAt, &PlayerCurrentInput), Without<Death>>,
     collider_query: Query<
         (Entity, &Transform, &MovementCollider),
-        Without<Player>,
+        (Without<Player>, Without<Death>),
     >,
     wnds: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
@@ -165,7 +165,7 @@ pub fn input_player(
 			if !is_colliding(dest, PLAYER_SIZE, "player",&collider_query) {
 				player_transform.translation = dest;
 			}
-		} else {
+		} else if character_movement_state.state == "walking" {
             character_movement_state.state = "standing".to_string();
 		}
     }

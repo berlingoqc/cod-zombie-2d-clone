@@ -5,7 +5,7 @@ use crate::{
     collider::{MovementCollider, ProjectileCollider, is_colliding},
     weapons::weapons::{WeaponState, WeaponCurrentAction},
     player::{Player, MainCamera, PLAYER_SIZE},
-    health::Health, animation::AnimationTimer, character::{LookingAt, CharacterMovementState}, utils::vec2_perpendicular_counter_clockwise
+    health::Health, animation::AnimationTimer, character::{LookingAt, CharacterMovementState, Death}, utils::vec2_perpendicular_counter_clockwise
 };
 
 use rand::seq::SliceRandom;
@@ -29,9 +29,9 @@ pub struct BotDestination {
 
 impl BotDestination {
 
-    pub fn move_bot<T: Component>(&mut self, pos: &mut Transform, collider_query: &Query<
+    pub fn move_bot<T: Component, R: Component>(&mut self, pos: &mut Transform, collider_query: &Query<
         (Entity, &Transform, &MovementCollider),
-        Without<T>
+        (Without<T>, Without<R>)
     >,) -> bool {
         if let Some(el) = self.path.pop() {
             if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, "zombie", &collider_query) {
@@ -166,7 +166,7 @@ impl ZombieBundle {
 
 pub fn system_zombie_handle(
     // mut commands: Commands,
-    query_player: Query<(Entity, &Transform), (With<Player>, Without<Zombie>)>,
+    query_player: Query<(Entity, &Transform), (With<Player>, Without<Zombie>, Without<Death>)>,
     mut config: ResMut<ZombieSpawnerConfig>,
     mut query_zombies: Query<(&mut Transform, &mut BotDestination, &mut Zombie, &mut WeaponState, &mut LookingAt, &mut CharacterMovementState), With<Zombie>>,
     //mut query_windows: Query<(&mut Window, Entity, &Children)>,
@@ -175,7 +175,7 @@ pub fn system_zombie_handle(
 
     collider_query: Query<
         (Entity, &Transform, &MovementCollider),
-        Without<Zombie>
+        (Without<Zombie>, Without<Death>)
     >,
 
     time: Res<Time>

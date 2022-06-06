@@ -22,17 +22,19 @@ impl HealthRegeneration {
 	// trigger each time to modify health if possible
 	// tick the timer
 	pub fn apply_regeneration_if(&mut self, delta: Duration, health: &mut Health) -> () {
-		if let Some(timer) = self.timer.as_mut() {
-			timer.tick(delta);
-			if timer.finished() {
-				health.tmp_health += self.regeneration_amount;
-				if health.tmp_health < health.max_health {
-					timer.reset();
-				} else {
-					self.timer = None;
+		if health.current_health > 0. {
+			if let Some(timer) = self.timer.as_mut() {
+				timer.tick(delta);
+				if timer.finished() {
+					health.tmp_health += self.regeneration_amount;
+					if health.tmp_health < health.max_health {
+						timer.reset();
+					} else {
+						self.timer = None;
+					}
 				}
-			}
-		};
+			};
+		}
 	}
 }
 
