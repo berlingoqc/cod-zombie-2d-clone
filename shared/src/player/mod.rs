@@ -15,6 +15,21 @@ use self::{interaction::{PlayerCurrentInteraction, PlayerInteractionType}, input
 
 pub const PLAYER_SIZE: Vec2 = const_vec2!([25., 25.]);
 
+const SPAWN_OFFSET_0: Vec2 = const_vec2!([-50., 50.]);
+const SPAWN_OFFSET_1: Vec2 = const_vec2!([50., 50.]);
+const SPAWN_OFFSET_2: Vec2 = const_vec2!([-50., -50.]);
+const SPAWN_OFFSET_3: Vec2 = const_vec2!([50., -50.]);
+
+fn get_spawn_offset(player_index: usize) -> Vec2 {
+    return match player_index {
+        0=> SPAWN_OFFSET_0,
+        1=> SPAWN_OFFSET_1,
+        2=> SPAWN_OFFSET_2,
+        3=> SPAWN_OFFSET_3,
+        _=> Vec2::default(),
+    };
+}
+
 #[derive(Component)]
 pub struct MainCamera;
 
@@ -45,7 +60,7 @@ pub struct PlayerBundle {
 }
 
 impl PlayerBundle {
-    fn new(starting_weapon_name: &str, input: PlayerCurrentInput) -> PlayerBundle {
+    fn new(starting_weapon_name: &str, input: PlayerCurrentInput, index_player: usize) -> PlayerBundle {
         PlayerBundle { 
             player: Player{
                 active_weapon_name: starting_weapon_name.to_string(),
@@ -54,7 +69,7 @@ impl PlayerBundle {
             player_current_input: input,
             sprite : SpriteSheetBundle {
                 transform: Transform {
-                    translation: Vec3::new(0., 0., 10.),
+                    translation: Vec3::new(0., 0., 10.) + get_spawn_offset(index_player).extend(0.),
                     ..Transform::default()
                 },
                 ..default()
@@ -99,6 +114,8 @@ pub fn setup_player(
     weapons: &Res<WeaponAssetState>,
     
     config: &ZombiePlayerInformation,
+
+    index_player: usize
 ) {
     // TODO: for multiplayer
     // Fetch the location of the player spawner in the map
@@ -112,8 +129,7 @@ pub fn setup_player(
 
     let weapon = weapons.weapons.iter().find(|w| w.name.eq(default_weapon_name)).unwrap().clone();
 
-
-    let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name, config.controller.clone())).id();
+    let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name, config.controller.clone(), index_player)).id();
 
     let weapon = commands.spawn()
         .insert_bundle(WeaponBundle::new(weapon)).insert(ActiveWeapon{}).id();

@@ -275,8 +275,8 @@ pub fn system_zombie_game(
             ev_panel_event.send(ZombieGamePanelEvent{});
 
             // Spawn players
-            for player in zombie_game.players.iter() {
-                setup_player(&mut commands, &zombie_game, &weapons, player);
+            for (i, player) in zombie_game.players.iter().enumerate() {
+                setup_player(&mut commands, &zombie_game, &weapons, player, i);
             }
 
             zombie_game.state = ZombieGameState::Round as i32;
