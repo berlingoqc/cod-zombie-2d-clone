@@ -154,6 +154,10 @@ pub fn system_animation_character(
                 if timer.timer.just_finished() {
                     timer.index += 1;
                     if timer.index >= animation.indexs.len() {
+                        if animation.run_once {
+                            timer.timer.pause();
+                            continue;
+                        }
                         timer.index = 0;
                     }
                 }

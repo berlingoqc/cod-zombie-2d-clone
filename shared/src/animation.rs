@@ -17,7 +17,7 @@ pub struct SpriteSheetAnimationConfiguration {
 	pub state_name: String,
 	pub indexs: Vec<usize>,
 	pub playback_speed: f32,
-
+	pub run_once: bool,
 	//pub no_offset: bool,
 }
 
