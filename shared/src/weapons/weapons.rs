@@ -241,10 +241,10 @@ pub fn handle_weapon_input(
 
                     let parent_location = player_global_transform.translation;
 
-                    let mut diff = if !looking_at.1 { 
+                    let mut diff = (if !looking_at.1 { 
                         let mouse_location = looking_at.0;
                         Vec2::new(mouse_location.x - parent_location.x, mouse_location.y - parent_location.y).normalize()
-                    } else { looking_at.0 };
+                    } else { looking_at.0 }).normalize();
 
                     if weapon.offset > 0 {
                         let bottom = weapon.offset * -1;

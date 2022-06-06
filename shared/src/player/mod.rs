@@ -147,7 +147,7 @@ pub fn setup_player(
 
 
 pub fn system_health_player(
-	mut q_player_health: Query<(Entity, &mut Health, &mut HealthRegeneration, &mut CharacterMovementState, &mut Transform), (With<Player>)>,
+	mut q_player_health: Query<(Entity, &mut Health, &mut HealthRegeneration, &mut CharacterMovementState, &mut AnimationTimer, &mut Transform), (With<Player>)>,
 
     mut game_state: ResMut<State<GameState>>,
 
@@ -158,7 +158,7 @@ pub fn system_health_player(
     mut ev_player_dead: EventWriter<PlayerDeadEvent>,
 
 ) {
-    for (entity, mut health, mut regeneration, mut character_movement_state, mut transform) in q_player_health.iter_mut() {
+    for (entity, mut health, mut regeneration, mut character_movement_state, mut timer, mut transform) in q_player_health.iter_mut() {
         match health.get_health_change_state() {
             HealthChangeState::GainHealth => {
                 health.apply_change();
@@ -169,7 +169,11 @@ pub fn system_health_player(
             },
             HealthChangeState::Dead => {
                 health.current_health = 0.;
+                
                 character_movement_state.state = "dying".to_string();
+                character_movement_state.sub_state = "".to_string();
+                timer.offset = 0;
+
                 transform.translation.z = 5.;
                 commands.entity(entity).insert(Death{});
                 ev_player_dead.send(PlayerDeadEvent { player: entity.clone() });
