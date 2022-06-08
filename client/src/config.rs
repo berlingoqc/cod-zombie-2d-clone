@@ -25,6 +25,7 @@ pub struct Opts {
 
     #[structopt(short, long, default_value = "game/easy.level.ron")]
     pub level: String
+    
 }
 
 impl Opts {

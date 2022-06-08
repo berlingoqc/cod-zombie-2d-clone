@@ -7,8 +7,11 @@ edition = "2021"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
-bevy_networking_turbulence = { git = "https://github.com/berlingoqc/bevy_networking_turbulence/", branch="master", default-features = false, features = ["use-webrtc"] }
 bevy = {version = "0.7.0", default-features=false, features = ["bevy_sprite", "bevy_render", "bevy_ui"]}
+
+bytemuck = {version="1.7.3", features= ["derive"]}
+ggrs = { git = "https://github.com/gschup/ggrs", features=["sync-send"] }
+bevy_ggrs = { git = "https://github.com/gschup/bevy_ggrs" }
 
 bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap/", rev = "91d44605888421d5f020d0f4004848e71ff4853d"}
 tiled = { version = "0.10.1", default-features=false}

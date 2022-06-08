@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::health::Health;
 use crate::map::{Window, WindowPanelBundle};
 use crate::player::PlayerDeadEvent;
-use crate::player::input::{AvailableGameController, PlayerCurrentInput};
+use crate::player::input::{AvailableGameController, PlayerCurrentInput, FrameCount, BoxInput};
 use crate::player::{
     setup_player,
     interaction::PlayerInteraction
@@ -20,6 +20,8 @@ use super::zombies::zombie::*;
 use bevy::asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset};
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
+use bevy_ggrs::RollbackIdProvider;
+use ggrs::InputStatus;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -187,6 +189,12 @@ impl Plugin for ZombieGamePlugin {
     }
 }
 
+#[allow(dead_code)]
+pub fn increase_frame_system(mut frame_count: ResMut<FrameCount>, inputs: Res<Vec<(BoxInput, InputStatus)>>,) {
+    frame_count.frame += 1;
+    println!("IONPUTS : {:?} {:?}", inputs[0].0.inp, inputs[1].0.inp,);
+}
+
 // make on client and server side ....
 pub fn setup_zombie_game(
     mut state: ResMut<ZombieLevelAssetState>,
@@ -234,6 +242,8 @@ pub fn system_zombie_game(
     query_spawner: Query<&MapElementPosition, With<ZombieSpawner>>,
     query_window: Query<(&MapElementPosition, Entity), With<Window>>,
 
+    mut rip: ResMut<RollbackIdProvider>,
+
     weapons: Res<WeaponAssetState>,
 ) {
     let mut nbr_zombie = 0;
@@ -276,7 +286,7 @@ pub fn system_zombie_game(
 
             // Spawn players
             for (i, player) in zombie_game.players.iter().enumerate() {
-                setup_player(&mut commands, &zombie_game, &weapons, player, i);
+                setup_player(&mut rip,&mut commands, &zombie_game, &weapons, player, i);
             }
 
             zombie_game.state = ZombieGameState::Round as i32;

@@ -2,6 +2,7 @@ pub mod interaction;
 pub mod input;
 
 use bevy::{prelude::*, math::const_vec2};
+use bevy_ggrs::{Rollback, RollbackIdProvider};
 
 use crate::{
     collider::{MovementCollider, is_colliding},
@@ -35,7 +36,7 @@ pub struct MainCamera;
 
 #[derive(Default, Component)]
 pub struct Player {
-    pub active_weapon_name: String,
+    handle: usize,
 }
 
 pub struct PlayerDeadEvent {
@@ -63,7 +64,7 @@ impl PlayerBundle {
     fn new(starting_weapon_name: &str, input: PlayerCurrentInput, index_player: usize) -> PlayerBundle {
         PlayerBundle { 
             player: Player{
-                active_weapon_name: starting_weapon_name.to_string(),
+                handle: index_player,
                 ..default()
             },
             player_current_input: input,
@@ -109,6 +110,7 @@ impl PlayerBundle {
 }
 
 pub fn setup_player(
+    mut rip: &mut ResMut<RollbackIdProvider>,
     mut commands: &mut Commands,
     zombie_game: &ResMut<ZombieGame>,
     weapons: &Res<WeaponAssetState>,
@@ -130,6 +132,8 @@ pub fn setup_player(
     let weapon = weapons.weapons.iter().find(|w| w.name.eq(default_weapon_name)).unwrap().clone();
 
     let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name, config.controller.clone(), index_player)).id();
+
+    commands.entity(player).insert(Rollback::new(rip.next_id()));
 
     let weapon = commands.spawn()
         .insert_bundle(WeaponBundle::new(weapon)).insert(ActiveWeapon{}).id();

@@ -48,7 +48,12 @@ dependencies = ["build-native"]
 
 [tasks.run-dyn]
 command = "cargo"
-args = ["run", "--features", "native", "--features", "bevy/dynamic", "--features", "bevy/filesystem_watcher"]
+args = ["run", "--features", "native", "--features", "bevy/dynamic", "--features", "bevy/filesystem_watcher", "--", "--host", "127.0.0.1:7001", "--port", "7000"]
+
+[tasks.run-dyn-p2]
+command = "cargo"
+args = ["run", "--features", "native", "--features", "bevy/dynamic", "--features", "bevy/filesystem_watcher", "--", "--host", "127.0.0.1:7000", "--port", "7001"]
+
 
 [tasks.cp-assets-public]
 command = "cp"

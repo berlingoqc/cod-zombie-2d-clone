@@ -4,10 +4,39 @@ use bevy::{
     prelude::*
 };
 
+use bevy_ggrs::{Rollback, RollbackIdProvider};
+use bytemuck::{Pod, Zeroable};
+use ggrs::{Config, InputStatus, P2PSession, PlayerHandle, SpectatorSession, SyncTestSession};
+use std::{hash::Hash, net::SocketAddr};
+
 use crate::{game::{GameState, GameSpeed}, character::{CharacterMovementState, LookingAt, Death}, collider::{MovementCollider, is_colliding}, utils::get_cursor_location};
 
 use super::{Player, MainCamera, PLAYER_SIZE};
 
+// You can also register resources. If your Component / Resource implements Hash, you can make use of `#[reflect(Hash)]`
+// in order to allow a GGRS `SyncTestSession` to construct a checksum for a world snapshot
+#[derive(Default, Reflect, Hash, Component)]
+#[reflect(Hash)]
+pub struct FrameCount {
+    pub frame: u32,
+}
+
+
+/// You need to define a config struct to bundle all the generics of GGRS. You can safely ignore `State` and leave it as u8 for all GGRS functionality.
+/// TODO: Find a way to hide the state type.
+#[derive(Debug)]
+pub struct GGRSConfig;
+impl ggrs::Config for GGRSConfig {
+    type Input = BoxInput;
+    type State = u8;
+    type Address = SocketAddr;
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, PartialEq, Pod, Zeroable)]
+pub struct BoxInput {
+    pub inp: u8,
+}
 
 #[derive(Default, PartialEq, Debug, Clone)]
 pub enum SupportedController {
@@ -22,7 +51,6 @@ pub struct PlayerCurrentInput {
 
 	pub gamepad: Option<Gamepad>
 }
-
 
 pub struct AvailableGameController {
     pub keyboard_mouse: bool,
@@ -107,6 +135,31 @@ pub fn system_gamepad_event(
     }
 
 }
+
+const INPUT_UP: u8 = 1 << 0;
+const INPUT_DOWN: u8 = 1 << 1;
+const INPUT_LEFT: u8 = 1 << 2;
+const INPUT_RIGHT: u8 = 1 << 3;
+
+pub fn input(_handle: In<PlayerHandle>, keyboard_input: Res<Input<KeyCode>>) -> BoxInput {
+    let mut input: u8 = 0;
+
+    if keyboard_input.pressed(KeyCode::W) {
+        input |= INPUT_UP;
+    }
+    if keyboard_input.pressed(KeyCode::A) {
+        input |= INPUT_LEFT;
+    }
+    if keyboard_input.pressed(KeyCode::S) {
+        input |= INPUT_DOWN;
+    }
+    if keyboard_input.pressed(KeyCode::D) {
+        input |= INPUT_RIGHT;
+    }
+
+    BoxInput { inp: input }
+}
+
 
 pub fn input_player(
     keyboard_input: Res<Input<KeyCode>>,
