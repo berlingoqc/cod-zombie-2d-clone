@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["client", "shared" ]
+members = ["game"]
 
 [profile.dev]
 opt-level = 1
