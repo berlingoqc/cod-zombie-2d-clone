@@ -3,7 +3,7 @@
 
 mod config;
 mod plugins;
-mod player;
+mod ingameui;
 mod character_animation;
 mod menu;
 
@@ -32,9 +32,12 @@ use crate::{
         web::WebPlugin,
     },
     character_animation::CharacterAnimationPlugin,
-    player::system_player_added,
     menu::{
-        homemenu::{HomeMenuPlugin, clear_home_menu, system_button_handle}, ingameui::{system_clear_ingame_ui, system_weapon_ui, system_ingame_ui, setup_ingame_ui}, 
+        homemenu::{HomeMenuPlugin, clear_home_menu, system_button_handle}, 
+    },
+    ingameui::{
+        ingameui::{system_clear_ingame_ui, system_weapon_ui, system_ingame_ui, setup_ingame_ui},
+        player::{setup_player_camera, system_player_added}
     }
 };
 
@@ -116,7 +119,7 @@ fn main() {
 
     app.add_system(system_gamepad_event);
 
-    app.add_startup_system(player::setup_player_camera);
+    app.add_startup_system(setup_player_camera);
 
     app
     .add_system_set(

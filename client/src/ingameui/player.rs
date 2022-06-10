@@ -1,7 +1,7 @@
 use bevy::{prelude::*, text::Text2dBounds, transform};
 use shared::{player::{MainCamera, Player, interaction::PlayerCurrentInteraction}, health::Health};
 
-use crate::menu::ingameui::InGameUI;
+use super::ingameui::InGameUI;
 
 
 #[derive(Component)]
