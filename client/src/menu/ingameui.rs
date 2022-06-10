@@ -10,7 +10,6 @@ use shared::{
 #[derive(Component)]
 pub struct InGameUI;
 
-
 #[derive(Component)]
 pub struct PlayerUI {
     pub player: Entity,

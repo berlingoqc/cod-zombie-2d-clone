@@ -3,12 +3,9 @@
 
 mod config;
 mod plugins;
-mod ingameui;
-mod homemenu;
 mod player;
 mod character_animation;
-mod ui_utils;
-mod localmultiplayerui;
+mod menu;
 
 use std::net::SocketAddr;
 
@@ -35,8 +32,12 @@ use crate::{
         web::WebPlugin,
     },
     character_animation::CharacterAnimationPlugin,
-    homemenu::HomeMenuPlugin, ingameui::system_clear_ingame_ui, player::system_player_added
+    player::system_player_added,
+    menu::{
+        homemenu::{HomeMenuPlugin, clear_home_menu, system_button_handle}, ingameui::{system_clear_ingame_ui, system_weapon_ui, system_ingame_ui, setup_ingame_ui}, 
+    }
 };
+
 use bevy_kira_audio::AudioPlugin;
 
 const TIME_STEP: f32 = 1.0 / 60.0;
@@ -57,7 +58,7 @@ fn main() {
         .with_input_delay(2);
 
     sess_build = sess_build.add_player(ggrs::PlayerType::Local, 0).unwrap();
-    println!("HOSTTTT : {:?}", opts.host);
+    
     let remote_addr: SocketAddr = opts.host.parse().unwrap();
     sess_build = sess_build.add_player(ggrs::PlayerType::Remote(remote_addr), 1).unwrap();
 
@@ -117,49 +118,44 @@ fn main() {
 
     app.add_startup_system(player::setup_player_camera);
 
-    if opts.host == "" {
-        info!("Startin single player mode");
-        app
-        .add_system_set(
-            SystemSet::on_enter(GameState::PlayingZombie)
-                .with_system(setup_zombie_game)
-                .with_system(ingameui::setup_ingame_ui),
-        )
-        .add_system_set(
-            SystemSet::on_update(GameState::PlayingZombie)
-                .with_run_criteria(FixedTimestep::step(TIME_STEP as f64).chain(
-                        (|In(input): In<ShouldRun>, state: Res<State<GameState>>| {
-                            if state.current() == &GameState::PlayingZombie {
-                                input
-                            } else {
-                                ShouldRun::No
-                            }
-                        })
-                ))
-                .with_system(ingameui::system_ingame_ui)
-                .with_system(ingameui::system_weapon_ui)
-                .with_system(system_zombie_handle)
-                .with_system(system_zombie_game)
-                .with_system(apply_velocity)
-                .with_system(input_player)
-                .with_system(system_interaction_player)
-                .with_system(handle_weapon_input)
-                .with_system(movement_projectile)
-                .with_system(react_level_data)
-                .with_system(system_player_added)
-                .with_system(system_health_player)
-                .with_system(system_end_game)
-        )
-        .add_system_set(
-            SystemSet::on_exit(GameState::PlayingZombie)
-                .with_system(system_unload_map)
-                .with_system(system_clear_ingame_ui)
-                .with_system(system_unload_players)
-                .with_system(system_unload_zombie_game)
-        );
-    } else {
-        info!("Startin multiplayer mode");
-    }
+    app
+    .add_system_set(
+        SystemSet::on_enter(GameState::PlayingZombie)
+            .with_system(setup_zombie_game)
+            .with_system(setup_ingame_ui)
+    )
+    .add_system_set(
+        SystemSet::on_update(GameState::PlayingZombie)
+            .with_run_criteria(FixedTimestep::step(TIME_STEP as f64).chain(
+                    (|In(input): In<ShouldRun>, state: Res<State<GameState>>| {
+                        if state.current() == &GameState::PlayingZombie {
+                            input
+                        } else {
+                            ShouldRun::No
+                        }
+                    })
+            ))
+            .with_system(system_ingame_ui)
+            .with_system(system_weapon_ui)
+            .with_system(system_zombie_handle)
+            .with_system(system_zombie_game)
+            .with_system(apply_velocity)
+            .with_system(input_player)
+            .with_system(system_interaction_player)
+            .with_system(handle_weapon_input)
+            .with_system(movement_projectile)
+            .with_system(react_level_data)
+            .with_system(system_player_added)
+            .with_system(system_health_player)
+            .with_system(system_end_game)
+    )
+    .add_system_set(
+        SystemSet::on_exit(GameState::PlayingZombie)
+            .with_system(system_unload_map)
+            .with_system(system_clear_ingame_ui)
+            .with_system(system_unload_players)
+            .with_system(system_unload_zombie_game)
+    );
 
     if opts.benchmark_mode {
       app.add_plugin(FPSPlugin{});

@@ -1,7 +1,11 @@
 use bevy::{prelude::*, app::AppExit};
 
-use crate::ui_utils::*;
-use shared::{game::{GameState, ZombieGame, ZombiePlayerInformation}, player::input::{AvailableGameController, PlayerCurrentInput, SupportedController}};
+use super::ui_utils::*;
+use shared::{
+    game::{GameState, ZombieGame, ZombiePlayerInformation},
+    player::input::{AvailableGameController, PlayerCurrentInput, SupportedController}
+};
+
 
 
 pub fn setup_home_menu(
