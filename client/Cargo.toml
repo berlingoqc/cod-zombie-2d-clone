@@ -49,6 +49,10 @@ uuid = "=0.8.1"
 anyhow ="1.0"
 pathfinding = "3.0.12"
 
+console_error_panic_hook = "0.1.6"
+
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+ggrs = {  git = "https://github.com/gschup/ggrs", features=["sync-send", "wasm-bindgen"]}
+bevy_ggrs = { git = "https://github.com/gschup/bevy_ggrs", features=["wasm-bindgen"]}
 gloo-events = "0.1.1"
 web-sys = "0.3.57"
