@@ -9,7 +9,7 @@ use bytemuck::{Pod, Zeroable};
 use ggrs::{Config, InputStatus, P2PSession, PlayerHandle, SpectatorSession, SyncTestSession};
 use std::{hash::Hash, net::SocketAddr};
 
-use crate::{game::{GameState, GameSpeed}, character::{CharacterMovementState, LookingAt, Death}, collider::{MovementCollider, is_colliding}, utils::get_cursor_location};
+use crate::{game::{GameState, GameSpeed}, character::{CharacterMovementState, LookingAt, Death, Velocity}, collider::{MovementCollider, is_colliding}, utils::get_cursor_location};
 
 use super::{Player, MainCamera, PLAYER_SIZE};
 
@@ -21,21 +21,38 @@ pub struct FrameCount {
     pub frame: u32,
 }
 
-
 /// You need to define a config struct to bundle all the generics of GGRS. You can safely ignore `State` and leave it as u8 for all GGRS functionality.
 /// TODO: Find a way to hide the state type.
 #[derive(Debug)]
 pub struct GGRSConfig;
 impl ggrs::Config for GGRSConfig {
     type Input = BoxInput;
-    type State = u8;
+    type State = i32;
     type Address = SocketAddr;
 }
 
+const INPUT_UP: i32 = 1 << 0;
+const INPUT_DOWN: i32 = 1 << 1;
+const INPUT_LEFT: i32 = 1 << 2;
+const INPUT_RIGHT: i32 = 1 << 3;
+
 #[repr(C)]
-#[derive(Copy, Clone, PartialEq, Pod, Zeroable)]
+#[derive(Copy, Clone, PartialEq, Pod, Zeroable, Default)]
 pub struct BoxInput {
-    pub inp: u8,
+    // 0 : UP
+    // 1 : DOWN
+    // 2 : LEFT
+    // 3 : RIGHT
+    // 4 : Fire
+    // 5 : Reload
+    // 6 : Change Weapon
+    // 7 : Action
+    // ..
+    // ..
+    // 
+    pub inp: i32,
+    pub right_x: i32,
+    pub right_y: i32,
 }
 
 #[derive(Default, PartialEq, Debug, Clone)]
@@ -48,8 +65,11 @@ pub enum SupportedController {
 #[derive(Component, Default, Debug, Clone)]
 pub struct PlayerCurrentInput {
 	pub input_source: SupportedController,
+	pub gamepad: Option<Gamepad>,
 
-	pub gamepad: Option<Gamepad>
+
+    pub movement: Vec2,
+    pub looking_at: Vec2,
 }
 
 pub struct AvailableGameController {
@@ -136,13 +156,18 @@ pub fn system_gamepad_event(
 
 }
 
-const INPUT_UP: u8 = 1 << 0;
-const INPUT_DOWN: u8 = 1 << 1;
-const INPUT_LEFT: u8 = 1 << 2;
-const INPUT_RIGHT: u8 = 1 << 3;
 
-pub fn input(_handle: In<PlayerHandle>, keyboard_input: Res<Input<KeyCode>>) -> BoxInput {
-    let mut input: u8 = 0;
+
+pub fn input(
+    handle: In<PlayerHandle>,
+    
+    keyboard_input: Res<Input<KeyCode>>,
+    wnds: Res<Windows>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+
+
+) -> BoxInput {
+    let mut input: i32 = 0;
 
     if keyboard_input.pressed(KeyCode::W) {
         input |= INPUT_UP;
@@ -157,63 +182,86 @@ pub fn input(_handle: In<PlayerHandle>, keyboard_input: Res<Input<KeyCode>>) -> 
         input |= INPUT_RIGHT;
     }
 
-    BoxInput { inp: input }
+
+    let mouse_position = get_cursor_location(&wnds, &q_camera);
+
+
+    BoxInput { inp: input, right_x: mouse_position.x as i32, right_y: mouse_position.y as i32}
 }
 
 
-pub fn input_player(
-    keyboard_input: Res<Input<KeyCode>>,
-    axes: Res<Axis<GamepadAxis>>,
+pub fn apply_input_players(
 
-    mut query: Query<(&mut Transform, &mut Player, &mut CharacterMovementState, &mut LookingAt, &PlayerCurrentInput), Without<Death>>,
-    collider_query: Query<
-        (Entity, &Transform, &MovementCollider),
-        (Without<Player>, Without<Death>),
-    >,
-    wnds: Res<Windows>,
-    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    mut query: Query<(&mut PlayerCurrentInput, &Player), Without<Death>>,
 
-    game_speed: Res<GameSpeed>,
+    inputs: Res<Vec<(BoxInput, InputStatus)>>,
 
     mut game_state: ResMut<State<GameState>>
 ) {
 
-
-    if keyboard_input.pressed(KeyCode::F2) {
-        game_state.set(GameState::Menu).unwrap();
-        return;
-    }
-		
-
-    // TODO : split player input and movement (IF I WANT TO NETWORK AT SOME POINT)
     for (
-		mut player_transform,
-		mut player,
-		mut character_movement_state,
-		mut looking_at,
-		current_input
+		mut current_input,
+		player,
 	) in query.iter_mut() {
 
-        let (opt_movement, looking_direction) = match current_input.input_source {
-			SupportedController::Keyboard => {
-				(get_keyboard_input(&keyboard_input), Some(get_cursor_location(&wnds, &q_camera)))
-			},
-			SupportedController::Gamepad => {
-                let gamepad = current_input.gamepad.unwrap();
-                looking_at.1 = true;
-				get_gamepad_input(gamepad, &axes)
-			}
-		};
-        
-
-        if let Some(looking_direction) = looking_direction {
-		    looking_at.0 = looking_direction;
+        if inputs.len() <= player.handle {
+            continue;
         }
-		
-		if let Some(movement) = opt_movement {
+
+        println!("{:?} {:?}", player.handle, inputs[player.handle].0.inp);
+
+        let box_input = match inputs[player.handle].1 {
+            InputStatus::Confirmed => inputs[player.handle].0,
+            InputStatus::Predicted => inputs[player.handle].0,
+            InputStatus::Disconnected => BoxInput::default(), // disconnected players do nothing
+        };
+
+
+        let mut movement = Vec2::default();
+
+        if box_input.inp & INPUT_DOWN == 0 && box_input.inp & INPUT_UP != 0 {
+            movement += Vec2::new(0., 1.);
+        } else if box_input.inp & INPUT_DOWN != 0 && box_input.inp & INPUT_UP == 0 {
+            movement += Vec2::new(0., -1.);
+        }
+
+        if box_input.inp & INPUT_LEFT == 0 && box_input.inp & INPUT_RIGHT != 0 {
+            movement += Vec2::new(1., 0.);
+        } else if box_input.inp & INPUT_LEFT != 0 && box_input.inp & INPUT_RIGHT == 0 {
+            movement += Vec2::new(-1., 0.);
+        }
+
+        current_input.movement = movement;
+        current_input.looking_at = Vec2::new(box_input.right_x as f32, box_input.right_y as f32);
+
+
+    }
+}
+
+pub fn update_velocity_player(
+    mut query: Query<(&Transform, &mut Velocity, &PlayerCurrentInput,)>
+) {
+    for (t, mut v, c) in query.iter_mut() {
+        v.v = c.movement;
+    }
+}
+
+pub fn move_players(
+    mut query: Query<(&mut Transform, &mut LookingAt, &mut CharacterMovementState, &Velocity, &PlayerCurrentInput), With<Player>>,
+
+    collider_query: Query<
+        (Entity, &Transform, &MovementCollider),
+        (Without<Player>, Without<Death>),
+    >,
+
+    game_speed: Res<GameSpeed>,
+) {
+    for (mut player_transform, mut looking_at, mut character_movement_state, v, c) in query.iter_mut() {
+        looking_at.0 = c.looking_at;
+        if v.v.x != 0. || v.v.y != 0. {
 			character_movement_state.state = "walking".to_string();
 
-			let dest = player_transform.translation + (movement * game_speed.0 * 125.);
+			let dest = player_transform.translation + (v.v.extend(0.) * game_speed.0 * 125.);
 
 			if !is_colliding(dest, PLAYER_SIZE, "player",&collider_query) {
 				player_transform.translation = dest;
@@ -222,4 +270,5 @@ pub fn input_player(
             character_movement_state.state = "standing".to_string();
 		}
     }
+
 }

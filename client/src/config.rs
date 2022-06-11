@@ -24,7 +24,16 @@ pub struct Opts {
     pub map: String,
 
     #[structopt(short, long, default_value = "game/easy.level.ron")]
-    pub level: String
+    pub level: String,
+
+
+    // Temporary two for testing multiplayer
+    
+    #[structopt(short, long, default_value = "")]
+    pub remote_host: String,
+
+    #[structopt(short, long, default_value = "")]
+    pub index: u32,
     
 }
 

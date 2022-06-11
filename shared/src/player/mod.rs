@@ -8,7 +8,7 @@ use crate::{
     collider::{MovementCollider, is_colliding},
     game::{ZombieGame, GameState, GameSpeed, ZombiePlayerInformation},
     map::{MapElementPosition},
-    utils::get_cursor_location, weapons::{weapons::{WeaponBundle, ActiveWeapon}, loader::WeaponAssetState}, animation::AnimationTimer, character::{LookingAt, CharacterMovementState, Death}, health::{Health, HealthChangeState, HealthRegeneration}
+    utils::get_cursor_location, weapons::{weapons::{WeaponBundle, ActiveWeapon}, loader::WeaponAssetState}, animation::AnimationTimer, character::{LookingAt, CharacterMovementState, Death, Velocity}, health::{Health, HealthChangeState, HealthRegeneration}
 };
 
 use self::{interaction::{PlayerCurrentInteraction, PlayerInteractionType}, input::{PlayerCurrentInput, AvailableGameController}};
@@ -34,7 +34,7 @@ fn get_spawn_offset(player_index: usize) -> Vec2 {
 #[derive(Component)]
 pub struct MainCamera;
 
-#[derive(Default, Component)]
+#[derive(Default, Component, Reflect)]
 pub struct Player {
     handle: usize,
 }
@@ -57,6 +57,7 @@ pub struct PlayerBundle {
     pub health_regeneration: HealthRegeneration,
     pub character_movement_state: CharacterMovementState,
 
+    pub velocity: Velocity,
     pub player_current_input: PlayerCurrentInput,
 }
 
@@ -79,6 +80,7 @@ impl PlayerBundle {
                 size: PLAYER_SIZE,
                 ..default()
             },
+            velocity: Velocity::default(),
             map_element_position: MapElementPosition { position: Vec2::new(0.0, 0.), size: Vec2::new(50., 50.), rotation: 0 },
             // velocity: Velocity { v: Vec2::new(0.,0.)},
             character_movement_state: CharacterMovementState { state: String::from("walking"), sub_state: "".to_string() },

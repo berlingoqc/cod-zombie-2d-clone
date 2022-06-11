@@ -7,6 +7,8 @@ mod ingameui;
 mod character_animation;
 mod menu;
 
+mod p2p;
+
 use std::net::SocketAddr;
 
 use bevy::{
@@ -15,15 +17,15 @@ use bevy::{
 
 use bevy_ggrs::{SessionType, GGRSPlugin};
 use bytemuck::{Pod, Zeroable};
-use ggrs::{SessionBuilder, UdpNonBlockingSocket, Config};
+use ggrs::{SessionBuilder, UdpNonBlockingSocket, Config, P2PSession};
 use shared::{
     game::{
         react_level_data, setup_zombie_game, system_zombie_game,
         GameState, ZombieGamePlugin, LevelMapRequested, system_unload_zombie_game, system_end_game, increase_frame_system,
     },
     zombies::zombie::system_zombie_handle,
-    player::{input::{input_player, FrameCount, input, BoxInput, AvailableGameController, system_gamepad_event, GGRSConfig}, interaction::system_interaction_player, system_unload_players, system_health_player
-    }, weapons::{weapons::{handle_weapon_input}, ammunition::{apply_velocity, movement_projectile}}, map::render::system_unload_map, character::Velocity,
+    player::{input::{apply_input_players, FrameCount, input, BoxInput, AvailableGameController, system_gamepad_event, GGRSConfig, update_velocity_player, move_players}, interaction::system_interaction_player, system_unload_players, system_health_player, Player
+    }, weapons::{weapons::{handle_weapon_input}, ammunition::{apply_velocity, movement_projectile}}, map::render::system_unload_map, character::{Velocity, LookingAt},
 };
 use shared::map::MapPlugin;
 use crate::{
@@ -38,7 +40,7 @@ use crate::{
     ingameui::{
         ingameui::{system_clear_ingame_ui, system_weapon_ui, system_ingame_ui, setup_ingame_ui},
         player::{setup_player_camera, system_player_added}
-    }
+    }, p2p::config::P2PSystemLabel
 };
 
 use bevy_kira_audio::AudioPlugin;
@@ -48,6 +50,11 @@ const TIME_STEP: f32 = 1.0 / 60.0;
 const ROLLBACK_DEFAULT: &str = "rollback_default";
 
 
+fn print_events_system(mut session: ResMut<P2PSession<GGRSConfig>>) {
+    for event in session.events() {
+        println!("GGRS Event: {:?}", event);
+    }
+}
 
 fn main() {
     let opts = config::Opts::get();
@@ -55,18 +62,6 @@ fn main() {
 
     let mut app = App::new();
 
-    let mut sess_build = SessionBuilder::<GGRSConfig>::new()
-        .with_num_players(2)
-        .with_max_prediction_window(12)
-        .with_input_delay(2);
-
-    sess_build = sess_build.add_player(ggrs::PlayerType::Local, 0).unwrap();
-    
-    let remote_addr: SocketAddr = opts.host.parse().unwrap();
-    sess_build = sess_build.add_player(ggrs::PlayerType::Remote(remote_addr), 1).unwrap();
-
-    let socket = UdpNonBlockingSocket::bind_to_port(opts.port as u16).unwrap();
-    let sess = sess_build.start_p2p_session(socket).unwrap();
 
     GGRSPlugin::<GGRSConfig>::new()
         // define frequency of rollback game logic update
@@ -74,14 +69,23 @@ fn main() {
         // define system that returns inputs given a player handle, so GGRS can send the inputs around
         .with_input_system(input)
         // register types of components AND resources you want to be rolled back
+        .register_rollback_type::<Player>()
+        .register_rollback_type::<LookingAt>()
         .register_rollback_type::<Transform>()
-        //.register_rollback_type::<Velocity>()
+        .register_rollback_type::<Velocity>()
         .register_rollback_type::<FrameCount>()
         // these systems will be executed as part of the advance frame update
         .with_rollback_schedule(
             Schedule::default().with_stage(
                 ROLLBACK_DEFAULT,
                 SystemStage::parallel()
+                    .with_system(apply_input_players.label(P2PSystemLabel::Input))
+                    .with_system(
+                        update_velocity_player
+                            .label(P2PSystemLabel::Velocity)
+                            .after(P2PSystemLabel::Input)
+                    )
+                    .with_system(move_players.after(P2PSystemLabel::Velocity))
                     .with_system(increase_frame_system),
             ),
         )
@@ -103,16 +107,11 @@ fn main() {
         keyboard_mouse: true,
         gamepad: vec![]
     })
+    .insert_resource(FrameCount { frame: 0 })
     .add_plugins(DefaultPlugins)
     .add_plugin(CharacterAnimationPlugin{ })
     .add_plugin(AudioPlugin{})
     .add_plugin(MapPlugin {});
-
-
-    app.insert_resource(sess)
-        .insert_resource(SessionType::P2PSession)
-        // register a resource that will be rolled back
-        .insert_resource(FrameCount { frame: 0 });
 
     app.add_plugin(ZombieGamePlugin{});
     app.add_plugin(HomeMenuPlugin{});
@@ -120,6 +119,7 @@ fn main() {
     app.add_system(system_gamepad_event);
 
     app.add_startup_system(setup_player_camera);
+
 
     app
     .add_system_set(
@@ -143,7 +143,7 @@ fn main() {
             .with_system(system_zombie_handle)
             .with_system(system_zombie_game)
             .with_system(apply_velocity)
-            .with_system(input_player)
+            //.with_system(apply_input_players)
             .with_system(system_interaction_player)
             .with_system(handle_weapon_input)
             .with_system(movement_projectile)
@@ -151,6 +151,7 @@ fn main() {
             .with_system(system_player_added)
             .with_system(system_health_player)
             .with_system(system_end_game)
+            .with_system(print_events_system)
     )
     .add_system_set(
         SystemSet::on_exit(GameState::PlayingZombie)

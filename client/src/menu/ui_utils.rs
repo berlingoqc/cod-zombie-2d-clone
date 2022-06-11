@@ -13,6 +13,7 @@ pub enum ButtonActions {
     #[default]
     StartLocalGame,
     StartLocalMultiplayerGame,
+    StartOnlineMultiplayerGame,
     QuitApplication
 }
 

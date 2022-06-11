@@ -6,7 +6,7 @@ pub struct CharacterMovementState {
     pub sub_state: String,
 }
 
-#[derive(Default, Component)]
+#[derive(Default, Component, Reflect)]
 pub struct LookingAt(pub Vec2, pub bool);
 
 
@@ -14,7 +14,7 @@ pub struct LookingAt(pub Vec2, pub bool);
 pub struct Death {}
 
 
-#[derive(Component)]
+#[derive(Component, Reflect, Default)]
 pub struct Velocity {
     pub v: Vec2,
 }

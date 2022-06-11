@@ -1,8 +1,11 @@
 use bevy::{prelude::*, app::AppExit};
+use ggrs::UdpNonBlockingSocket;
+
+use crate::{p2p::{local::create_local_session, online::{NetworkPlayer, create_network_session}}, config::Opts};
 
 use super::ui_utils::*;
 use shared::{
-    game::{GameState, ZombieGame, ZombiePlayerInformation},
+    game::{GameState, ZombieGame, ZombiePlayerInformation, GameSpeed},
     player::input::{AvailableGameController, PlayerCurrentInput, SupportedController}
 };
 
@@ -35,13 +38,18 @@ pub fn setup_home_menu(
                     ..default()
                 }).with_children(|parent| {
                     add_button(ActionButtonComponent(ButtonActions::QuitApplication), "Close", parent, &asset_server);
-                    add_button(ActionButtonComponent(ButtonActions::StartLocalMultiplayerGame), "Start multiplayer game", parent, &asset_server);
-                    add_button(ActionButtonComponent(ButtonActions::StartLocalGame), "Start single player game", parent, &asset_server);
+                    add_button(ActionButtonComponent(ButtonActions::StartOnlineMultiplayerGame), "online multiplayer", parent, &asset_server);
+                    add_button(ActionButtonComponent(ButtonActions::StartLocalMultiplayerGame), "local multiplayer", parent, &asset_server);
+                    add_button(ActionButtonComponent(ButtonActions::StartLocalGame), "single player", parent, &asset_server);
                 });
         });
 }
 
 pub fn system_button_handle(
+
+    mut commands: Commands,
+    game_speed: Res<GameSpeed>,
+
     mut interaction_query: Query<
         (&Interaction, &mut UiColor, &ActionButtonComponent),
         (Changed<Interaction>, With<Button>),
@@ -63,23 +71,66 @@ pub fn system_button_handle(
                         zombie_game.players = vec![ZombiePlayerInformation {
                             name: "Player 1".to_string(),
                             controller: if controller.gamepad.len() > 0 {
-                                PlayerCurrentInput{ input_source: SupportedController::Gamepad, gamepad: Some(controller.gamepad.get(0).unwrap().clone())}
-                            } else { PlayerCurrentInput{ input_source: SupportedController::Keyboard, gamepad: None}}
+                                PlayerCurrentInput{ input_source: SupportedController::Gamepad, gamepad: Some(controller.gamepad.get(0).unwrap().clone()), ..default()}
+                            } else { PlayerCurrentInput{ input_source: SupportedController::Keyboard, gamepad: None, ..default()}},
+                            index: 0,
                         }];
+
+                        create_local_session(&mut commands, &game_speed, 1);
+
+                        app_state.set(GameState::PlayingZombie).unwrap();
+                    },
+                    ButtonActions::StartOnlineMultiplayerGame => {
+                        let opts = Opts::get();
+
+                        let mut players: Vec<NetworkPlayer> = vec![];
+
+                        zombie_game.players.push(ZombiePlayerInformation {
+                            name: format!("Player {}", 0),
+                            controller: PlayerCurrentInput { input_source: SupportedController::Keyboard,  ..default() },
+                            index: opts.index as usize,
+
+                        });
+
+                        zombie_game.players.push(ZombiePlayerInformation {
+                            name: format!("Player {}", 1),
+
+                            controller: PlayerCurrentInput { input_source: SupportedController::Keyboard, ..default() },
+                            index: if opts.index == 0 { 1 } else { 0 },
+                        });
+
+                        // HARCODE OF THE IP AND THE ORDER
+                        if opts.index == 0 {
+                            players.push(NetworkPlayer{address: "localhost".to_string()});
+                            players.push(NetworkPlayer{address: "127.0.0.1:7001".to_string()});
+                        } else if opts.index == 1 {
+                            players.push(NetworkPlayer{address: "127.0.0.1:7000".to_string()});
+                            players.push(NetworkPlayer{address: "localhost".to_string()});
+                        };
+
+                        let socket = UdpNonBlockingSocket::bind_to_port(opts.port as u16).unwrap();
+
+                        create_network_session(&mut commands, &game_speed, socket, players);
+
                         app_state.set(GameState::PlayingZombie).unwrap();
                     },
                     ButtonActions::StartLocalMultiplayerGame => {
                         // Add a player with the keyboard and add one player by present input
                         zombie_game.players = vec![ZombiePlayerInformation {
                             name: "Player 1".to_string(),
-                            controller: PlayerCurrentInput { input_source: SupportedController::Keyboard, gamepad: None }
+                            controller: PlayerCurrentInput { input_source: SupportedController::Keyboard, gamepad: None, ..default() },
+                            index: 0,
                         }];
                         for (i, gamepad) in controller.gamepad.iter().enumerate() {
                             zombie_game.players.push(ZombiePlayerInformation {
                                 name: format!("Player {}", i + 2),
-                                controller: PlayerCurrentInput { input_source: SupportedController::Gamepad, gamepad: Some(gamepad.clone()) }
+                                controller: PlayerCurrentInput { input_source: SupportedController::Gamepad, gamepad: Some(gamepad.clone()), ..default() },
+                                index: i + 1,
                             })
                         }
+
+                        create_local_session(&mut commands, &game_speed, zombie_game.players.iter().count());
+
                         app_state.set(GameState::PlayingZombie).unwrap();
                     },
                     ButtonActions::QuitApplication => {

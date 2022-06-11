@@ -6,7 +6,7 @@ use super::weapons::{ExpiringComponent, Projectile};
 
 pub fn apply_velocity(
     mut commands: Commands,
-    mut query: Query<(&mut Transform, &Velocity, Entity)>,
+    mut query: Query<(&mut Transform, &Velocity, Entity), Without<Player>>,
 
     game_speed: Res<GameSpeed>
 ) {

@@ -28,14 +28,14 @@ use serde::{Deserialize, Serialize};
 use pathfinding::prelude::astar;
 
 #[derive(Component)]
-pub struct GameSpeed(pub f32);
+pub struct GameSpeed(pub f32, pub usize);
 
 impl Default for GameSpeed {
     fn default() -> Self {
         #[cfg(target_arch = "wasm32")]
-        return GameSpeed(1.0 / 30.0);
+        return GameSpeed(1.0 / 30.0, 30);
         #[cfg(not(target_arch = "wasm32"))]
-        return GameSpeed(1.0 / 60.0);
+        return GameSpeed(1.0 / 60.0, 60);
     }
 }
 
@@ -114,6 +114,7 @@ pub struct ZombiePlayer {}
 pub struct ZombiePlayerInformation {
     pub name: String,
     pub controller: PlayerCurrentInput,
+    pub index: usize,
 }
 
 #[derive(Default, Debug)]
@@ -192,7 +193,6 @@ impl Plugin for ZombieGamePlugin {
 #[allow(dead_code)]
 pub fn increase_frame_system(mut frame_count: ResMut<FrameCount>, inputs: Res<Vec<(BoxInput, InputStatus)>>,) {
     frame_count.frame += 1;
-    println!("IONPUTS : {:?} {:?}", inputs[0].0.inp, inputs[1].0.inp,);
 }
 
 // make on client and server side ....
@@ -285,8 +285,8 @@ pub fn system_zombie_game(
             ev_panel_event.send(ZombieGamePanelEvent{});
 
             // Spawn players
-            for (i, player) in zombie_game.players.iter().enumerate() {
-                setup_player(&mut rip,&mut commands, &zombie_game, &weapons, player, i);
+            for player in zombie_game.players.iter() {
+                setup_player(&mut rip,&mut commands, &zombie_game, &weapons, player, player.index);
             }
 
             zombie_game.state = ZombieGameState::Round as i32;
@@ -307,6 +307,8 @@ pub fn system_zombie_game(
                 && zombie_game.current_round.zombie_remaining > 0
                 && nbr_zombie < 20
             {
+                // TODO add better option to disable zombie spawning
+                return;
                 for position in query_spawner.iter() {
                     if zombie_game.current_round.zombie_remaining > 0 {
                         let mut ndg = rand::thread_rng();
