@@ -244,6 +244,8 @@ pub fn system_zombie_game(
 
     mut rip: ResMut<RollbackIdProvider>,
 
+    
+
     weapons: Res<WeaponAssetState>,
 ) {
     let mut nbr_zombie = 0;
@@ -308,7 +310,6 @@ pub fn system_zombie_game(
                 && nbr_zombie < 20
             {
                 // TODO add better option to disable zombie spawning
-                return;
                 for position in query_spawner.iter() {
                     if zombie_game.current_round.zombie_remaining > 0 {
                         let mut ndg = rand::thread_rng();

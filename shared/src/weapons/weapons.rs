@@ -1,6 +1,8 @@
 use std::thread::{__FastLocalKeyInner, __OsLocalKeyInner};
 
 use bevy::{prelude::*, sprite::{SpriteBundle, Sprite}, math::Vec2};
+use bevy_ggrs::{RollbackIdProvider, Rollback};
+use ggrs::InputStatus;
 use serde::Deserialize;
 
 use rand::prelude::SliceRandom;
@@ -8,7 +10,7 @@ use rand::prelude::SliceRandom;
 use crate::{
     utils::{get_cursor_location, vec2_perpendicular_counter_clockwise, vec2_perpendicular_clockwise},
     collider::ProjectileCollider,
-    animation::AnimationTimer, player::{MainCamera, Player, input::{PlayerCurrentInput, SupportedController}}, character::{CharacterMovementState, Velocity, LookingAt, Death}
+    animation::AnimationTimer, player::{MainCamera, Player, input::{PlayerCurrentInput, SupportedController, INPUT_FIRE, INPUT_JUST_FIRE, BoxInput, INPUT_WEAPON_CHANGED, INPUT_WEAPON_RELOAD}}, character::{CharacterMovementState, Velocity, LookingAt, Death}
 };
 
 
@@ -64,7 +66,7 @@ pub struct Ammunition {
     pub sprite_config: AmmunitionSpriteConfig
 }
 
-#[derive(Default, Component)]
+#[derive(Default, Component, Reflect)]
 pub struct AmmunitionState {
 	pub mag_remaining: i32,
 	pub remaining_ammunition: i32
@@ -87,7 +89,7 @@ pub struct WeaponState {
 #[derive(Default, Component)]
 pub struct ActiveWeapon {}
 
-#[derive(Default, Component)]
+#[derive(Default, Component, Reflect)]
 pub struct Projectile {}
 
 
@@ -157,25 +159,28 @@ pub fn handle_weapon_input(
     mut commands: Commands,
     time: Res<Time>,
     
-	keyboard_input: Res<Input<KeyCode>>,
-    buttons_mouse: Res<Input<MouseButton>>,
-    buttons_gamepad: Res<Input<GamepadButton>>,
-
     query_unequiped_weapon: Query<(Entity, &Weapon), Without<ActiveWeapon>>,
 	mut query_player_weapon: Query<(Entity, &mut AmmunitionState, &mut WeaponState, &Weapon, &ActiveWeapon), With<WeaponState>>,
 	
-    mut q_player: Query<(&GlobalTransform, &PlayerCurrentInput, &LookingAt, &mut CharacterMovementState, &mut AnimationTimer, &Children), (With<Player>, Without<Death>)>,
+    mut q_player: Query<(&GlobalTransform, &PlayerCurrentInput, &LookingAt, &mut CharacterMovementState, &mut AnimationTimer, &Children, &Player), (Without<Death>)>,
+
+    inputs: Res<Vec<(BoxInput, InputStatus)>>,
+
+    mut rip: ResMut<RollbackIdProvider>,
 ) {
-    for (player_global_transform, current_input, looking_at, mut movement_state, mut timer, childrens) in q_player.iter_mut() {
-        let player_input = PlayerInputs {
-           keyboard_input: &keyboard_input,
-           buttons_mouse: &buttons_mouse,
-           buttons_gamepad: &buttons_gamepad,
-           current_controller: current_input,
+    for (player_global_transform, current_input, looking_at, mut movement_state, mut timer, childrens, player) in q_player.iter_mut() {
+
+        if inputs.len() <= player.handle {
+            continue;
+        }
+
+        let box_input = match inputs[player.handle].1 {
+            InputStatus::Confirmed => inputs[player.handle].0,
+            InputStatus::Predicted => inputs[player.handle].0,
+            InputStatus::Disconnected => BoxInput::default(), // disconnected players do nothing
         };
-
-
-        if player_input.just_pressed(&CHANGE_WEAPON_BTN) {
+        
+        if box_input.inp & INPUT_WEAPON_CHANGED == INPUT_WEAPON_CHANGED {
             for children in childrens.iter() {
                 if let Ok((weapon_entity,_,_, _, _)) = query_player_weapon.get(*children) {
                     commands.entity(weapon_entity).remove::<ActiveWeapon>();
@@ -207,7 +212,7 @@ pub fn handle_weapon_input(
                     weapon_state.state = WeaponCurrentAction::Firing;
                 }
 
-                if player_input.just_pressed(&RELOAD_WEAPON_BTN) {
+                if box_input.inp & INPUT_WEAPON_RELOAD == INPUT_WEAPON_RELOAD {
 
 
                     if ammunition_state.mag_remaining < weapon.ammunition.magasin_size {
@@ -218,9 +223,9 @@ pub fn handle_weapon_input(
                 }
 
                 let firing = if weapon.automatic {
-                    player_input.pressed(&FIRED_WEAPON_BTN)
+                    box_input.inp & INPUT_FIRE == INPUT_FIRE
                 } else {
-                    player_input.just_pressed(&FIRED_WEAPON_BTN)
+                    box_input.inp & INPUT_JUST_FIRE == INPUT_JUST_FIRE
                 };
 
                 if firing {
@@ -283,10 +288,10 @@ pub fn handle_weapon_input(
                                 let new_x = diff.x * angle.cos() - diff.y * angle.sin();
                                 let new_y = diff.x * angle.sin() + diff.y * angle.cos();
 
-                                spawn_bullet(&mut commands, &weapon, &time, &starting_point, &offset_each, &Vec2::new(new_x, new_y), i);
+                                spawn_bullet(&mut commands, &mut rip, &weapon, &time, &starting_point, &offset_each, &Vec2::new(new_x, new_y), i);
                             }
                         } else {
-                            spawn_bullet(&mut commands, &weapon, &time, &starting_point, &offset_each, &diff, i);
+                            spawn_bullet(&mut commands, &mut rip, &weapon, &time, &starting_point, &offset_each, &diff, i);
                         }
 
                     }
@@ -299,6 +304,7 @@ pub fn handle_weapon_input(
 
 pub fn spawn_bullet(
     commands: &mut Commands,
+    mut rip: &mut ResMut<RollbackIdProvider>,
     weapon: &Weapon,
     time: &Res<Time>,
     starting_point: &Vec3,
@@ -328,6 +334,7 @@ pub fn spawn_bullet(
         .insert(ProjectileCollider {})
         .insert(Velocity {
             v: *velocity * 1000.,
-        });
+        })
+        .insert(Rollback::new(rip.next_id()));
 }
 

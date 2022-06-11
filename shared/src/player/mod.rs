@@ -36,7 +36,7 @@ pub struct MainCamera;
 
 #[derive(Default, Component, Reflect)]
 pub struct Player {
-    handle: usize,
+    pub handle: usize,
 }
 
 pub struct PlayerDeadEvent {
@@ -145,7 +145,7 @@ pub fn setup_player(
     if let Some(alternate_weapon) = &zombie_game.starting_weapons.starting_alternate_weapon {
         let weapon = weapons.weapons.iter().find(|w| w.name.eq(alternate_weapon.as_str())).unwrap().clone();
         let weapon = commands.spawn()
-            .insert_bundle(WeaponBundle::new(weapon)).id();
+            .insert_bundle(WeaponBundle::new(weapon)).insert(Rollback::new(rip.next_id())).id();
         commands.entity(player).add_child(weapon);
     }
 }

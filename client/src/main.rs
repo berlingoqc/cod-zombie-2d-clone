@@ -25,7 +25,7 @@ use shared::{
     },
     zombies::zombie::system_zombie_handle,
     player::{input::{apply_input_players, FrameCount, input, BoxInput, AvailableGameController, system_gamepad_event, GGRSConfig, update_velocity_player, move_players}, interaction::system_interaction_player, system_unload_players, system_health_player, Player
-    }, weapons::{weapons::{handle_weapon_input}, ammunition::{apply_velocity, movement_projectile}}, map::render::system_unload_map, character::{Velocity, LookingAt},
+    }, weapons::{weapons::{handle_weapon_input, Weapon, AmmunitionState, Projectile}, ammunition::{apply_velocity, movement_projectile}}, map::render::system_unload_map, character::{Velocity, LookingAt},
 };
 use shared::map::MapPlugin;
 use crate::{
@@ -57,7 +57,7 @@ fn print_events_system(mut session: ResMut<P2PSession<GGRSConfig>>) {
 }
 
 fn main() {
-    //#[cfg(target_arch = "wasm32")]
+    #[cfg(target_arch = "wasm32")]
     console_error_panic_hook::set_once();
     
     let opts = config::Opts::get();
@@ -77,6 +77,8 @@ fn main() {
         .register_rollback_type::<Transform>()
         .register_rollback_type::<Velocity>()
         .register_rollback_type::<FrameCount>()
+        .register_rollback_type::<AmmunitionState>()
+        .register_rollback_type::<Projectile>()
         // these systems will be executed as part of the advance frame update
         .with_rollback_schedule(
             Schedule::default().with_stage(
@@ -89,6 +91,8 @@ fn main() {
                             .after(P2PSystemLabel::Input)
                     )
                     .with_system(move_players.after(P2PSystemLabel::Velocity))
+                    .with_system(handle_weapon_input)
+                    .with_system(movement_projectile)
                     .with_system(increase_frame_system),
             ),
         )
@@ -148,13 +152,12 @@ fn main() {
             .with_system(apply_velocity)
             //.with_system(apply_input_players)
             .with_system(system_interaction_player)
-            .with_system(handle_weapon_input)
-            .with_system(movement_projectile)
+            //.with_system(handle_weapon_input)
+            //.with_system(movement_projectile)
             .with_system(react_level_data)
             .with_system(system_player_added)
             .with_system(system_health_player)
             .with_system(system_end_game)
-            .with_system(print_events_system)
     )
     .add_system_set(
         SystemSet::on_exit(GameState::PlayingZombie)

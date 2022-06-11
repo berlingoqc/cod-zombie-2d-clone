@@ -35,6 +35,12 @@ const INPUT_UP: i32 = 1 << 0;
 const INPUT_DOWN: i32 = 1 << 1;
 const INPUT_LEFT: i32 = 1 << 2;
 const INPUT_RIGHT: i32 = 1 << 3;
+pub const INPUT_FIRE: i32 = 1 << 4;
+pub const INPUT_JUST_FIRE: i32 = 1 << 5;
+
+pub const INPUT_WEAPON_RELOAD: i32 = 1 << 6;
+
+pub const INPUT_WEAPON_CHANGED: i32 = 1 << 7;
 
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Pod, Zeroable, Default)]
@@ -162,6 +168,7 @@ pub fn input(
     handle: In<PlayerHandle>,
     
     keyboard_input: Res<Input<KeyCode>>,
+    mouse_input: Res<Input<MouseButton>>,
     wnds: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
 
@@ -181,7 +188,18 @@ pub fn input(
     if keyboard_input.pressed(KeyCode::D) {
         input |= INPUT_RIGHT;
     }
-
+    if mouse_input.pressed(MouseButton::Left) {
+        input |= INPUT_FIRE
+    }
+    if mouse_input.just_pressed(MouseButton::Left) {
+       input |= INPUT_JUST_FIRE;
+    }
+    if keyboard_input.just_pressed(KeyCode::Tab) {
+        input |= INPUT_WEAPON_CHANGED;
+    }
+    if keyboard_input.just_pressed(KeyCode::R) {
+        input |= INPUT_WEAPON_RELOAD;
+    }
 
     let mouse_position = get_cursor_location(&wnds, &q_camera);
 
@@ -207,8 +225,6 @@ pub fn apply_input_players(
         if inputs.len() <= player.handle {
             continue;
         }
-
-        println!("{:?} {:?}", player.handle, inputs[player.handle].0.inp);
 
         let box_input = match inputs[player.handle].1 {
             InputStatus::Confirmed => inputs[player.handle].0,
