@@ -94,7 +94,7 @@ pub struct MapElementPosition {
     pub rotation: i32,
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Reflect)]
 pub struct ZombieSpawner {}
 
 #[derive(Bundle)]

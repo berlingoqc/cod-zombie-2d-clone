@@ -5,7 +5,7 @@ use crate::{p2p::{local::create_local_session, online::{NetworkPlayer, create_ne
 
 use super::ui_utils::*;
 use shared::{
-    game::{GameState, ZombieGame, ZombiePlayerInformation, GameSpeed},
+    game::{GameState, ZombieGame, ZombiePlayerInformation, GameSpeed, ZombieGameConfig},
     player::input::{AvailableGameController, PlayerCurrentInput, SupportedController}
 };
 
@@ -58,7 +58,7 @@ pub fn system_button_handle(
     mut exit: EventWriter<AppExit>,
     mut app_state: ResMut<State<GameState>>,
 
-    mut zombie_game: ResMut<ZombieGame>,
+    mut zombie_game: ResMut<ZombieGameConfig>,
     controller: Res<AvailableGameController>
 ) {
     for (interaction, mut color, action) in interaction_query.iter_mut() {

@@ -38,7 +38,7 @@ impl HealthRegeneration {
 	}
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Reflect)]
 pub struct Health {
 	pub current_health: f32,
 	pub tmp_health: f32,

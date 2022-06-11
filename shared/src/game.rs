@@ -20,7 +20,7 @@ use super::zombies::zombie::*;
 use bevy::asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset};
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
-use bevy_ggrs::RollbackIdProvider;
+use bevy_ggrs::{RollbackIdProvider, Rollback};
 use ggrs::InputStatus;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -65,20 +65,20 @@ pub enum ZombieGameState {
 
 
 
-#[derive(Default, Deserialize, Clone, Debug)]
+#[derive(Default, Deserialize, Clone, Debug, Reflect)]
 pub struct MapRoundConfiguration {
     pub starting_zombie: i32,
     pub round_increments: i32,
     pub initial_timeout: u64,
 }
 
-#[derive(Default, Deserialize, Clone, Debug)]
+#[derive(Default, Deserialize, Clone, Debug, Reflect)]
 pub struct StartingWeapons {
     pub starting_weapon: String,
     pub starting_alternate_weapon: Option<String>,
 }
 
-#[derive(Default, Deserialize, Clone, Debug)]
+#[derive(Default, Deserialize, Clone, Debug, Reflect)]
 pub struct WindowPanelConfiguration {
     pub interaction_timeout: f32,
     pub spacing: f32,
@@ -96,7 +96,7 @@ pub struct ZombieLevelAsset {
 }
 
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Reflect)]
 pub struct CurrentRoundInfo {
     pub total_zombie: i32,
     pub zombie_remaining: i32,
@@ -117,12 +117,16 @@ pub struct ZombiePlayerInformation {
     pub index: usize,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Reflect)]
 pub struct ZombieGame {
     pub round: i32,
     pub state: i32, //ZombieGameState,
     pub current_round: CurrentRoundInfo,
+}
 
+
+#[derive(Default, Debug)]
+pub struct ZombieGameConfig {
     pub configuration: MapRoundConfiguration,
     pub starting_weapons: StartingWeapons,
     pub window_panel: WindowPanelConfiguration,
@@ -177,6 +181,7 @@ impl Plugin for ZombieGamePlugin {
             .init_resource::<GameSpeed>()
             .init_resource::<Game>()
             .init_resource::<ZombieGame>()
+            .init_resource::<ZombieGameConfig>()
             .init_resource::<ZombieLevelAssetState>()
             .init_resource::<ZombieSpawnerConfig>()
 
@@ -230,6 +235,7 @@ pub fn system_zombie_game(
     map_state: Res<MapDataState>,
 
     mut zombie_game: ResMut<ZombieGame>,
+    mut zombie_game_config: ResMut<ZombieGameConfig>,
 
     zombie_query: Query<&Zombie>,
 
@@ -269,15 +275,17 @@ pub fn system_zombie_game(
             let data_asset = data_asset.unwrap();
 
             zombie_game.round = 1;
-            zombie_game.configuration = data_asset.configuration.clone();
-            zombie_game.starting_weapons = data_asset.starting_weapons.clone();
-            zombie_game.window_panel = data_asset.window_panel.clone();
             zombie_game.current_round = CurrentRoundInfo {
-                total_zombie: zombie_game.configuration.starting_zombie,
-                zombie_remaining: zombie_game.configuration.starting_zombie,
+                total_zombie: zombie_game_config.configuration.starting_zombie,
+                zombie_remaining: zombie_game_config.configuration.starting_zombie,
             };
+
+            zombie_game_config.configuration = data_asset.configuration.clone();
+            zombie_game_config.starting_weapons = data_asset.starting_weapons.clone();
+            zombie_game_config.window_panel = data_asset.window_panel.clone();
+ 
             config.timer = Timer::new(
-                Duration::from_millis(zombie_game.configuration.initial_timeout),
+                Duration::from_millis(zombie_game_config.configuration.initial_timeout),
                 true,
             );
 
@@ -287,8 +295,8 @@ pub fn system_zombie_game(
             ev_panel_event.send(ZombieGamePanelEvent{});
 
             // Spawn players
-            for player in zombie_game.players.iter() {
-                setup_player(&mut rip,&mut commands, &zombie_game, &weapons, player, player.index);
+            for player in zombie_game_config.players.iter() {
+                setup_player(&mut rip,&mut commands, &zombie_game_config, &weapons, player, player.index);
             }
 
             zombie_game.state = ZombieGameState::Round as i32;
@@ -315,8 +323,8 @@ pub fn system_zombie_game(
                         let mut ndg = rand::thread_rng();
                         config.nums_ndg.shuffle(&mut ndg);
 
-                        let position = position.position
-                            + Vec2::new(config.nums_ndg[0] as f32, config.nums_ndg[50] as f32);
+                        let position = position.position;
+                            //+ Vec2::new(config.nums_ndg[0] as f32, config.nums_ndg[50] as f32);
                         let mut closest_window = MapElementPosition {
                             ..MapElementPosition::default()
                         };
@@ -346,7 +354,7 @@ pub fn system_zombie_game(
                                 rotation: 0,
                             },
                             bot_destination,
-                        ));
+                        )).insert(Rollback::new(rip.next_id()));
 
                         zombie_game.current_round.zombie_remaining -= 1;
 
@@ -357,8 +365,8 @@ pub fn system_zombie_game(
         }
         ZombieGameState::RoundInterlude => {
             zombie_game.round += 1;
-            let zombie_count = zombie_game.configuration.starting_zombie
-                + ((zombie_game.round - 1) * zombie_game.configuration.round_increments);
+            let zombie_count = zombie_game_config.configuration.starting_zombie
+                + ((zombie_game.round - 1) * zombie_game_config.configuration.round_increments);
             zombie_game.current_round = CurrentRoundInfo {
                 zombie_remaining: zombie_count,
                 total_zombie: zombie_count,
@@ -424,7 +432,7 @@ pub fn system_panel_event(
 
     mut commands: Commands,
 
-    zombie_game: Res<ZombieGame>,
+    zombie_game: Res<ZombieGameConfig>,
     
     mut q_window: Query<(Entity, &mut Health, &mut PlayerInteraction, &MapElementPosition), With<Window>>,
 ) {

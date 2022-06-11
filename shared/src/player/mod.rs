@@ -6,7 +6,7 @@ use bevy_ggrs::{Rollback, RollbackIdProvider};
 
 use crate::{
     collider::{MovementCollider, is_colliding},
-    game::{ZombieGame, GameState, GameSpeed, ZombiePlayerInformation},
+    game::{ZombieGame, GameState, GameSpeed, ZombiePlayerInformation, ZombieGameConfig},
     map::{MapElementPosition},
     utils::get_cursor_location, weapons::{weapons::{WeaponBundle, ActiveWeapon}, loader::WeaponAssetState}, animation::AnimationTimer, character::{LookingAt, CharacterMovementState, Death, Velocity}, health::{Health, HealthChangeState, HealthRegeneration}
 };
@@ -114,7 +114,7 @@ impl PlayerBundle {
 pub fn setup_player(
     mut rip: &mut ResMut<RollbackIdProvider>,
     mut commands: &mut Commands,
-    zombie_game: &ResMut<ZombieGame>,
+    zombie_game: &ResMut<ZombieGameConfig>,
     weapons: &Res<WeaponAssetState>,
     
     config: &ZombiePlayerInformation,

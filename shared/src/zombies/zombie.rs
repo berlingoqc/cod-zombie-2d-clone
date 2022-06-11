@@ -17,7 +17,7 @@ pub const ZOMBIE_SIZE: Vec2 = const_vec2!([25. , 25. ]);
 
 // bot destination is a component
 // to register and apply the target of a bot
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct BotDestination {
     // Destination element
     pub destination: Vec2,
@@ -25,6 +25,12 @@ pub struct BotDestination {
     pub path: Vec<(i32, i32)>,
     // entity trying to reach
     pub entity: Entity
+}
+
+impl Default for BotDestination {
+   fn default() -> Self {
+       BotDestination { destination: Vec2::default(), path: vec![], entity: Entity::from_raw(0) }
+   }
 }
 
 impl BotDestination {
@@ -92,9 +98,10 @@ impl BotDestination {
 
 
 // the different state of a zombie
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Reflect, Default)]
 pub enum ZombieState {
     // When the zombie is spawning
+    #[default]
     AwakingFromTheDead,
     // When the zombie is outside the player area
     // and trying to get inside
@@ -107,7 +114,7 @@ pub enum ZombieState {
 }
 
 
-#[derive(Component)]
+#[derive(Component, Reflect, Default)]
 pub struct Zombie {
     pub state: ZombieState,
 }
@@ -184,8 +191,8 @@ pub fn system_zombie_handle(
         match zombie.state {
             ZombieState::AwakingFromTheDead => {
                 if pos.scale.x < 1.0 {
-                    let mut rng = rand::thread_rng();
-                    config.nums_ndg.shuffle(&mut rng);
+                    //let mut rng = rand::thread_rng();
+                    //config.nums_ndg.shuffle(&mut rng);
                     pos.scale += Vec3::new(0.01, 0.01, 0.01);
                 } else {
                     pos.rotation = Quat::from_rotation_z(0.);
