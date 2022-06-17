@@ -15,6 +15,17 @@ pub struct LocalHandles {
 
 #[derive(SystemLabel, Debug, Clone, Hash, Eq, PartialEq)]
 pub enum P2PSystemLabel {
+    // Input of player , zombie
     Input,
-    Velocity,
+
+    // Move bullet , player and zombie
+    Move,
+
+    Collision,
+
+    // Game logic , spawn new entity , etc ...
+    GameLogic,
+
+    // Frame clean up , validate game state and change state
+    FrameCleanup
 }

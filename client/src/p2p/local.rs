@@ -13,7 +13,7 @@ pub fn create_local_session(
 ) {
 	let mut sess_build = SessionBuilder::<GGRSConfig>::new()
         .with_num_players(nbr_player)
-        .with_max_prediction_window(MAX_PREDICTION)
+        .with_max_prediction_window(8)
         .with_fps(game_speed.1)
         .expect("Invalid FPS")
         .with_input_delay(INPUT_DELAY)

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Default, Component)]
+#[derive(Default, Component, Reflect)]
 pub struct CharacterMovementState {
     pub state: String,
     pub sub_state: String,

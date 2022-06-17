@@ -5,7 +5,7 @@ use crate::{
     collider::{MovementCollider, ProjectileCollider, is_colliding},
     weapons::weapons::{WeaponState, WeaponCurrentAction},
     player::{Player, MainCamera, PLAYER_SIZE},
-    health::Health, animation::AnimationTimer, character::{LookingAt, CharacterMovementState, Death}, utils::vec2_perpendicular_counter_clockwise
+    health::Health, animation::AnimationTimer, character::{LookingAt, CharacterMovementState, Death}, utils::{vec2_perpendicular_counter_clockwise, Checksum}
 };
 
 use rand::seq::SliceRandom;
@@ -102,15 +102,15 @@ impl BotDestination {
 pub enum ZombieState {
     // When the zombie is spawning
     #[default]
-    AwakingFromTheDead,
+    AwakingFromTheDead = 0,
     // When the zombie is outside the player area
     // and trying to get inside
-    FindingEnterace,
+    FindingEnterace = 1,
 
-    CrossingEntrance,
+    CrossingEntrance = 2,
     // When the zombie is inside the player area
     // and trying to reach a player
-    FollowingPlayer,
+    FollowingPlayer = 3,
 }
 
 
@@ -133,6 +133,7 @@ pub struct ZombieBundle {
     animation_timer: AnimationTimer,
     looking_at: LookingAt,
     chracter_movement_state: CharacterMovementState,
+    checksum: Checksum,
 }
 
 impl ZombieBundle {
@@ -150,6 +151,7 @@ impl ZombieBundle {
                 size: ZOMBIE_SIZE,
                 ..default()
             },
+            checksum: Checksum::default(),
             projectile_collider: ProjectileCollider {},
             zombie: Zombie {
                 state: ZombieState::AwakingFromTheDead,
@@ -201,6 +203,7 @@ pub fn system_zombie_handle(
                 }
             }
             ZombieState::FindingEnterace => {
+                println!("DAD");
                 if !dest.move_bot(&mut pos, &collider_query) {
                     if let Ok((entity, mut health)) = query_ennemy.get_mut(dest.entity) {
                         if health.current_health > 0. {
@@ -230,6 +233,9 @@ pub fn system_zombie_handle(
             ZombieState::CrossingEntrance => {
                 if !dest.move_bot(&mut pos, &collider_query) {
                     zombie.state = ZombieState::FollowingPlayer;
+                    println!("Change to following player");
+                } else {
+                    println!("MOVE MOVE");
                 }
             },
             ZombieState::FollowingPlayer => {
@@ -248,6 +254,8 @@ pub fn system_zombie_handle(
                             distance = dst;
                         }
                     }
+
+                    println!("Player_Translation {:?}", player_translation);
 
                     // Valid if i'm colliding with him.
                     if let Some(collision) = collide(pos.translation, ZOMBIE_SIZE * 2., player_translation, PLAYER_SIZE) {
