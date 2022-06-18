@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use shared::{game::GameSpeed, player::input::GGRSConfig};
 
 use bevy_ggrs::SessionType;
-use ggrs::{PlayerType, SessionBuilder, NonBlockingSocket};
+use ggrs::{PlayerType, SessionBuilder, NonBlockingSocket, P2PSession};
 
 use super::config::*;
 
@@ -49,5 +49,14 @@ pub fn create_network_session(
     commands.insert_resource(LocalHandles {
         handles: (0..nbr_player).collect(),
     });
+
+}
+
+pub fn system_cleanup_network_session(
+	mut commands: Commands,
+) {
+	commands.remove_resource::<P2PSession<GGRSConfig>>();
+	commands.remove_resource::<LocalHandles>();
+	commands.remove_resource::<SessionType>();
 
 }

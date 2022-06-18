@@ -40,7 +40,7 @@ use crate::{
     ingameui::{
         ingameui::{system_clear_ingame_ui, system_weapon_ui, system_ingame_ui, setup_ingame_ui},
         player::{setup_player_camera, system_player_added}
-    }, p2p::{config::P2PSystemLabel, checksum::checksum_zombie}
+    }, p2p::{config::P2PSystemLabel, checksum::checksum_zombie, online::system_cleanup_network_session}
 };
 
 use bevy_kira_audio::AudioPlugin;
@@ -198,6 +198,7 @@ fn main() {
             .with_system(system_clear_ingame_ui)
             .with_system(system_unload_players)
             .with_system(system_unload_zombie_game)
+            .with_system(system_cleanup_network_session)
     );
 
     if opts.benchmark_mode {

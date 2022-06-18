@@ -1,7 +1,7 @@
 use bevy::{prelude::*, app::AppExit};
 use ggrs::UdpNonBlockingSocket;
 
-use crate::{p2p::{local::create_local_session, online::{NetworkPlayer, create_network_session}}, config::Opts};
+use crate::{p2p::{online::{NetworkPlayer, create_network_session}}, config::Opts};
 
 use super::ui_utils::*;
 use shared::{
