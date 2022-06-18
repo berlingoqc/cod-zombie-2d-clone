@@ -1,8 +1,9 @@
 use bevy::{prelude::*, sprite::collide_aabb::collide};
+use ggrs::InputStatus;
 
 use crate::{map::{MapElementPosition, Window, WindowPanel, Size}, health::Health, weapons::weapons::{PlayerInputs, INTERACTION_BTN}};
 
-use super::{Player, input::PlayerCurrentInput};
+use super::{Player, input::{PlayerCurrentInput, INPUT_INTERACTION_PRESSED, BoxInput}};
 
 #[derive(Component)]
 pub struct PlayerCurrentInteraction {
@@ -44,7 +45,7 @@ pub struct PlayerInteraction {
 }
 
 pub fn system_interaction_player(
-    mut query_player: Query<(&Transform, &mut PlayerCurrentInteraction, &PlayerCurrentInput), With<Player>>,
+    mut query_player: Query<(&Transform, &mut PlayerCurrentInteraction, &PlayerCurrentInput, &Player)>,
     time: Res<Time>,
     interaction_query: Query<
         (Entity, &Transform, &MapElementPosition, &PlayerInteraction),
@@ -54,23 +55,24 @@ pub fn system_interaction_player(
         ),
     >,
 
-     
-	keyboard_input: Res<Input<KeyCode>>,
-    buttons_mouse: Res<Input<MouseButton>>,
-    buttons_gamepad: Res<Input<GamepadButton>>,
+    inputs: Res<Vec<(BoxInput, InputStatus)>>,
 
     mut query_window: Query<(&mut Window, &mut Health, &Children)>,
     mut query_panel: Query<(&mut WindowPanel, &Size, &mut Sprite)>
 ) {
 
-    for (player_transform, mut interaction, current_input) in query_player.iter_mut() {
-        
-        let player_input = PlayerInputs {
-           keyboard_input: &keyboard_input,
-           buttons_mouse: &buttons_mouse,
-           buttons_gamepad: &buttons_gamepad,
-           current_controller: current_input,
+    for (player_transform, mut interaction, current_input, player) in query_player.iter_mut() {
+
+        if inputs.len() <= player.handle {
+            continue;
+        }
+
+        let box_input = match inputs[player.handle].1 {
+            InputStatus::Confirmed => inputs[player.handle].0,
+            InputStatus::Predicted => inputs[player.handle].0,
+            InputStatus::Disconnected => BoxInput::default(), // disconnected players do nothing
         };
+
 
         for (entity, transform, info, player_interaction) in interaction_query.iter() {
             let collision = collide(player_transform.translation, Vec2::new(25., 25.), info.position.extend(10.),  player_interaction.interaction_size);
@@ -102,7 +104,7 @@ pub fn system_interaction_player(
 
 
         if interaction.interaction {
-            if player_input.pressed(&INTERACTION_BTN) {
+            if box_input.inp & INPUT_INTERACTION_PRESSED == INPUT_INTERACTION_PRESSED {
                 match interaction.interaction_type {
                     PlayerInteractionType::RepairWindow => {
                         if interaction.interacting == true {

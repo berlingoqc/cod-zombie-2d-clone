@@ -62,6 +62,7 @@ pub fn system_button_handle(
     controller: Res<AvailableGameController>
 ) {
     for (interaction, mut color, action) in interaction_query.iter_mut() {
+        let opts = Opts::get();
         match *interaction {
             Interaction::Clicked => {
                 *color = PRESSED_BUTTON.into();
@@ -76,12 +77,14 @@ pub fn system_button_handle(
                             index: 0,
                         }];
 
-                        create_local_session(&mut commands, &game_speed, 1);
+                        let socket = UdpNonBlockingSocket::bind_to_port(opts.port as u16).unwrap();
+                        let mut players: Vec<NetworkPlayer> = vec![];
+                        players.push(NetworkPlayer{address: "localhost".to_string()});
+                        create_network_session(&mut commands, &game_speed, socket, players);
 
                         app_state.set(GameState::PlayingZombie).unwrap();
                     },
                     ButtonActions::StartOnlineMultiplayerGame => {
-                        let opts = Opts::get();
 
                         let mut players: Vec<NetworkPlayer> = vec![];
 
@@ -109,7 +112,6 @@ pub fn system_button_handle(
                         };
 
                         let socket = UdpNonBlockingSocket::bind_to_port(opts.port as u16).unwrap();
-
                         create_network_session(&mut commands, &game_speed, socket, players);
 
                         app_state.set(GameState::PlayingZombie).unwrap();
@@ -121,7 +123,13 @@ pub fn system_button_handle(
                             controller: PlayerCurrentInput { input_source: SupportedController::Keyboard, gamepad: None, ..default() },
                             index: 0,
                         }];
+
+                        let mut players: Vec<NetworkPlayer> = vec![];
+                        players.push(NetworkPlayer{address: "localhost".to_string()});
+
                         for (i, gamepad) in controller.gamepad.iter().enumerate() {
+
+                            players.push(NetworkPlayer{address: "localhost".to_string()});
                             zombie_game.players.push(ZombiePlayerInformation {
                                 name: format!("Player {}", i + 2),
                                 controller: PlayerCurrentInput { input_source: SupportedController::Gamepad, gamepad: Some(gamepad.clone()), ..default() },
@@ -129,7 +137,8 @@ pub fn system_button_handle(
                             })
                         }
 
-                        create_local_session(&mut commands, &game_speed, zombie_game.players.iter().count());
+                        let socket = UdpNonBlockingSocket::bind_to_port(opts.port as u16).unwrap();
+                        create_network_session(&mut commands, &game_speed, socket, players);
 
                         app_state.set(GameState::PlayingZombie).unwrap();
                     },

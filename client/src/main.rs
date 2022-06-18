@@ -101,6 +101,7 @@ fn main() {
                             .with_system(system_zombie_handle)
                             .with_system(apply_input_players)
                             .with_system(handle_weapon_input)
+                            .with_system(system_interaction_player)
                             .label(P2PSystemLabel::Input)
                     )
                     .with_system_set(
@@ -188,7 +189,6 @@ fn main() {
             ))
             .with_system(system_ingame_ui)
             .with_system(system_weapon_ui)
-            .with_system(system_interaction_player)
             .with_system(react_level_data)
             .with_system(system_player_added)
     )

@@ -42,6 +42,8 @@ pub const INPUT_WEAPON_RELOAD: i32 = 1 << 6;
 
 pub const INPUT_WEAPON_CHANGED: i32 = 1 << 7;
 
+pub const INPUT_INTERACTION_PRESSED: i32 = 1 << 8;
+
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Pod, Zeroable, Default)]
 pub struct BoxInput {
@@ -199,6 +201,9 @@ pub fn input(
     }
     if keyboard_input.just_pressed(KeyCode::R) {
         input |= INPUT_WEAPON_RELOAD;
+    }
+    if keyboard_input.pressed(KeyCode::F) {
+        input |= INPUT_INTERACTION_PRESSED;
     }
 
     let mouse_position = get_cursor_location(&wnds, &q_camera);

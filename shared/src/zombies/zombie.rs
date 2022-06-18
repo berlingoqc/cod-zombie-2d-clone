@@ -203,7 +203,6 @@ pub fn system_zombie_handle(
                 }
             }
             ZombieState::FindingEnterace => {
-                println!("DAD");
                 if !dest.move_bot(&mut pos, &collider_query) {
                     if let Ok((entity, mut health)) = query_ennemy.get_mut(dest.entity) {
                         if health.current_health > 0. {
@@ -233,9 +232,6 @@ pub fn system_zombie_handle(
             ZombieState::CrossingEntrance => {
                 if !dest.move_bot(&mut pos, &collider_query) {
                     zombie.state = ZombieState::FollowingPlayer;
-                    println!("Change to following player");
-                } else {
-                    println!("MOVE MOVE");
                 }
             },
             ZombieState::FollowingPlayer => {
@@ -254,8 +250,6 @@ pub fn system_zombie_handle(
                             distance = dst;
                         }
                     }
-
-                    println!("Player_Translation {:?}", player_translation);
 
                     // Valid if i'm colliding with him.
                     if let Some(collision) = collide(pos.translation, ZOMBIE_SIZE * 2., player_translation, PLAYER_SIZE) {
