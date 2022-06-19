@@ -1,7 +1,7 @@
 use bevy::{prelude::*, app::AppExit};
 use ggrs::UdpNonBlockingSocket;
 
-use crate::{p2p::{online::{NetworkPlayer, create_network_session}}, config::Opts};
+use crate::{p2p::{online::{NetworkPlayer, create_session}}, config::Opts};
 
 use super::ui_utils::*;
 use shared::{
@@ -79,14 +79,13 @@ pub fn system_button_handle(
                         }];
 
                         let mut players: Vec<NetworkPlayer> = vec![];
-                        //players.push(NetworkPlayer{address: "localhost".to_string()});
-                        //create_network_session(&mut commands, &game_speed, socket, players);
+                        players.push(NetworkPlayer{address: "localhost".to_string()});
+                        create_session(&mut commands, &game_speed, players);
 
-                        //app_state.set(GameState::PlayingZombie).unwrap();
+                        app_state.set(GameState::PlayingZombie).unwrap();
                     },
                     ButtonActions::StartOnlineMultiplayerGame => {
                         app_state.set(GameState::OnlineMenu).unwrap();
-                        /*
                         let mut players: Vec<NetworkPlayer> = vec![];
                         zombie_game.players.push(ZombiePlayerInformation {
                             name: format!("Player {}", 0),
@@ -112,11 +111,9 @@ pub fn system_button_handle(
                             players.push(NetworkPlayer{address: "localhost".to_string()});
                         };
 
-                        let socket = UdpNonBlockingSocket::bind_to_port(opts.port as u16).unwrap();
-                        create_network_session(&mut commands, &game_speed, socket, players);
+                        create_session(&mut commands, &game_speed, players);
 
                         app_state.set(GameState::PlayingZombie).unwrap();
-                        */
                     },
                     ButtonActions::StartLocalMultiplayerGame => {
                         // Add a player with the keyboard and add one player by present input
