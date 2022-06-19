@@ -1,7 +1,7 @@
 #![feature(stmt_expr_attributes)]
 #![feature(derive_default_enum)]
 
-mod config;
+//mod config;
 mod plugins;
 mod ingameui;
 mod character_animation;
@@ -15,11 +15,11 @@ use bevy::{
 
 use bevy_ggrs::{SessionType, GGRSPlugin};
 use bytemuck::{Pod, Zeroable};
-use ggrs::{SessionBuilder, UdpNonBlockingSocket, Config, P2PSession};
+use ggrs::{SessionBuilder, Config, P2PSession};
 use shared::{
     game::{
         react_level_data, setup_zombie_game, system_zombie_game,
-        GameState, ZombieGamePlugin, LevelMapRequested, system_unload_zombie_game, system_end_game, increase_frame_system, ZombieGame,
+        GameState, ZombieGamePlugin, LevelMapRequested, system_unload_zombie_game, system_end_game, increase_frame_system, ZombieGame, GameSpeed,
     },
     zombies::zombie::{system_zombie_handle, Zombie, BotDestination, system_move_zombie},
     player::{input::{apply_input_players, FrameCount, input, BoxInput, AvailableGameController, system_gamepad_event, GGRSConfig, update_velocity_player, move_players}, interaction::system_interaction_player, system_unload_players, system_health_player, Player
@@ -59,15 +59,18 @@ fn main() {
     #[cfg(target_arch = "wasm32")]
     console_error_panic_hook::set_once();
     
-    let opts = config::Opts::get();
-    info!("opts: {:?}", opts);
+    //let opts = config::Opts::get();
+    //info!("opts: {:?}", opts);
 
     let mut app = App::new();
 
 
+    let game_speed = GameSpeed::default();
+
+
     GGRSPlugin::<GGRSConfig>::new()
         // define frequency of rollback game logic update
-        .with_update_frequency(60)
+        .with_update_frequency(game_speed.1)
         // define system that returns inputs given a player handle, so GGRS can send the inputs around
         .with_input_system(input)
         // register types of components AND resources you want to be rolled back
@@ -94,7 +97,6 @@ fn main() {
             Schedule::default().with_stage(
                 ROLLBACK_DEFAULT,
                 SystemStage::parallel()
-
                     .with_system_set(
                         SystemSet::new()
                             .with_system(system_zombie_handle)
@@ -153,7 +155,7 @@ fn main() {
         canvas: Some("#bevy-canvas".to_string()),
         ..WindowDescriptor::default()
     })
-    .insert_resource(LevelMapRequested{map: opts.map, level: opts.level})
+    .insert_resource(LevelMapRequested{map: "maps/map_iso/iso_map.asset.ron".to_string(), level: "game/easy.level.ron".to_string()})
     .insert_resource(AvailableGameController{
         keyboard_mouse: true,
         gamepad: vec![]
@@ -204,9 +206,9 @@ fn main() {
             .with_system(system_cleanup_network_session)
     );
 
-    if opts.benchmark_mode {
-      app.add_plugin(FPSPlugin{});
-    }
+    //if opts.benchmark_mode {
+    //  app.add_plugin(FPSPlugin{});
+    //}
 
     app.add_plugin(WebPlugin{});
 

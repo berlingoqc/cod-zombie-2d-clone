@@ -10,7 +10,7 @@ use super::ui_utils::{HOVERED_BUTTON, NORMAL_BUTTON, PRESSED_BUTTON};
 
 
 
-const MATCHBOX_ADDR: &str = "ws://24.48.81.243:3536";
+const MATCHBOX_ADDR: &str = "ws://192.168.50.9:3536";//"ws://24.48.81.243:3536";
 
 
 #[derive(Component)]
@@ -62,7 +62,6 @@ pub fn update_matchbox_socket(
     if let Some(socket) = socket_res.as_mut() {
         socket.accept_new_connections();
         if socket.players().len() >= 2 {
-			println!("We got two people in the lobby");
 			
 			let mut sess_build = SessionBuilder::<GGRSConfig>::new()
         		.with_num_players(2)

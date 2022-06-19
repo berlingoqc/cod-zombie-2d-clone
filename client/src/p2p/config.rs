@@ -3,9 +3,9 @@ use ggrs::PlayerHandle;
 
 pub const ROLLBACK_SYSTEMS: &str = "rollback_systems";
 pub const CHECKSUM_UPDATE: &str = "checksum_update";
-pub const MAX_PREDICTION: usize = 12;
+pub const MAX_PREDICTION: usize = 8;
 pub const INPUT_DELAY: usize = 2;
-pub const CHECK_DISTANCE: usize = 2;
+pub const CHECK_DISTANCE: usize = 4;
 
 
 pub struct LocalHandles {

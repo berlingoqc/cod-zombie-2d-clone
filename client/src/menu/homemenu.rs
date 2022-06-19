@@ -1,7 +1,6 @@
 use bevy::{prelude::*, app::AppExit};
-use ggrs::UdpNonBlockingSocket;
 
-use crate::{p2p::{online::{NetworkPlayer, create_session}}, config::Opts};
+use crate::{p2p::{online::{NetworkPlayer, create_session}}};
 
 use super::ui_utils::*;
 use shared::{
@@ -62,7 +61,6 @@ pub fn system_button_handle(
     controller: Res<AvailableGameController>
 ) {
     for (interaction, mut color, action) in interaction_query.iter_mut() {
-        let opts = Opts::get();
         match *interaction {
             Interaction::Clicked => {
                 *color = PRESSED_BUTTON.into();
@@ -86,34 +84,6 @@ pub fn system_button_handle(
                     },
                     ButtonActions::StartOnlineMultiplayerGame => {
                         app_state.set(GameState::OnlineMenu).unwrap();
-                        let mut players: Vec<NetworkPlayer> = vec![];
-                        zombie_game.players.push(ZombiePlayerInformation {
-                            name: format!("Player {}", 0),
-                            controller: PlayerCurrentInput { input_source: SupportedController::Keyboard,  ..default() },
-                            index: opts.index as usize,
-                            is_local: true,
-                        });
-
-                        zombie_game.players.push(ZombiePlayerInformation {
-                            name: format!("Player {}", 1),
-
-                            controller: PlayerCurrentInput { input_source: SupportedController::Keyboard, ..default() },
-                            index: if opts.index == 0 { 1 } else { 0 },
-                            is_local: false,
-                        });
-
-                        // HARCODE OF THE IP AND THE ORDER
-                        if opts.index == 0 {
-                            players.push(NetworkPlayer{address: "localhost".to_string()});
-                            players.push(NetworkPlayer{address: "127.0.0.1:7001".to_string()});
-                        } else if opts.index == 1 {
-                            players.push(NetworkPlayer{address: "127.0.0.1:7000".to_string()});
-                            players.push(NetworkPlayer{address: "localhost".to_string()});
-                        };
-
-                        create_session(&mut commands, &game_speed, players);
-
-                        app_state.set(GameState::PlayingZombie).unwrap();
                     },
                     ButtonActions::StartLocalMultiplayerGame => {
                         // Add a player with the keyboard and add one player by present input
@@ -138,12 +108,10 @@ pub fn system_button_handle(
                             })
                         }
 
-                        /*
-                        let socket = UdpNonBlockingSocket::bind_to_port(opts.port as u16).unwrap();
-                        create_network_session(&mut commands, &game_speed, socket, players);
+                        create_session(&mut commands, &game_speed, players);
 
                         app_state.set(GameState::PlayingZombie).unwrap();
-                        */
+
                     },
                     ButtonActions::QuitApplication => {
                         exit.send(AppExit);

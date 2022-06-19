@@ -45,7 +45,7 @@ ron = "0.7.0"
 serde = { version = "1", features = ["derive"] }
 tiled = { version = "0.10.1", default-features=false}
 rand = "0.8.5"
-structopt = "0.3"
+# structopt = "0.3"
 anyhow ="1.0"
 pathfinding = "3.0.12"
 

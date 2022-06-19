@@ -34,7 +34,7 @@ pub struct GameSpeed(pub f32, pub usize);
 impl Default for GameSpeed {
     fn default() -> Self {
         #[cfg(target_arch = "wasm32")]
-        return GameSpeed(1.0 / 30.0, 30);
+        return GameSpeed(1.0 / 60.0, 60);
         #[cfg(not(target_arch = "wasm32"))]
         return GameSpeed(1.0 / 60.0, 60);
     }
@@ -211,6 +211,9 @@ pub fn setup_zombie_game(
     commands.spawn().insert(ZombieGame{
         ..Default::default()
     }).insert(Checksum::default()).insert(Rollback::new(rip.next_id()));
+
+
+    info!("Game starting ");
 
 }
 

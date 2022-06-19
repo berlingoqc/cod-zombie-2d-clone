@@ -4,9 +4,10 @@ use bevy::prelude::*;
 use shared::{game::GameSpeed, player::input::GGRSConfig};
 
 use bevy_ggrs::SessionType;
-use ggrs::{PlayerType, SessionBuilder, NonBlockingSocket, P2PSession, UdpNonBlockingSocket, Message};
+use ggrs::{PlayerType, SessionBuilder, NonBlockingSocket, P2PSession, Message};
 
-use super::config::*;
+use super::config::{MAX_PREDICTION, INPUT_DELAY, CHECK_DISTANCE, LocalHandles};
+
 
 pub struct LocalSocket {
 	messages: Vec<(String, Message)>,

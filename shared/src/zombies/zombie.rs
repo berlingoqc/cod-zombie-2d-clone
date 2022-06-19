@@ -203,6 +203,7 @@ pub fn system_zombie_handle(
 
     time: Res<Time>
 ) {
+    info!("System zombie handl");
     for (mut pos, mut dest, mut zombie, mut weapon_state, mut looking_at, mut movement_state) in query_zombies.iter_mut() {
         match zombie.state {
             ZombieState::AwakingFromTheDead => {
