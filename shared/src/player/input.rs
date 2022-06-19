@@ -9,7 +9,7 @@ use bytemuck::{Pod, Zeroable};
 use ggrs::{Config, InputStatus, P2PSession, PlayerHandle, SpectatorSession, SyncTestSession};
 use std::{hash::Hash, net::SocketAddr};
 
-use crate::{game::{GameState, GameSpeed}, character::{CharacterMovementState, LookingAt, Death, Velocity}, collider::{MovementCollider, is_colliding}, utils::get_cursor_location};
+use crate::{game::{GameState, GameSpeed}, character::{CharacterMovementState, LookingAt, Death, Velocity}, collider::{MovementCollider, is_colliding}, utils::get_cursor_location, weapons::weapons::GameButton};
 
 use super::{Player, MainCamera, PLAYER_SIZE};
 
@@ -43,6 +43,9 @@ pub const INPUT_WEAPON_RELOAD: i32 = 1 << 6;
 pub const INPUT_WEAPON_CHANGED: i32 = 1 << 7;
 
 pub const INPUT_INTERACTION_PRESSED: i32 = 1 << 8;
+
+
+pub const INPUT_FROM_GAMEPAD: i32 = 1 << 31;
 
 #[repr(C)]
 #[derive(Copy, Clone, PartialEq, Pod, Zeroable, Default)]
@@ -78,6 +81,7 @@ pub struct PlayerCurrentInput {
 
     pub movement: Vec2,
     pub looking_at: Vec2,
+    pub relative: bool,
 }
 
 pub struct AvailableGameController {
@@ -89,57 +93,6 @@ pub struct AvailableGameController {
 fn vec_moving(vec: &Vec2) -> bool {
     return vec.x != 0. && vec.y != 0.;
 }
-
-fn get_gamepad_input(
-    player_gamepad: Gamepad,
-    axes: &Res<Axis<GamepadAxis>>,
-) -> (Option<Vec3>, Option<Vec2>) {
-
-    let axis_lx = GamepadAxis(player_gamepad, GamepadAxisType::LeftStickX);
-    let axis_ly = GamepadAxis(player_gamepad, GamepadAxisType::LeftStickY);
-
-    let axis_rx = GamepadAxis(player_gamepad, GamepadAxisType::RightStickX);
-    let axis_ry = GamepadAxis(player_gamepad, GamepadAxisType::RightStickY);
-
-
-    if let (Some(x), Some(y), Some(rx), Some(ry)) = (axes.get(axis_lx), axes.get(axis_ly), axes.get(axis_rx), axes.get(axis_ry)) {
-        let left_stick_pos = Vec2::new(x, y);
-        let right_stick_pos = Vec2::new(rx, ry);
-
-        return (if vec_moving(&left_stick_pos) { Some(left_stick_pos.extend(0.0)) } else { None }, if vec_moving(&right_stick_pos) {  Some(right_stick_pos) } else { None });
-    }
-    
-    return (None, None);
-}
-
-fn get_keyboard_input(
-    keyboard_input: &Res<Input<KeyCode>>,
-) -> Option<Vec3> {
-
-    let mut movement = Vec3::default();
-    let mut moved = false;
-
-
-    if keyboard_input.pressed(KeyCode::W) {
-        movement += Vec3::new(0., 1., 0.);
-        moved = true;
-    }
-    if keyboard_input.pressed(KeyCode::S) {
-        movement += Vec3::new(0., -1., 0.);
-        moved = true;
-    }
-    if keyboard_input.pressed(KeyCode::A) {
-        movement += Vec3::new(-1., 0., 0.);
-        moved = true;
-    }
-    if keyboard_input.pressed(KeyCode::D) {
-        movement += Vec3::new(1., 0., 0.);
-        moved = true;
-    }
-
-	return if moved { Some(movement) }  else { None };
-}
-
 
 
 pub fn system_gamepad_event(
@@ -168,46 +121,116 @@ pub fn system_gamepad_event(
 
 pub fn input(
     handle: In<PlayerHandle>,
+
+    q_player: Query<(&PlayerCurrentInput, &Player)>,
     
     keyboard_input: Res<Input<KeyCode>>,
     mouse_input: Res<Input<MouseButton>>,
+
     wnds: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
 
 
+    buttons: Res<Input<GamepadButton>>,
+    axes: Res<Axis<GamepadAxis>>,
+
+
 ) -> BoxInput {
+
     let mut input: i32 = 0;
+    let mut mouse_position: Vec2 = Vec2::default();
 
-    if keyboard_input.pressed(KeyCode::W) {
-        input |= INPUT_UP;
-    }
-    if keyboard_input.pressed(KeyCode::A) {
-        input |= INPUT_LEFT;
-    }
-    if keyboard_input.pressed(KeyCode::S) {
-        input |= INPUT_DOWN;
-    }
-    if keyboard_input.pressed(KeyCode::D) {
-        input |= INPUT_RIGHT;
-    }
-    if mouse_input.pressed(MouseButton::Left) {
-        input |= INPUT_FIRE
-    }
-    if mouse_input.just_pressed(MouseButton::Left) {
-       input |= INPUT_JUST_FIRE;
-    }
-    if keyboard_input.just_pressed(KeyCode::Tab) {
-        input |= INPUT_WEAPON_CHANGED;
-    }
-    if keyboard_input.just_pressed(KeyCode::R) {
-        input |= INPUT_WEAPON_RELOAD;
-    }
-    if keyboard_input.pressed(KeyCode::F) {
-        input |= INPUT_INTERACTION_PRESSED;
-    }
+    for (player_input, player) in q_player.iter() {
 
-    let mouse_position = get_cursor_location(&wnds, &q_camera);
+        if (player.handle == handle.0) {
 
+            if player_input.input_source == SupportedController::Keyboard {
+
+                if keyboard_input.pressed(KeyCode::W) {
+                    input |= INPUT_UP;
+                }
+                if keyboard_input.pressed(KeyCode::A) {
+                    input |= INPUT_LEFT;
+                }
+                if keyboard_input.pressed(KeyCode::S) {
+                    input |= INPUT_DOWN;
+                }
+                if keyboard_input.pressed(KeyCode::D) {
+                    input |= INPUT_RIGHT;
+                }
+                if mouse_input.pressed(MouseButton::Left) {
+                    input |= INPUT_FIRE
+                }
+                if mouse_input.just_pressed(MouseButton::Left) {
+                    input |= INPUT_JUST_FIRE;
+                }
+                if keyboard_input.just_pressed(KeyCode::Tab) {
+                    input |= INPUT_WEAPON_CHANGED;
+                }
+                if keyboard_input.just_pressed(KeyCode::R) {
+                    input |= INPUT_WEAPON_RELOAD;
+                }
+                if keyboard_input.pressed(KeyCode::F) {
+                    input |= INPUT_INTERACTION_PRESSED;
+                }
+
+                mouse_position = get_cursor_location(&wnds, &q_camera);
+            } else {
+                input |= INPUT_FROM_GAMEPAD;
+
+
+                let player_gamepad = player_input.gamepad.unwrap();
+
+                let axis_lx = GamepadAxis(player_gamepad, GamepadAxisType::LeftStickX);
+                let axis_ly = GamepadAxis(player_gamepad, GamepadAxisType::LeftStickY);
+
+                let axis_rx = GamepadAxis(player_gamepad, GamepadAxisType::RightStickX);
+                let axis_ry = GamepadAxis(player_gamepad, GamepadAxisType::RightStickY);
+
+
+                if let (Some(x), Some(y), Some(rx), Some(ry)) = (axes.get(axis_lx), axes.get(axis_ly), axes.get(axis_rx), axes.get(axis_ry)) {
+                    let left_stick_pos = Vec2::new(x, y);
+                    let right_stick_pos = Vec2::new(rx * 100., ry * 100.);
+
+                    mouse_position = right_stick_pos;
+
+                    if x > 0.1 {
+                        input |= INPUT_RIGHT;
+                    } else if x < -0.1 {
+                        input |= INPUT_LEFT;
+                    }
+
+                    if y > 0.1 {
+                        input |= INPUT_UP;
+                    } else if (y) < -0.1 {
+                        input |= INPUT_DOWN;
+                    }
+                }
+
+                let reload_button = GamepadButton(player_gamepad, GamepadButtonType::West);
+                let change_weapon_button = GamepadButton(player_gamepad, GamepadButtonType::North);
+                let interaction_button = GamepadButton(player_gamepad, GamepadButtonType::South);
+                let weapon_trigger_button = GamepadButton(player_gamepad, GamepadButtonType::RightTrigger);
+
+                if buttons.pressed(weapon_trigger_button) {
+                    input |= INPUT_FIRE
+                }
+                if buttons.just_pressed(weapon_trigger_button) {
+                    input |= INPUT_JUST_FIRE;
+                }
+                if buttons.just_pressed(change_weapon_button) {
+                    input |= INPUT_WEAPON_CHANGED;
+                }
+                if buttons.just_pressed(reload_button) {
+                    input |= INPUT_WEAPON_RELOAD;
+                }
+                if buttons.pressed(interaction_button) {
+                    input |= INPUT_INTERACTION_PRESSED;
+                }
+
+            }
+        }
+    }
 
     BoxInput { inp: input, right_x: mouse_position.x as i32, right_y: mouse_position.y as i32}
 }
@@ -253,9 +276,15 @@ pub fn apply_input_players(
         }
 
         current_input.movement = movement;
-        current_input.looking_at = Vec2::new(box_input.right_x as f32, box_input.right_y as f32);
-
-
+        if box_input.inp & INPUT_FROM_GAMEPAD == INPUT_FROM_GAMEPAD {
+            current_input.relative = true;
+            let vec = Vec2::new((box_input.right_x as f32) / 100., (box_input.right_y as f32) / 100.);
+            if vec_moving(&vec) {
+                current_input.looking_at = vec;
+            }
+        } else {
+            current_input.looking_at = Vec2::new(box_input.right_x as f32, box_input.right_y as f32);
+        }
     }
 }
 
@@ -279,6 +308,7 @@ pub fn move_players(
 ) {
     for (mut player_transform, mut looking_at, mut character_movement_state, v, c) in query.iter_mut() {
         looking_at.0 = c.looking_at;
+        looking_at.1 = c.relative;
         if v.v.x != 0. || v.v.y != 0. {
 			character_movement_state.state = "walking".to_string();
 
