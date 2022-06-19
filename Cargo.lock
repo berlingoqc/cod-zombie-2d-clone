@@ -476,6 +476,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_animation"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c087569c34b168dd988e8b3409ce273661b4a58c3c534d0e381950589f59f68e"
+dependencies = [
+ "bevy_app",
+ "bevy_asset",
+ "bevy_core",
+ "bevy_ecs",
+ "bevy_hierarchy",
+ "bevy_math",
+ "bevy_reflect",
+ "bevy_transform",
+ "bevy_utils",
+]
+
+[[package]]
 name = "bevy_app"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -673,6 +690,7 @@ checksum = "2e07bda7721091c1a683343d466132dc69dec65aa83d8c9e328a2fb3431f03be"
 dependencies = [
  "anyhow",
  "base64",
+ "bevy_animation",
  "bevy_app",
  "bevy_asset",
  "bevy_core",
@@ -722,6 +740,7 @@ version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d518a8e5f526a9537fc8408a284caec7af22b23c3b23c0dee08bacc0930e2f1a"
 dependencies = [
+ "bevy_animation",
  "bevy_app",
  "bevy_asset",
  "bevy_audio",
@@ -2653,6 +2672,7 @@ dependencies = [
  "num-rational",
  "num-traits",
  "png",
+ "scoped_threadpool",
 ]
 
 [[package]]
@@ -4048,6 +4068,12 @@ checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 dependencies = [
  "winapi-util",
 ]
+
+[[package]]
+name = "scoped_threadpool"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d51f5df5af43ab3f1360b429fa5e0152ac5ce8c0bd6485cae490332e96846a8"
 
 [[package]]
 name = "scopeguard"
