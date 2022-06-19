@@ -110,6 +110,7 @@ pub struct ZombiePlayerInformation {
     pub name: String,
     pub controller: PlayerCurrentInput,
     pub index: usize,
+    pub is_local: bool,
 }
 
 #[derive(Default, Debug, Reflect, Component)]

@@ -37,6 +37,7 @@ pub struct MainCamera;
 #[derive(Default, Component, Reflect)]
 pub struct Player {
     pub handle: usize,
+    pub is_local: bool,
 }
 
 pub struct PlayerDeadEvent {
@@ -62,10 +63,11 @@ pub struct PlayerBundle {
 }
 
 impl PlayerBundle {
-    fn new(starting_weapon_name: &str, input: PlayerCurrentInput, index_player: usize) -> PlayerBundle {
+    fn new(starting_weapon_name: &str, input: PlayerCurrentInput, index_player: usize, is_local: bool) -> PlayerBundle {
         PlayerBundle { 
             player: Player{
                 handle: index_player,
+                is_local: is_local,
                 ..default()
             },
             player_current_input: input,
@@ -133,7 +135,7 @@ pub fn setup_player(
 
     let weapon = weapons.weapons.iter().find(|w| w.name.eq(default_weapon_name)).unwrap().clone();
 
-    let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name, config.controller.clone(), index_player)).id();
+    let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name, config.controller.clone(), index_player, config.is_local)).id();
 
     commands.entity(player).insert(Rollback::new(rip.next_id()));
 

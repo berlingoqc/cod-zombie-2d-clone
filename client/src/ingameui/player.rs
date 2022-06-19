@@ -35,7 +35,7 @@ pub fn system_player_added(
     asset_server: Res<AssetServer>,
 
     mut q_following_player: Query<(Entity, &FollowingPlayer, &mut Transform, &mut Text, Option<&HealthBar>, Option<&PlayerInteractionText>), Without<Player>>,
-    q_player: Query<(&Transform, &Health, &PlayerCurrentInteraction), With<Player>>,
+    q_player: Query<(&Transform, &Health, &PlayerCurrentInteraction, &Player)>,
 
 ) {
     let mut clear_up = false;
@@ -84,7 +84,8 @@ pub fn system_player_added(
 
     for (_, following_player, mut tranform, mut text, opt_healthbar, opt_interaction) in q_following_player.iter_mut() {
 
-        if let Ok((player_transform, health, player_interaction)) = q_player.get(following_player.player) {
+        if let Ok((player_transform, health, player_interaction, player)) = q_player.get(following_player.player) {
+
             tranform.translation = Vec3::new(
                 player_transform.translation.x + following_player.offset.x,
                 player_transform.translation.y + following_player.offset.y,
@@ -102,7 +103,7 @@ pub fn system_player_added(
                 text.sections[0].value = health_bar_string;
             }
 
-            if opt_interaction.is_some() {
+            if player.is_local && opt_interaction.is_some() {
                 if player_interaction.interaction {
                     text.sections[0].value = format!("Press F to repair window")
                 } else {

@@ -75,6 +75,7 @@ pub fn system_button_handle(
                                 PlayerCurrentInput{ input_source: SupportedController::Gamepad, gamepad: Some(controller.gamepad.get(0).unwrap().clone()), ..default()}
                             } else { PlayerCurrentInput{ input_source: SupportedController::Keyboard, gamepad: None, ..default()}},
                             index: 0,
+                            is_local: true,
                         }];
 
                         let socket = UdpNonBlockingSocket::bind_to_port(opts.port as u16).unwrap();
@@ -92,7 +93,7 @@ pub fn system_button_handle(
                             name: format!("Player {}", 0),
                             controller: PlayerCurrentInput { input_source: SupportedController::Keyboard,  ..default() },
                             index: opts.index as usize,
-
+                            is_local: true,
                         });
 
                         zombie_game.players.push(ZombiePlayerInformation {
@@ -100,6 +101,7 @@ pub fn system_button_handle(
 
                             controller: PlayerCurrentInput { input_source: SupportedController::Keyboard, ..default() },
                             index: if opts.index == 0 { 1 } else { 0 },
+                            is_local: false,
                         });
 
                         // HARCODE OF THE IP AND THE ORDER
@@ -122,6 +124,7 @@ pub fn system_button_handle(
                             name: "Player 1".to_string(),
                             controller: PlayerCurrentInput { input_source: SupportedController::Keyboard, gamepad: None, ..default() },
                             index: 0,
+                            is_local: true,
                         }];
 
                         let mut players: Vec<NetworkPlayer> = vec![];
@@ -134,6 +137,7 @@ pub fn system_button_handle(
                                 name: format!("Player {}", i + 2),
                                 controller: PlayerCurrentInput { input_source: SupportedController::Gamepad, gamepad: Some(gamepad.clone()), ..default() },
                                 index: i + 1,
+                                is_local: true
                             })
                         }
 
