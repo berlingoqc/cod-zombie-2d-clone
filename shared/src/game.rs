@@ -8,6 +8,7 @@ use crate::player::{
     setup_player,
     interaction::PlayerInteraction
 };
+use crate::utils::Checksum;
 use crate::weapons::loader::{WeaponAssetPlugin, WeaponAssetState};
 use crate::weapons::weapons::Weapon;
 
@@ -39,13 +40,6 @@ impl Default for GameSpeed {
     }
 }
 
-#[derive(Default)]
-pub struct Game {
-    pub player: Player,
-
-    pub zombie_game: Option<ZombieGame>,
-}
-
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub enum GameState {
     Menu,
@@ -53,9 +47,10 @@ pub enum GameState {
     GameOver,
 }
 
-#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Default, Reflect)]
 #[repr(i32)]
 pub enum ZombieGameState {
+    #[default]
     Initializing = 0,
     Starting,
     Round,
@@ -117,10 +112,10 @@ pub struct ZombiePlayerInformation {
     pub index: usize,
 }
 
-#[derive(Default, Debug, Reflect)]
+#[derive(Default, Debug, Reflect, Component)]
 pub struct ZombieGame {
     pub round: i32,
-    pub state: i32, //ZombieGameState,
+    pub state: ZombieGameState,
     pub current_round: CurrentRoundInfo,
 }
 
@@ -179,8 +174,6 @@ impl Plugin for ZombieGamePlugin {
             .add_event::<ZombieGamePanelEvent>()
             .add_event::<PlayerDeadEvent>()
             .init_resource::<GameSpeed>()
-            .init_resource::<Game>()
-            .init_resource::<ZombieGame>()
             .init_resource::<ZombieGameConfig>()
             .init_resource::<ZombieLevelAssetState>()
             .init_resource::<ZombieSpawnerConfig>()
@@ -203,13 +196,19 @@ pub fn increase_frame_system(mut frame_count: ResMut<FrameCount>, inputs: Res<Ve
 // make on client and server side ....
 pub fn setup_zombie_game(
     mut state: ResMut<ZombieLevelAssetState>,
-    //mut commands: Commands,
+    mut commands: Commands,
+    mut rip: ResMut<RollbackIdProvider>,
     asset_server: Res<AssetServer>,
-    requested_level: Res<LevelMapRequested>
+    requested_level: Res<LevelMapRequested>,
 ) {
     let handle: Handle<ZombieLevelAsset> = asset_server.load(requested_level.level.as_str());
     state.handle = handle;
     state.loaded = false;
+
+
+    commands.spawn().insert(ZombieGame{
+        ..Default::default()
+    }).insert(Checksum::default()).insert(Rollback::new(rip.next_id()));
 
 }
 
@@ -217,6 +216,7 @@ pub fn system_end_game(
     q_player: Query<&Health, With<Player>>,
     mut ev_player_dead: EventReader<PlayerDeadEvent>,
     mut game_state: ResMut<State<GameState>>,
+
 ) {
 
     for ev in ev_player_dead.iter() {
@@ -224,8 +224,8 @@ pub fn system_end_game(
             game_state.set(GameState::Menu).unwrap();
         }
     }
-
 }
+
 pub fn system_zombie_game(
     mut commands: Commands,
 
@@ -234,7 +234,7 @@ pub fn system_zombie_game(
     weapon_state: Res<WeaponAssetState>,
     map_state: Res<MapDataState>,
 
-    mut zombie_game: ResMut<ZombieGame>,
+    mut q_zombie_game: Query<&mut ZombieGame>,
     mut zombie_game_config: ResMut<ZombieGameConfig>,
 
     zombie_query: Query<&Zombie>,
@@ -254,12 +254,13 @@ pub fn system_zombie_game(
 
     weapons: Res<WeaponAssetState>,
 ) {
+    let mut zombie_game = q_zombie_game.get_single_mut().unwrap();
     let mut nbr_zombie = 0;
     for _ in zombie_query.iter() {
         nbr_zombie += 1;
     }
 
-    match unsafe { ::std::mem::transmute(zombie_game.state) } {
+    match zombie_game.state {
         ZombieGameState::Initializing => {
             let data_asset = custom_assets.get(&level_asset_state.handle);
             if level_asset_state.loaded || data_asset.is_none() {
@@ -299,14 +300,14 @@ pub fn system_zombie_game(
                 setup_player(&mut rip,&mut commands, &zombie_game_config, &weapons, player, player.index);
             }
 
-            zombie_game.state = ZombieGameState::Round as i32;
+            zombie_game.state = ZombieGameState::Round;
         },
         ZombieGameState::Starting => {
 
         },
         ZombieGameState::Round => {
             if nbr_zombie == 0 && zombie_game.current_round.zombie_remaining == 0 {
-                zombie_game.state = ZombieGameState::RoundInterlude as i32;
+                zombie_game.state = ZombieGameState::RoundInterlude;
 
                 return;
             }
@@ -343,6 +344,7 @@ pub fn system_zombie_game(
                             destination: Vec2::default(),
                             entity: closest_window_entity.clone(),
                             path: vec![],
+                            requested_movement: None, 
                         };
 
                         bot_destination.set_destination(closest_window.position, position, closest_window_entity.clone(), 0.);
@@ -371,7 +373,7 @@ pub fn system_zombie_game(
                 zombie_remaining: zombie_count,
                 total_zombie: zombie_count,
             };
-            zombie_game.state = ZombieGameState::Round as i32;
+            zombie_game.state = ZombieGameState::Round;
             config.timer.reset();
         }
         ZombieGameState::Over => {}
@@ -403,14 +405,15 @@ pub fn change_game_state_event(
     mut ev_change_state: EventReader<ZombieGameStateChangeEvent>,
 
     mut commands: Commands,
-    mut zombie_game: ResMut<ZombieGame>,
+    mut q_zombie_game: Query<&mut ZombieGame>,
     query_zombies: Query<Entity, With<Zombie>>,
     query_player: Query<Entity, With<Player>>,
     query_weapons: Query<Entity, With<Weapon>>,
     query_window: Query<Entity, With<Window>>,
 ) {
     for _ in ev_change_state.iter() {
-        zombie_game.state = ZombieGameState::Initializing as i32;
+        let mut zombie_game = q_zombie_game.get_single_mut().unwrap();
+        zombie_game.state = ZombieGameState::Initializing;
         for z in query_zombies.iter() {
             commands.entity(z).despawn();
         }
@@ -458,7 +461,9 @@ pub fn system_panel_event(
 }
 
 pub fn system_unload_zombie_game(
-    mut zombie_game: ResMut<ZombieGame>,
+    mut commands: Commands,
+    q_zombiegame: Query<Entity, With<ZombieGame>>,
 ) {
-    zombie_game.state = 0;
+    let entity = q_zombiegame.get_single().unwrap();
+    commands.entity(entity).despawn();
 }

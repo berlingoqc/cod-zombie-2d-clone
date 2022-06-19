@@ -23,7 +23,7 @@ use shared::{
         react_level_data, setup_zombie_game, system_zombie_game,
         GameState, ZombieGamePlugin, LevelMapRequested, system_unload_zombie_game, system_end_game, increase_frame_system, ZombieGame,
     },
-    zombies::zombie::{system_zombie_handle, Zombie, BotDestination},
+    zombies::zombie::{system_zombie_handle, Zombie, BotDestination, system_move_zombie},
     player::{input::{apply_input_players, FrameCount, input, BoxInput, AvailableGameController, system_gamepad_event, GGRSConfig, update_velocity_player, move_players}, interaction::system_interaction_player, system_unload_players, system_health_player, Player
     }, weapons::{weapons::{handle_weapon_input, Weapon, AmmunitionState, Projectile}, ammunition::{apply_velocity, movement_projectile}}, map::{render::system_unload_map, ZombieSpawner}, character::{Velocity, LookingAt, Death, CharacterMovementState}, health::{Health, HealthRegeneration}, collider::ProjectileCollider,
 };
@@ -40,7 +40,7 @@ use crate::{
     ingameui::{
         ingameui::{system_clear_ingame_ui, system_weapon_ui, system_ingame_ui, setup_ingame_ui},
         player::{setup_player_camera, system_player_added}
-    }, p2p::{config::P2PSystemLabel, checksum::checksum_zombie, online::system_cleanup_network_session}
+    }, p2p::{config::P2PSystemLabel, checksum::{checksum_zombie, checksum_zombiegame}, online::system_cleanup_network_session}
 };
 
 use bevy_kira_audio::AudioPlugin;
@@ -81,6 +81,7 @@ fn main() {
         .register_rollback_type::<AmmunitionState>()
         .register_rollback_type::<Projectile>()
         .register_rollback_type::<Zombie>()
+        .register_rollback_type::<ZombieGame>()
         .register_rollback_type::<ZombieSpawner>()
         .register_rollback_type::<CharacterMovementState>()
         .register_rollback_type::<BotDestination>()
@@ -107,6 +108,7 @@ fn main() {
                     .with_system_set(
                         SystemSet::new()
                             .with_system(update_velocity_player)
+                            .with_system(system_move_zombie)
                             .label(P2PSystemLabel::Move)
                             .after(P2PSystemLabel::Input)
                     )
@@ -136,7 +138,9 @@ fn main() {
                 ROLLBACK_DEFAULT, 
                 CHECKSUM_UPDATE,
                 SystemStage::parallel()
-                        .with_system(checksum_zombie)),
+                        .with_system(checksum_zombie)
+                        .with_system(checksum_zombiegame)
+            ),
         )
         // make it happen in the bevy app
         .build(&mut app);

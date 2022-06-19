@@ -60,12 +60,13 @@ pub fn system_ingame_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 
-    zombie_game: Res<ZombieGame>,
+    q_zombie_game: Query<&ZombieGame>,
     zombie_query: Query<&Zombie>,
     mut query_round: Query<&mut Text, With<RoundText>>,
 
     player_added: Query<Entity, Added<Player>>,
 ) {
+    let zombie_game = q_zombie_game.get_single().unwrap();
     let mut nbr_zombie = 0;
     for _ in zombie_query.iter() {
         nbr_zombie += 1;

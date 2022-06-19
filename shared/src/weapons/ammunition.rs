@@ -51,6 +51,7 @@ pub fn movement_projectile(
             );
             if collision.is_some() {
                 if let Some(_zombie) = zombie {
+                    println!("HITTINH ZOMBIEEE");
                     commands.entity(hit_entity).despawn();
                 }
                 commands.entity(projectile_entity).despawn();

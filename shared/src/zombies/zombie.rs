@@ -21,6 +21,8 @@ pub const ZOMBIE_SIZE: Vec2 = const_vec2!([25. , 25. ]);
 pub struct BotDestination {
     // Destination element
     pub destination: Vec2,
+    // Requested_movement
+    pub requested_movement: Option<Vec2>,
     // Precalculate path to reach the target
     pub path: Vec<(i32, i32)>,
     // entity trying to reach
@@ -29,7 +31,7 @@ pub struct BotDestination {
 
 impl Default for BotDestination {
    fn default() -> Self {
-       BotDestination { destination: Vec2::default(), path: vec![], entity: Entity::from_raw(0) }
+       BotDestination { destination: Vec2::default(), path: vec![], entity: Entity::from_raw(0), requested_movement: None, }
    }
 }
 
@@ -41,8 +43,7 @@ impl BotDestination {
     >,) -> bool {
         if let Some(el) = self.path.pop() {
             if !is_colliding(Vec3::new(el.0 as f32, el.1 as f32, 10.), ZOMBIE_SIZE, "zombie", &collider_query) {
-                pos.translation.x = el.0 as f32;
-                pos.translation.y = el.1 as f32;
+                self.requested_movement = Some(Vec2::new(el.0 as f32, el.1 as f32));
             }
             return true;
         } else {
@@ -168,6 +169,19 @@ impl ZombieBundle {
             info,
             destination: dest,
             weapon_state: WeaponState { fired_at: 0., state: WeaponCurrentAction::Firing }
+        }
+    }
+}
+
+
+pub fn system_move_zombie(
+    mut query_zombies: Query<(&mut Transform, &mut BotDestination), With<Zombie>>,
+) {
+    for (mut transform, mut bot_destination) in query_zombies.iter_mut() {
+        if let Some(requested_movement) = bot_destination.requested_movement {
+            transform.translation.x = requested_movement.x;
+            transform.translation.y = requested_movement.y;
+            bot_destination.requested_movement = None
         }
     }
 }
