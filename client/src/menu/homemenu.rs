@@ -78,17 +78,16 @@ pub fn system_button_handle(
                             is_local: true,
                         }];
 
-                        let socket = UdpNonBlockingSocket::bind_to_port(opts.port as u16).unwrap();
                         let mut players: Vec<NetworkPlayer> = vec![];
-                        players.push(NetworkPlayer{address: "localhost".to_string()});
-                        create_network_session(&mut commands, &game_speed, socket, players);
+                        //players.push(NetworkPlayer{address: "localhost".to_string()});
+                        //create_network_session(&mut commands, &game_speed, socket, players);
 
-                        app_state.set(GameState::PlayingZombie).unwrap();
+                        //app_state.set(GameState::PlayingZombie).unwrap();
                     },
                     ButtonActions::StartOnlineMultiplayerGame => {
-
+                        app_state.set(GameState::OnlineMenu).unwrap();
+                        /*
                         let mut players: Vec<NetworkPlayer> = vec![];
-
                         zombie_game.players.push(ZombiePlayerInformation {
                             name: format!("Player {}", 0),
                             controller: PlayerCurrentInput { input_source: SupportedController::Keyboard,  ..default() },
@@ -117,6 +116,7 @@ pub fn system_button_handle(
                         create_network_session(&mut commands, &game_speed, socket, players);
 
                         app_state.set(GameState::PlayingZombie).unwrap();
+                        */
                     },
                     ButtonActions::StartLocalMultiplayerGame => {
                         // Add a player with the keyboard and add one player by present input
@@ -141,10 +141,12 @@ pub fn system_button_handle(
                             })
                         }
 
+                        /*
                         let socket = UdpNonBlockingSocket::bind_to_port(opts.port as u16).unwrap();
                         create_network_session(&mut commands, &game_speed, socket, players);
 
                         app_state.set(GameState::PlayingZombie).unwrap();
+                        */
                     },
                     ButtonActions::QuitApplication => {
                         exit.send(AppExit);

@@ -7,7 +7,7 @@ use bevy::{
 use bevy_ggrs::{Rollback, RollbackIdProvider};
 use bytemuck::{Pod, Zeroable};
 use ggrs::{Config, InputStatus, P2PSession, PlayerHandle, SpectatorSession, SyncTestSession};
-use std::{hash::Hash, net::SocketAddr};
+use std::{hash::Hash};
 
 use crate::{game::{GameState, GameSpeed}, character::{CharacterMovementState, LookingAt, Death, Velocity}, collider::{MovementCollider, is_colliding}, utils::get_cursor_location, weapons::weapons::GameButton};
 
@@ -28,7 +28,7 @@ pub struct GGRSConfig;
 impl ggrs::Config for GGRSConfig {
     type Input = BoxInput;
     type State = i32;
-    type Address = SocketAddr;
+    type Address = String;
 }
 
 const INPUT_UP: i32 = 1 << 0;

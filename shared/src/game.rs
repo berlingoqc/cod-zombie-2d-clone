@@ -43,6 +43,7 @@ impl Default for GameSpeed {
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub enum GameState {
     Menu,
+    OnlineMenu,
     PlayingZombie,
     GameOver,
 }

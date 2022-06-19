@@ -9,8 +9,6 @@ mod menu;
 
 mod p2p;
 
-use std::net::SocketAddr;
-
 use bevy::{
     core::FixedTimestep, prelude::*, window::WindowDescriptor, ecs::schedule::ShouldRun
 };
@@ -35,7 +33,7 @@ use crate::{
     },
     character_animation::CharacterAnimationPlugin,
     menu::{
-        homemenu::{HomeMenuPlugin, clear_home_menu, system_button_handle}, 
+        homemenu::{HomeMenuPlugin, clear_home_menu, system_button_handle}, onlinemenu::OnlineMenuPlugin, 
     },
     ingameui::{
         ingameui::{system_clear_ingame_ui, system_weapon_ui, system_ingame_ui, setup_ingame_ui},
@@ -168,6 +166,7 @@ fn main() {
 
     app.add_plugin(ZombieGamePlugin{});
     app.add_plugin(HomeMenuPlugin{});
+    app.add_plugin(OnlineMenuPlugin{});
 
     app.add_system(system_gamepad_event);
 

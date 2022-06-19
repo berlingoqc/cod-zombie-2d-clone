@@ -1,7 +1,5 @@
 
 
-use std::net::SocketAddr;
-
 use bevy::prelude::*;
 use shared::{game::GameSpeed, player::input::GGRSConfig};
 
@@ -18,7 +16,7 @@ pub struct NetworkPlayer {
 pub fn create_network_session(
 	commands: &mut Commands,
 	game_speed: &GameSpeed,
-	socket: impl NonBlockingSocket<SocketAddr> + 'static,
+	socket: impl NonBlockingSocket<String> + 'static,
 	players: Vec<NetworkPlayer>,
 ) {
 	let nbr_player = players.iter().count();
@@ -36,9 +34,7 @@ pub fn create_network_session(
 	            .add_player(PlayerType::Local, i)
 	            .expect("Could not add local player");
 		} else {
-			let remote_addr: SocketAddr = player_addr.address.parse().unwrap();
-			sess_build = sess_build.add_player(PlayerType::Remote(remote_addr), i).unwrap();
-			println!("ADD REMOTE ADDR {:?}", remote_addr);
+			sess_build = sess_build.add_player(PlayerType::Remote(player_addr.address.clone()), i).unwrap();
 		}
     }
 

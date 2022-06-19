@@ -37,6 +37,7 @@ bevy_kira_audio = { git = "https://github.com/NiklasEi/bevy_kira_audio", branch 
 bytemuck = {version="1.7.3", features= ["derive"]}
 ggrs = { git = "https://github.com/gschup/ggrs", features=["sync-send"] }
 bevy_ggrs = { git = "https://github.com/gschup/bevy_ggrs" }
+matchbox_socket = { git = "https://github.com/berlingoqc/matchbox", features = ["ggrs-socket"] }
 
 approx = "0.5.1"
 
@@ -45,7 +46,6 @@ serde = { version = "1", features = ["derive"] }
 tiled = { version = "0.10.1", default-features=false}
 rand = "0.8.5"
 structopt = "0.3"
-uuid = "=0.8.1"
 anyhow ="1.0"
 pathfinding = "3.0.12"
 
