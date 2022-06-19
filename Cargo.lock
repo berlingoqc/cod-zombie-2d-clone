@@ -1380,7 +1380,6 @@ dependencies = [
  "rand",
  "ron",
  "serde",
- "shared",
  "tiled",
  "web-sys",
 ]
@@ -4225,24 +4224,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "900fba806f70c630b0a382d0d825e17a0f19fcd059a2ade1ff237bcddf446b31"
 dependencies = [
  "lazy_static",
-]
-
-[[package]]
-name = "shared"
-version = "0.0.16"
-dependencies = [
- "anyhow",
- "bevy",
- "bevy_ecs_tilemap",
- "bevy_ggrs",
- "bytemuck",
- "console_error_panic_hook",
- "ggrs",
- "pathfinding",
- "rand",
- "ron",
- "serde",
- "tiled",
 ]
 
 [[package]]
