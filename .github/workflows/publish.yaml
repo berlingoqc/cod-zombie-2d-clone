@@ -32,7 +32,7 @@ jobs:
       - name: Publish generated content to GitHub Pages
         uses: tsunematsu21/actions-publish-gh-pages@v1.0.2
         with:
-          dir: client/public
+          dir: game/public
           branch: gh-pages
           token: ${{ secrets.ACCESS_TOKEN }}
   release_dev:
@@ -42,7 +42,7 @@ jobs:
     - name: rustup
       run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && rustup default nightly-2022-04-13 && cargo install --force cargo-make && cd game && cargo make build-native
     - name: Create release folder
-      run: mkdir -p release && cp ./client/target/debug/cod-zombie-2d-clone ./release
+      run: mkdir -p release && cp ./game/target/debug/cod-zombie-2d-clone ./release
     - uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
