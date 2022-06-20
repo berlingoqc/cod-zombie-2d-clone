@@ -10,7 +10,7 @@ use super::ui_utils::{HOVERED_BUTTON, NORMAL_BUTTON, PRESSED_BUTTON};
 
 
 
-const MATCHBOX_ADDR: &str = "ws://24.48.81.243:3536";
+const MATCHBOX_ADDR: &str = "wss://matchbox.growbe.ca";
 
 
 #[derive(Component)]
