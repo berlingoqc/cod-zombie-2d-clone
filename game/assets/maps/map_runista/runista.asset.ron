@@ -1,0 +1,12 @@
+MapDataAsset(
+    tiled: (
+        path: "maps/map_runista/runista.tmx",
+        transform: (-450., -375., 0.)
+    ),
+    spawners: [
+    ],
+    windows: [
+    ],
+    walls: [
+    ]
+)
