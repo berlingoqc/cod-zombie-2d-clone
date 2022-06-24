@@ -33,6 +33,14 @@ pub fn system_move_camera_single_player(
     if let Ok(mut transform) = q_cameras.get_single_mut() {
         if let Ok(transform_player) = q_players.get_single() {
             transform.translation = transform_player.translation;
+        } else {
+            let mut count = 0;
+            let mut positions_sum = Vec3::default();
+            for transform in q_players.iter() {
+                positions_sum += transform.translation;
+                count += 1;
+            }
+            transform.translation = positions_sum / (count as f32)
         }
     }
 
