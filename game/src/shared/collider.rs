@@ -30,8 +30,32 @@ pub fn is_colliding<T : Component, R : Component>(
         if collider.allowed_entity_type.iter().any(|x| x == character_type) { continue }
         let collision = collide(destination, size, transform.translation, collider.size);
         if collision.is_some() {
+            println!("{:?} {:?} {:?} {:?}", destination, size, transform.translation, collider.size);
             return true;
         }
     }
     return false;
+}
+
+
+pub fn system_collider_debug(
+    mut commands: Commands,
+    q_new_collider: Query<(&MovementCollider, &Transform), Added<MovementCollider>>
+) {
+    for (collider, transform) in q_new_collider.iter() {
+        info!("COLLIDER {:?} {:?}", collider.size, transform.translation);
+        commands.spawn_bundle(SpriteBundle {
+                sprite: Sprite {
+                    color: Color::rgb(0.10, 0.30, 0.50),
+                    custom_size: Some(collider.size),
+                    ..Sprite::default()
+                },
+                transform: Transform {
+                    translation: transform.translation + Vec3::new(0., 0., 10.),
+                    ..Transform::default()
+                },
+                ..SpriteBundle::default()
+            });
+    }
+
 }

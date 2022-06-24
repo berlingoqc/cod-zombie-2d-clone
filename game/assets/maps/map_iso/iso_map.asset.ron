@@ -3,6 +3,13 @@ MapDataAsset(
         path: "maps/map_iso/test.tmx",
         transform: (-450., -375., 0.)
     ),
+    metadata_tiled: {
+        75: [
+            TiledMetada(
+
+            )
+        ]
+    },
     spawners: [
         MapElementPosition(
             position: (550., 120.),

@@ -4,6 +4,7 @@ use bevy::{
     prelude::*
 };
 
+use bevy_ecs_tilemap::Tile;
 use bevy_ggrs::{Rollback, RollbackIdProvider};
 use bytemuck::{Pod, Zeroable};
 use ggrs::{Config, InputStatus, P2PSession, PlayerHandle, SpectatorSession, SyncTestSession};
@@ -289,7 +290,7 @@ pub fn apply_input_players(
 }
 
 pub fn update_velocity_player(
-    mut query: Query<(&Transform, &mut Velocity, &PlayerCurrentInput,)>
+    mut query: Query<(&Transform, &mut Velocity, &PlayerCurrentInput,)>,
 ) {
     for (t, mut v, c) in query.iter_mut() {
         v.v = c.movement;
@@ -305,14 +306,17 @@ pub fn move_players(
     >,
 
     game_speed: Res<GameSpeed>,
+
 ) {
+
     for (mut player_transform, mut looking_at, mut character_movement_state, v, c) in query.iter_mut() {
+        //info!("Player location {:?}", player_transform.translation);
         looking_at.0 = c.looking_at;
         looking_at.1 = c.relative;
         if v.v.x != 0. || v.v.y != 0. {
 			character_movement_state.state = "walking".to_string();
 
-			let dest = player_transform.translation + (v.v.extend(0.) * game_speed.0 * 125.);
+			let dest = player_transform.translation + (v.v.extend(0.) * game_speed.0 * 400.);
 
 			if !is_colliding(dest, PLAYER_SIZE, "player",&collider_query) {
 				player_transform.translation = dest;

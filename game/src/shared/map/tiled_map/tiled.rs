@@ -2,9 +2,12 @@ use bevy::math::Vec2;
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
 use std::{collections::HashMap, io::BufReader};
+use tiled::PropertyValue;
 
 use bevy::asset::{AssetLoader, AssetPath, BoxedFuture, LoadContext, LoadedAsset};
 use bevy::reflect::TypeUuid;
+
+use crate::shared::collider::MovementCollider;
 
 #[derive(Default)]
 pub struct TiledMapPlugin;
@@ -77,16 +80,59 @@ pub fn process_loaded_tile_maps(
     mut map_events: EventReader<AssetEvent<TiledMap>>,
     maps: Res<Assets<TiledMap>>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut query: Query<(Entity, &Handle<TiledMap>, &mut Map)>,
+    mut query: Query<(Entity, &Handle<TiledMap>, &Transform, &mut Map)>,
     new_maps: Query<&Handle<TiledMap>, Added<Handle<TiledMap>>>,
     layer_query: Query<&Layer>,
     chunk_query: Query<&Chunk>,
+
+    q_tiled: Query<(Entity, &Tile, &TilePos)>,
 ) {
     let mut changed_maps = Vec::<Handle<TiledMap>>::default();
     for event in map_events.iter() {
         match event {
             AssetEvent::Created { handle } => {
                 changed_maps.push(handle.clone());
+
+                for (entity, _, transform, map) in query.iter() {
+                    if let Some(map) = maps.get(handle) {
+                        for (e, tile, pos) in q_tiled.iter() {
+                            for tileset in map.map.tilesets() {
+                                if let Some(tile_data) = tileset.get_tile(tile.texture_index.into())
+                                {
+                                    for (k, v) in tile_data.properties.iter() {
+                                        if k.eq("collider") {
+                                            match v {
+                                                PropertyValue::BoolValue(b) => {
+                                                    if !b { continue; }
+                                                    let position = transform.translation
+                                                        + Vec3::new(32., 32., 0.)
+                                                            * Vec3::new(
+                                                                pos.0 as f32,
+                                                                pos.1 as f32,
+                                                                0.,
+                                                            );
+                                                    commands
+                                                        .entity(e)
+                                                        .insert(MovementCollider {
+                                                            size: Vec2::new(32., 32.),
+                                                            allowed_entity_type: vec![],
+                                                        })
+                                                        .insert(Transform {
+                                                            translation: position,
+                                                            ..default()
+                                                        });
+                                                }
+                                                _ => {
+                                                    info!("IGNORING");
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
             AssetEvent::Modified { handle } => {
                 changed_maps.push(handle.clone());
@@ -108,7 +154,7 @@ pub fn process_loaded_tile_maps(
     }
 
     for changed_map in changed_maps.iter() {
-        for (_, map_handle, mut map) in query.iter_mut() {
+        for (_, map_handle, _, mut map) in query.iter_mut() {
             // only deal with currently changed map
             if map_handle != changed_map {
                 continue;
@@ -190,11 +236,7 @@ pub fn process_loaded_tile_maps(
                             &mut commands,
                             map_settings.clone(),
                             &mut meshes,
-                            tiled_map
-                                .tilesets
-                                .get(&tileset_index)
-                                .unwrap()
-                                .clone_weak(),
+                            tiled_map.tilesets.get(&tileset_index).unwrap().clone_weak(),
                             0u16,
                             layer_index as u16,
                             move |mut tile_pos| {

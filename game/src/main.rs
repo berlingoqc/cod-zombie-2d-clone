@@ -24,7 +24,7 @@ use shared::{
     },
     zombies::zombie::{system_zombie_handle, Zombie, BotDestination, system_move_zombie},
     player::{input::{apply_input_players, FrameCount, input, BoxInput, AvailableGameController, system_gamepad_event, GGRSConfig, update_velocity_player, move_players}, interaction::system_interaction_player, system_unload_players, system_health_player, Player
-    }, weapons::{weapons::{handle_weapon_input, Weapon, AmmunitionState, Projectile}, ammunition::{apply_velocity, movement_projectile}}, map::{render::system_unload_map, ZombieSpawner}, character::{Velocity, LookingAt, Death, CharacterMovementState}, health::{Health, HealthRegeneration}, collider::ProjectileCollider,
+    }, weapons::{weapons::{handle_weapon_input, Weapon, AmmunitionState, Projectile}, ammunition::{apply_velocity, movement_projectile}}, map::{render::system_unload_map, ZombieSpawner}, character::{Velocity, LookingAt, Death, CharacterMovementState}, health::{Health, HealthRegeneration}, collider::{ProjectileCollider, system_collider_debug},
 };
 use shared::map::MapPlugin;
 use crate::{
@@ -195,6 +195,7 @@ fn main() {
             .with_system(react_level_data)
             .with_system(system_player_added)
             .with_system(system_move_camera_single_player)
+            .with_system(system_collider_debug)
     )
     .add_system_set(
         SystemSet::on_exit(GameState::PlayingZombie)

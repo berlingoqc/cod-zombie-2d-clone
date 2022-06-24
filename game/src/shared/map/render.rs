@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
+use bevy::utils::HashMap;
 use bevy_ecs_tilemap::prelude::*;
 
 use crate::shared::collider::*;
@@ -26,6 +27,7 @@ pub struct MapDataAsset {
     pub walls: Vec<MapElementPosition>,
     pub windows: Vec<MapElementPosition>,
     pub spawners: Vec<MapElementPosition>,
+
     pub tiled: MapTiledData,
 }
 
