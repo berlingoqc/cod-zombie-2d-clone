@@ -16,6 +16,7 @@ use bevy::{
 use bevy_ggrs::{SessionType, GGRSPlugin};
 use bytemuck::{Pod, Zeroable};
 use ggrs::{SessionBuilder, Config, P2PSession};
+use ingameui::player::system_move_camera_single_player;
 use shared::{
     game::{
         react_level_data, setup_zombie_game, system_zombie_game,
@@ -152,7 +153,7 @@ fn main() {
         canvas: Some("#bevy-canvas".to_string()),
         ..WindowDescriptor::default()
     })
-    .insert_resource(LevelMapRequested{map: "maps/map_iso/iso_map.asset.ron".to_string(), level: "game/easy.level.ron".to_string()})
+    .insert_resource(LevelMapRequested{map: "maps/map_runista/runista.asset.ron".to_string(), level: "game/easy.level.ron".to_string()})
     .insert_resource(AvailableGameController{
         keyboard_mouse: true,
         gamepad: vec![]
@@ -193,6 +194,7 @@ fn main() {
             .with_system(system_weapon_ui)
             .with_system(react_level_data)
             .with_system(system_player_added)
+            .with_system(system_move_camera_single_player)
     )
     .add_system_set(
         SystemSet::on_exit(GameState::PlayingZombie)

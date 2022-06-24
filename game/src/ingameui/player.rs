@@ -26,6 +26,18 @@ pub fn setup_player_camera(mut commands: Commands) {
     commands.spawn().insert_bundle(UiCameraBundle::default());
 }
 
+pub fn system_move_camera_single_player(
+    mut q_cameras: Query<&mut Transform, With<MainCamera>>,
+    q_players: Query<&Transform, (With<Player>, Without<MainCamera>)>
+) {
+    if let Ok(mut transform) = q_cameras.get_single_mut() {
+        if let Ok(transform_player) = q_players.get_single() {
+            transform.translation = transform_player.translation;
+        }
+    }
+
+}
+
 
 
 pub fn system_player_added(
