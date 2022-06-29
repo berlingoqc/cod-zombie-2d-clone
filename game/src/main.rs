@@ -9,6 +9,8 @@ mod menu;
 
 mod p2p;
 
+use std::fmt::Debug;
+
 use bevy::{
     core::FixedTimestep, prelude::*, window::WindowDescriptor, ecs::schedule::ShouldRun
 };
@@ -24,7 +26,7 @@ use shared::{
     },
     zombies::zombie::{system_zombie_handle, Zombie, BotDestination, system_move_zombie},
     player::{input::{apply_input_players, FrameCount, input, BoxInput, AvailableGameController, system_gamepad_event, GGRSConfig, update_velocity_player, move_players}, interaction::system_interaction_player, system_unload_players, system_health_player, Player
-    }, weapons::{weapons::{handle_weapon_input, Weapon, AmmunitionState, Projectile}, ammunition::{apply_velocity, movement_projectile}}, map::{render::system_unload_map, ZombieSpawner}, character::{Velocity, LookingAt, Death, CharacterMovementState}, health::{Health, HealthRegeneration}, collider::{ProjectileCollider, system_collider_debug},
+    }, weapons::{weapons::{handle_weapon_input, Weapon, AmmunitionState, Projectile}, ammunition::{apply_velocity, movement_projectile}}, map::{render::system_unload_map, ZombieSpawner}, character::{Velocity, LookingAt, Death, CharacterMovementState}, health::{Health, HealthRegeneration}, collider::{ProjectileCollider, system_collider_debug, init_collider_debug}, debug::{DebugState, system_debug_keyboard, system_collider_debug_cleanup},
 };
 use shared::map::MapPlugin;
 use crate::{
@@ -195,7 +197,6 @@ fn main() {
             .with_system(react_level_data)
             .with_system(system_player_added)
             .with_system(system_move_camera_single_player)
-            .with_system(system_collider_debug)
     )
     .add_system_set(
         SystemSet::on_exit(GameState::PlayingZombie)
@@ -205,6 +206,25 @@ fn main() {
             .with_system(system_unload_zombie_game)
             .with_system(system_cleanup_network_session)
     );
+
+
+
+    // TODO flag to have the debug mode of compile flag
+    app.add_state(DebugState::None);
+    app.add_system(system_debug_keyboard);
+    app.add_system_set(
+        SystemSet::on_enter(DebugState::On)
+            .with_system(init_collider_debug)
+    ).add_system_set(
+        SystemSet::on_update(DebugState::On)
+            .with_system(system_collider_debug)
+    ).add_system_set(
+        SystemSet::on_exit(DebugState::On)
+            .with_system(system_collider_debug_cleanup)
+    );
+
+
+
 
     //if opts.benchmark_mode {
     //  app.add_plugin(FPSPlugin{});

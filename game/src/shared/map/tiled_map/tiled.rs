@@ -93,10 +93,14 @@ pub fn process_loaded_tile_maps(
             AssetEvent::Created { handle } => {
                 changed_maps.push(handle.clone());
 
-                for (entity, _, transform, map) in query.iter() {
+                if let Ok((_entity, _, transform, _map)) = query.get_single() {
                     if let Some(map) = maps.get(handle) {
                         for (e, tile, pos) in q_tiled.iter() {
                             for tileset in map.map.tilesets() {
+                                if tileset.name != "runista_wall" {
+                                    continue;
+                                }
+                                
                                 if let Some(tile_data) = tileset.get_tile(tile.texture_index.into())
                                 {
                                     for (k, v) in tile_data.properties.iter() {
@@ -104,13 +108,13 @@ pub fn process_loaded_tile_maps(
                                             match v {
                                                 PropertyValue::BoolValue(b) => {
                                                     if !b { continue; }
-                                                    let position = transform.translation
+                                                    let position = (transform.translation
                                                         + Vec3::new(32., 32., 0.)
                                                             * Vec3::new(
                                                                 pos.0 as f32,
                                                                 pos.1 as f32,
                                                                 0.,
-                                                            );
+                                                            )) + Vec3::new(16., 16., 0.);
                                                     commands
                                                         .entity(e)
                                                         .insert(MovementCollider {
