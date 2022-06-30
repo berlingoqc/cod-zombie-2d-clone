@@ -96,15 +96,18 @@ pub fn process_loaded_tile_maps(
                 if let Ok((_entity, _, transform, _map)) = query.get_single() {
                     if let Some(map) = maps.get(handle) {
                         for (e, tile, pos) in q_tiled.iter() {
+
                             for tileset in map.map.tilesets() {
                                 if tileset.name != "runista_wall" {
                                     continue;
                                 }
                                 
+                                //print!("Texture index {:?}", tile.texture_index);
                                 if let Some(tile_data) = tileset.get_tile(tile.texture_index.into())
                                 {
                                     for (k, v) in tile_data.properties.iter() {
                                         if k.eq("collider") {
+                                            //println!("Tiled data {:?} {:?}", tile_data.properties, tile);
                                             match v {
                                                 PropertyValue::BoolValue(b) => {
                                                     if !b { continue; }
