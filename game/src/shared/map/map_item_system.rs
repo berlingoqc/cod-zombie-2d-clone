@@ -23,6 +23,7 @@ pub fn system_window_panel_destroy(
 				for first_child in children.iter() {
 					if let Ok((_, mut sprite)) = q_panel.get_mut(first_child.clone()) {
 						if sprite.custom_size.unwrap().x != 0. {
+							println!("IM destroyingggg panel dead");
 							sprite.custom_size = Some(Vec2::new(0., 0.));
 						}
 					}
@@ -37,6 +38,7 @@ pub fn system_window_panel_destroy(
 				for first_child in children.iter() {
 					if let Ok((_, mut sprite)) = q_panel.get_mut(first_child.clone()) {
 						if sprite.custom_size.unwrap().x != 0. {
+							println!("IM destroyingggg panel lost health");
 							sprite.custom_size = Some(Vec2::new(0., 0.));
 							break;
 						}

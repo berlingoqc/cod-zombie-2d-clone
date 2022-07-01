@@ -90,6 +90,7 @@ pub fn system_interaction_player(
                                 // SEND CANCEL REPARATRION EVENT
                                 let (_,size, mut sprite) = query_panel.get_mut(interaction.child_entity).unwrap();
                                 interaction.interacting = false;
+                                println!("Stop interaction before");
                                 sprite.custom_size = Some(Vec2::new(0.,0.));
                             }
                         },
@@ -112,6 +113,7 @@ pub fn system_interaction_player(
                             let time_since_startup = time.time_since_startup().as_secs_f32();
                             if interaction.interaction_trigger_at + interaction.interaction_cooldown <= time_since_startup {
                                 let (_,size, mut sprite) = query_panel.get_mut(interaction.child_entity).unwrap();
+                                println!("Putting size back to here");
                                 sprite.custom_size = Some(size.0);
                                 interaction.interacting = false;
 
@@ -122,6 +124,8 @@ pub fn system_interaction_player(
                                 let (_,size, mut sprite) = query_panel.get_mut(interaction.child_entity).unwrap();
                                 let time_diff = time_since_startup - (interaction.interaction_trigger_at + interaction.interaction_cooldown);
                                 let percentage_time_diff_cooldown = 1. - (time_diff / interaction.interaction_cooldown);
+
+                                println!("Building animation");
                                 sprite.custom_size = Some(size.0 / percentage_time_diff_cooldown);
                             }
                         } else {
@@ -149,6 +153,7 @@ pub fn system_interaction_player(
                     match interaction.interaction_type {
                         PlayerInteractionType::RepairWindow => {
                             let (_,size, mut sprite) = query_panel.get_mut(interaction.child_entity).unwrap();
+                            println!("INTERACTION REPAIR WINDOW SHIT");
                             sprite.custom_size = Some(Vec2::new(0.,0.));
                         },
                         _ => {}

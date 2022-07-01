@@ -13,6 +13,7 @@ use serde::Deserialize;
 pub struct MapDataState {
     pub handle: Handle<MapDataAsset>,
     pub rendered: bool,
+    pub rendered_map_objects: bool,
 }
 
 #[derive(Deserialize, Clone, Component)]
@@ -53,29 +54,6 @@ impl MapDataAsset {
                 ),
                 ..Default::default()
             });
-
-        for s in (&self.spawners).into_iter() {
-            command
-                .spawn()
-                .insert_bundle(ZombieSpawnerBundle::new(s.clone()));
-        }
-
-        for w in (&self.walls).into_iter() {
-            command
-                .spawn()
-                .insert(MapElement {})
-                .insert_bundle(WallBundle::new(w.clone()));
-        }
-
-        for w in (&self.windows).into_iter() {
-            let entity = command
-                .spawn()
-                .insert(MapElement {})
-                .insert_bundle(WindowBundle::new(w.clone())).id();
-        }
-
-
-        // Send event map loaded
     }
 }
 

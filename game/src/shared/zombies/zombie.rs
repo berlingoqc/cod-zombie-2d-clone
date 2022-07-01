@@ -13,7 +13,7 @@ use pathfinding::prelude::astar;
 
 use super::spawner::ZombieSpawnerConfig;
 
-pub const ZOMBIE_SIZE: Vec2 = const_vec2!([25. , 25. ]);
+pub const ZOMBIE_SIZE: Vec2 = const_vec2!([9. , 9. ]);
 
 // bot destination is a component
 // to register and apply the target of a bot
@@ -228,6 +228,8 @@ pub fn system_zombie_handle(
                         } else {
 
                             zombie.state = ZombieState::CrossingEntrance;
+
+                            println!("Crossing entrace");
 
 
                             let p2 = looking_at.0;

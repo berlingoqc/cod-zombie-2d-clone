@@ -2,12 +2,12 @@ use bevy::math::Vec2;
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
 use std::{collections::HashMap, io::BufReader};
-use tiled::PropertyValue;
 
 use bevy::asset::{AssetLoader, AssetPath, BoxedFuture, LoadContext, LoadedAsset};
 use bevy::reflect::TypeUuid;
 
-use crate::shared::collider::MovementCollider;
+
+use super::tiled_map_properties::system_react_tiled_for_properties;
 
 #[derive(Default)]
 pub struct TiledMapPlugin;
@@ -15,9 +15,15 @@ pub struct TiledMapPlugin;
 impl Plugin for TiledMapPlugin {
     fn build(&self, app: &mut App) {
         app.add_asset::<TiledMap>()
+            .add_event::<MapRenderedEvent>()
             .add_asset_loader(TiledLoader)
+            .add_system(system_react_tiled_for_properties)
             .add_system(process_loaded_tile_maps);
     }
+}
+
+pub struct MapRenderedEvent {
+    pub handle: Handle<TiledMap>
 }
 
 #[derive(TypeUuid)]
@@ -85,66 +91,24 @@ pub fn process_loaded_tile_maps(
     layer_query: Query<&Layer>,
     chunk_query: Query<&Chunk>,
 
-    q_tiled: Query<(Entity, &Tile, &TilePos)>,
+
+    mut ev_map_render: EventWriter<MapRenderedEvent>,
 ) {
     let mut changed_maps = Vec::<Handle<TiledMap>>::default();
+    let mut signal_creating = false;
     for event in map_events.iter() {
         match event {
             AssetEvent::Created { handle } => {
                 changed_maps.push(handle.clone());
-
-                if let Ok((_entity, _, transform, _map)) = query.get_single() {
-                    if let Some(map) = maps.get(handle) {
-                        for (e, tile, pos) in q_tiled.iter() {
-
-                            for tileset in map.map.tilesets() {
-                                if tileset.name != "runista_wall" {
-                                    continue;
-                                }
-                                
-                                //print!("Texture index {:?}", tile.texture_index);
-                                if let Some(tile_data) = tileset.get_tile(tile.texture_index.into())
-                                {
-                                    for (k, v) in tile_data.properties.iter() {
-                                        if k.eq("collider") {
-                                            //println!("Tiled data {:?} {:?}", tile_data.properties, tile);
-                                            match v {
-                                                PropertyValue::BoolValue(b) => {
-                                                    if !b { continue; }
-                                                    let position = (transform.translation
-                                                        + Vec3::new(32., 32., 0.)
-                                                            * Vec3::new(
-                                                                pos.0 as f32,
-                                                                pos.1 as f32,
-                                                                0.,
-                                                            )) + Vec3::new(16., 16., 0.);
-                                                    commands
-                                                        .entity(e)
-                                                        .insert(MovementCollider {
-                                                            size: Vec2::new(32., 32.),
-                                                            allowed_entity_type: vec![],
-                                                        })
-                                                        .insert(Transform {
-                                                            translation: position,
-                                                            ..default()
-                                                        });
-                                                }
-                                                _ => {
-                                                    info!("IGNORING");
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                signal_creating = true;
+                println!("Created");
             }
             AssetEvent::Modified { handle } => {
+                println!("Modify");
                 changed_maps.push(handle.clone());
             }
             AssetEvent::Removed { handle } => {
+                println!("Remvoe");
                 // if mesh was modified and removed in the same update, ignore the modification
                 // events are ordered so future modification events are ok
                 changed_maps = changed_maps
@@ -157,6 +121,7 @@ pub fn process_loaded_tile_maps(
 
     // If we have new map entities add them to the changed_maps list.
     for new_map_handle in new_maps.iter() {
+        println!("First take");
         changed_maps.push(new_map_handle.clone_weak());
     }
 
@@ -294,6 +259,10 @@ pub fn process_loaded_tile_maps(
                     }
                 }
             }
+        }
+        println!("Map loaded");
+        if signal_creating {
+            ev_map_render.send(MapRenderedEvent { handle: changed_map.clone() });
         }
     }
 }

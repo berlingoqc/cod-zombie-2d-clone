@@ -12,7 +12,7 @@ ZombieLevelAsset(
         interaction_timeout: 0.7,
         spacing: 20.,
         health: 1.,
-        nbr: 1
+        nbr: 2
 
     )
 )

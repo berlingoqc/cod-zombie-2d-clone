@@ -14,7 +14,7 @@ use crate::shared::{
 use self::{interaction::{PlayerCurrentInteraction, PlayerInteractionType}, input::{PlayerCurrentInput, AvailableGameController}};
 
 
-pub const PLAYER_SIZE: Vec2 = const_vec2!([25., 25.]);
+pub const PLAYER_SIZE: Vec2 = const_vec2!([9., 9.]);
 
 const SPAWN_OFFSET_0: Vec2 = const_vec2!([-50., 50.]);
 const SPAWN_OFFSET_1: Vec2 = const_vec2!([50., 50.]);
@@ -73,7 +73,7 @@ impl PlayerBundle {
             player_current_input: input,
             sprite : SpriteSheetBundle {
                 transform: Transform {
-                    translation: Vec3::new(0., 0., 10.) + get_spawn_offset(index_player).extend(0.),
+                    translation: Vec3::new(500., 500., 10.) + get_spawn_offset(index_player).extend(0.),
                     ..Transform::default()
                 },
                 ..default()
@@ -83,7 +83,7 @@ impl PlayerBundle {
                 ..default()
             },
             velocity: Velocity::default(),
-            map_element_position: MapElementPosition { position: Vec2::new(0.0, 0.), size: Vec2::new(50., 50.), rotation: 0 },
+            map_element_position: MapElementPosition { position: Vec2::new(0.0, 0.), size: PLAYER_SIZE, rotation: 0 },
             // velocity: Velocity { v: Vec2::new(0.,0.)},
             character_movement_state: CharacterMovementState { state: String::from("walking"), sub_state: "".to_string() },
             looking_direction: LookingAt(Vec2::new(0., 0.), false),

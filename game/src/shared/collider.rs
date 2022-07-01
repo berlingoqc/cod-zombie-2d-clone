@@ -59,6 +59,7 @@ pub fn init_collider_debug(
     q_new_collider: Query<(&MovementCollider, &Transform)>,
 ) {
     for (collider, transform) in q_new_collider.iter() {
+        println!("MOvement collider {:?} {:?}", transform.translation, collider.size);
         spawn_debug_collider_sprite(&mut commands, transform.translation, collider.size);
     }
 }

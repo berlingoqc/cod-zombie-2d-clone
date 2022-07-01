@@ -272,7 +272,7 @@ pub fn system_zombie_game(
             if weapon_state.loaded == false {
                 return;
             }
-            if map_state.rendered == false {
+            if map_state.rendered == false || map_state.rendered_map_objects == false {
                 println!("waiting for map");
                 return;
             }
@@ -293,18 +293,18 @@ pub fn system_zombie_game(
                 true,
             );
 
-            // creating event
-            ev_panel_event.send(ZombieGamePanelEvent{});
 
             // Spawn players
             for player in zombie_game_config.players.iter() {
                 setup_player(&mut rip,&mut commands, &zombie_game_config, &weapons, player, player.index);
             }
 
-            zombie_game.state = ZombieGameState::Round;
+            zombie_game.state = ZombieGameState::Starting;
         },
         ZombieGameState::Starting => {
-
+            zombie_game.state = ZombieGameState::Round;
+            
+            ev_panel_event.send(ZombieGamePanelEvent{});
         },
         ZombieGameState::Round => {
             if nbr_zombie == 0 && zombie_game.current_round.zombie_remaining == 0 {
@@ -439,12 +439,19 @@ pub fn system_panel_event(
     zombie_game: Res<ZombieGameConfig>,
     
     mut q_window: Query<(Entity, &mut Health, &mut PlayerInteraction, &MapElementPosition), With<Window>>,
+
+    mut q_panel: Query<(Entity, &Transform, &mut Sprite), With<Window>>,
+
+
+    //mut q_panel_added: Query<&mut Sprite, Added<WindowPanel>>
 ) {
 
     let window_panel_health = 1.0;
 
     for _ in ev_change_state.iter() {
+        println!("Event shit");
         for (entity, mut health, mut p_interaction, w) in q_window.iter_mut() {
+            println!("Found window {:?}", entity);
             p_interaction.interaction_timeout = zombie_game.window_panel.interaction_timeout;
             for i in 0..zombie_game.window_panel.nbr {
                 let panel = commands.spawn()
@@ -457,6 +464,11 @@ pub fn system_panel_event(
             health.current_health = health.max_health;
             health.tmp_health = health.max_health;
         }
+    }
+
+    for (e, transform, mut sprite) in q_panel.iter_mut() {
+        //println!("{:?} {:?} {:?} {:?}", e, transform.translation, transform.scale, sprite);
+        //sprite.custom_size = Some(Vec2::new(5., 20.));
     }
 
 }

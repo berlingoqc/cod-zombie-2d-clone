@@ -148,8 +148,8 @@ fn main() {
     // Create an GGRS session
     app.insert_resource(WindowDescriptor {
         title: "Zombie".to_string(),
-        width: 500.,
-        height: 300.,
+        width: 1600.,
+        height: 800.,
         resizable: true,
         #[cfg(target_arch = "wasm32")]
         canvas: Some("#bevy-canvas".to_string()),

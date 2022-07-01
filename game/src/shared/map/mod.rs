@@ -86,7 +86,7 @@ pub struct WindowPanelBundle {
 #[derive(Component)]
 pub struct MapElement {}
 
-#[derive(Component, Reflect, Default, Deserialize, Clone)]
+#[derive(Component, Reflect, Default, Deserialize, Clone, Debug)]
 #[reflect(Component)]
 pub struct MapElementPosition {
     pub position: Vec2,
@@ -134,7 +134,7 @@ impl WindowBundle {
             sprite_bundle: SpriteBundle {
                 sprite: Sprite {
                     color: Color::rgb(0.25, 0.50, 0.50),
-                    custom_size: Some(info.size),
+                    custom_size: Some(Vec2::new(0.,0.)),
                     ..Sprite::default()
                 },
                 transform: Transform {
@@ -145,7 +145,6 @@ impl WindowBundle {
             },
             collider: MovementCollider {
                 size: info.size,
-                //allowed_entity_type: vec!["zombie".to_string()],
                 ..default()
             },
             info,
@@ -172,7 +171,10 @@ impl WindowPanelBundle {
         // create a shap to fit the direction of the vector
         // spawn it a the location with the index and offset
         let scale = if index % 2 == 0 { 1. } else { -1. };
-        let translation = direction * (scale * offset * (index as f32 / 2.).ceil());
+        let index_offset = (index as f32 / 2.).ceil();
+        let translation = direction * (scale * offset * index_offset);
+
+        println!("Windows panel {:?} {:?} {:?}", translation, translation, size);
         WindowPanelBundle {
             sprite_bundle: SpriteBundle {
                 sprite: Sprite {
@@ -181,7 +183,7 @@ impl WindowPanelBundle {
                     ..Sprite::default()
                 },
                 transform: Transform {
-                    translation: translation.extend(10.),
+                    translation: translation.extend(100.),
                     ..Transform::default()
                 },
                 ..SpriteBundle::default()
