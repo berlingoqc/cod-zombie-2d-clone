@@ -14,7 +14,6 @@ use bevy::{
 };
 
 use bevy_ggrs::{SessionType, GGRSPlugin};
-use bytemuck::{Pod, Zeroable};
 use ggrs::{SessionBuilder, Config, P2PSession};
 use shared::{
     game::{

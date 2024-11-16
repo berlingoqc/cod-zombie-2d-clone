@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
-use bevy_ecs_tilemap::prelude::*;
+//use bevy_ecs_tilemap::prelude::*;
 
 use crate::shared::collider::*;
-use super::tiled_map::tiled::{TiledMap, TiledMapBundle};
+//use super::tiled_map::tiled::{TiledMap, TiledMapBundle};
 use super::*;
 use crate::shared::game::LevelMapRequested;
 use serde::Deserialize;
@@ -14,11 +14,13 @@ pub struct MapDataState {
     pub rendered: bool,
 }
 
+/*
 #[derive(Deserialize, Clone, Component)]
 pub struct MapTiledData {
     pub path: String,
     pub transform: Vec3,
 }
+*/
 
 #[derive(Deserialize, TypeUuid, Clone, Component)]
 #[uuid = "39cadc56-aa9c-4543-8640-a018b74b5052"]
@@ -26,7 +28,7 @@ pub struct MapDataAsset {
     pub walls: Vec<MapElementPosition>,
     pub windows: Vec<MapElementPosition>,
     pub spawners: Vec<MapElementPosition>,
-    pub tiled: MapTiledData,
+    //pub tiled: MapTiledData,
 }
 
 impl MapDataAsset {
@@ -35,13 +37,13 @@ impl MapDataAsset {
         command: &mut Commands,
         asset_server: &AssetServer
     ) {
-        let handle: Handle<TiledMap> = asset_server.load(self.tiled.path.as_str());
+        //let handle: Handle<TiledMap> = asset_server.load(self.tiled.path.as_str());
 
         let map_entity = command.spawn().id();
         command
             .entity(map_entity)
-            .insert(MapElement {})
-            .insert_bundle(TiledMapBundle {
+            .insert(MapElement {});
+            /*.insert_bundle(TiledMapBundle {
                 tiled_map: handle,
                 map: Map::new(0u16, map_entity),
                 transform: Transform::from_xyz(
@@ -50,7 +52,7 @@ impl MapDataAsset {
                     self.tiled.transform.z,
                 ),
                 ..Default::default()
-            });
+            })*/
 
         for s in (&self.spawners).into_iter() {
             command
@@ -138,12 +140,12 @@ pub fn react_event_scene(
 pub fn system_unload_map(
     mut commands: Commands,
     q_map_element: Query<Entity, With<MapElementPosition>>,
-    q_map: Query<Entity, With<Map>>,
+    //q_map: Query<Entity, With<Map>>,
 ) {
     for entity in q_map_element.iter() {
         commands.entity(entity).despawn_recursive();
     }
-    for entity in q_map.iter() {
+    /*for entity in q_map.iter() {
         commands.entity(entity).despawn_recursive();
-    }
+    }*/
 }

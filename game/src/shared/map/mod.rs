@@ -1,15 +1,17 @@
 mod loader;
-mod tiled_map;
+//mod tiled_map;
 mod map_item_system;
 pub mod render;
 
 use bevy::prelude::*;
-use bevy_ecs_tilemap::prelude::*;
+//use bevy_ecs_tilemap::prelude::*;
 
+/*
 use tiled_map::{
     texture::set_texture_filters_to_nearest,
     tiled::TiledMapPlugin,
 };
+*/
 
 use serde::Deserialize;
 
@@ -22,8 +24,8 @@ pub struct MapPlugin {}
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<MapElementPosition>()
-            .add_plugin(TilemapPlugin)
-            .add_plugin(TiledMapPlugin)
+            //.add_plugin(TilemapPlugin)
+            //.add_plugin(TiledMapPlugin)
             .init_resource::<MapDataState>()
             .add_asset::<MapDataAsset>()
             .init_asset_loader::<MapDataAssetLoader>()
@@ -36,7 +38,7 @@ impl Plugin for MapPlugin {
                 SystemSet::on_update(GameState::PlayingZombie)
                     .with_system(react_event_scene)
                     .with_system(render_scene)
-                    .with_system(set_texture_filters_to_nearest)
+                    //.with_system(set_texture_filters_to_nearest)
                     .with_system(map_item_system::system_window_panel_destroy)
             );
    }
