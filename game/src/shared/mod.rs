@@ -10,3 +10,4 @@ pub mod utils;
 pub mod health;
 pub mod animation;
 pub mod character;
+pub mod asset_error;

@@ -1,19 +1,20 @@
 use std::rc::Weak;
 
-use bevy::{prelude::*, utils::HashMap, asset::{AssetLoader, LoadContext, BoxedFuture, LoadedAsset}, reflect::TypeUuid};
+use bevy::{prelude::*, utils::HashMap, asset::{AssetLoader, LoadContext, LoadedAsset}};
 use serde::Deserialize;
+
+use crate::shared::asset_error::BlobAssetLoaderError;
 
 use super::weapons::{Weapon, AmmunitionState, WeaponState};
 
 
-#[derive(Deserialize, TypeUuid, Default, Component)]
-#[uuid = "39cadc56-aa9c-4543-8640-a018b74b5021"]
+#[derive(Deserialize, Asset, TypePath, Default, Component)]
 pub struct WeaponsAsset {
 	pub weapons: Vec<Weapon>
 }
 
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct WeaponAssetState {
     pub handle: Handle<WeaponsAsset>,
     pub loaded: bool,
@@ -24,16 +25,21 @@ pub struct WeaponAssetState {
 pub struct WeaponAssetLoader;
 
 impl AssetLoader for WeaponAssetLoader {
-    fn load<'a>(
+    type Asset = WeaponsAsset;
+    type Settings = ();
+    type Error = BlobAssetLoaderError;
+
+    async fn load<'a>(
         &'a self,
-        bytes: &'a [u8],
-        load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
-        Box::pin(async move {
-            let map_data_asset = ron::de::from_bytes::<WeaponsAsset>(bytes)?;
-            load_context.set_default_asset(LoadedAsset::new(map_data_asset));
-            Ok(())
-        })
+        reader: &'a mut Reader<'_>,
+        _settings: &'a (),
+        _load_context: &'a mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes).await?;
+
+            let map_data_asset = ron::de::from_bytes::<WeaponsAsset>(&bytes).unwrap();
+            Ok(map_data_asset)
     }
 
     fn extensions(&self) -> &[&str] {
@@ -71,12 +77,11 @@ impl Plugin for WeaponAssetPlugin {
 	fn build(&self, app: &mut App) {
 		app
 			.init_resource::<WeaponAssetState>()
-			.add_asset::<WeaponsAsset>()
+			.init_asset::<WeaponsAsset>()
 			.init_asset_loader::<WeaponAssetLoader>()
-
-            .add_startup_system(setup_weapons_asset)
-            .add_system(system_weapon_asset)
-            .add_system(react_weapon_asset_change);
+            .add_systems(Startup, setup_weapons_asset)
+            .add_systems(Update, system_weapon_asset)
+            .add_systems(Update, react_weapon_asset_change);
 	}
 }
 
@@ -85,10 +90,10 @@ pub fn react_weapon_asset_change(
     custom_assets: ResMut<Assets<WeaponsAsset>>,
 	mut query_player_weapon: Query<(&mut AmmunitionState, &mut WeaponState, &mut Weapon, &Parent), With<WeaponState>>,
 ) {
-    for event in asset_events.iter() {
+    for event in asset_events.read() {
         match event {
-            AssetEvent::Modified { handle } => {
-                let asset = custom_assets.get(handle).unwrap();
+            AssetEvent::Modified {  id } => {
+                let asset = custom_assets.get(id.clone()).unwrap();
                 for (mut ammo_state, _, mut weapon, parent) in query_player_weapon.iter_mut() {
                     let new_config = asset.weapons.iter().find(|&x| x.name.eq(weapon.name.as_str()));
                     if let Some(new_config) = new_config {

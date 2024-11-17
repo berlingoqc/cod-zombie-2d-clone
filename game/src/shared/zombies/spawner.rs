@@ -10,7 +10,7 @@ pub struct ZombieSpawnerConfig {
 impl FromWorld for ZombieSpawnerConfig {
     fn from_world(world: &mut World) -> Self {
         ZombieSpawnerConfig{
-            timer: Timer::new(Duration::from_secs(5), true),
+            timer: Timer::new(Duration::from_secs(5), TimerMode::Repeating),
             nums_ndg: (-50..50).map(|x| x as f32).collect()
         }
     }

@@ -2,28 +2,9 @@ use bevy::{
     asset::{AssetLoader, LoadContext },
 };
 
-use thiserror::Error;
+use crate::shared::asset_error::BlobAssetLoaderError;
 
 use super::render::MapDataAsset;
-
-//#[non_exhaustive]
-//#[derive(Debug, Error)]
-//enum CustomAssetLoaderError {
-    /// An [IO](std::io) Error
-    //#[error("Could not load asset: {0}")]
-    //Io(#[from] std::io::Error),
-    /// A [RON](ron) Error
-    //#[error("Could not parse RON: {0}")]
-    //RonSpannedError(#[from] ron::error::SpannedError),
-//}
-
-#[non_exhaustive]
-#[derive(Debug, Error)]
-enum BlobAssetLoaderError {
-    /// An [IO](std::io) Error
-    #[error("Could not load file: {0}")]
-    Io(#[from] std::io::Error),
-}
 
 
 #[derive(Default)]

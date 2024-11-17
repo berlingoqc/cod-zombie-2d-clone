@@ -1,4 +1,4 @@
-use bevy::{prelude::*, sprite::collide_aabb::collide};
+use bevy::{prelude::*};
 
 use crate::shared::{character::Velocity, game::GameSpeed, map::MapElementPosition, zombies::zombie::Zombie, collider::ProjectileCollider, player::Player};
 
@@ -38,11 +38,12 @@ pub fn movement_projectile(
     let mut i = 0;
     'outer: for (projectile_entity, transform, expiring) in projectile_query.iter() {
         i += 1;
-        if expiring.created_at + expiring.duration <= time.time_since_startup().as_secs_f32() {
+        if expiring.created_at + expiring.duration <= time.elapsed().as_secs_f32() {
             commands.entity(projectile_entity).despawn();
             break;
         }
         for (hit_entity, transform_collider, info, zombie) in collider_query.iter() {
+            /*
             let collision = collide(
                transform_collider.translation,
                 info.size,
@@ -56,6 +57,7 @@ pub fn movement_projectile(
                 commands.entity(projectile_entity).despawn();
                 break 'outer;
             }
+            */
         }
     }
 }

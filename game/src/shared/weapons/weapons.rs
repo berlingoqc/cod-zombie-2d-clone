@@ -1,5 +1,5 @@
 use bevy::{prelude::*, sprite::{SpriteBundle, Sprite}, math::Vec2};
-use bevy_ggrs::{RollbackIdProvider, Rollback};
+use bevy_ggrs::{Rollback};
 use ggrs::InputStatus;
 use serde::Deserialize;
 
@@ -118,14 +118,14 @@ impl WeaponBundle {
 pub type GameButton = (KeyCode, MouseButton, GamepadButtonType);
 
 pub const CHANGE_WEAPON_BTN: GameButton = (KeyCode::Tab, MouseButton::Middle, GamepadButtonType::North);
-pub const RELOAD_WEAPON_BTN: GameButton = (KeyCode::R, MouseButton::Right, GamepadButtonType::West);
+pub const RELOAD_WEAPON_BTN: GameButton = (KeyCode::KeyR, MouseButton::Right, GamepadButtonType::West);
 pub const FIRED_WEAPON_BTN: GameButton = (KeyCode::Space, MouseButton::Left, GamepadButtonType::RightTrigger);
-pub const INTERACTION_BTN: GameButton = (KeyCode::F, MouseButton::Other(0), GamepadButtonType::South);
+pub const INTERACTION_BTN: GameButton = (KeyCode::KeyF, MouseButton::Other(0), GamepadButtonType::South);
 
 pub struct PlayerInputs<'a> {
-    pub keyboard_input: &'a Res<'a,Input<KeyCode>>,
-    pub buttons_mouse: &'a Res<'a, Input<MouseButton>>,
-    pub buttons_gamepad: &'a Res<'a, Input<GamepadButton>>,
+    pub keyboard_input: &'a Res<'a,ButtonInput<KeyCode>>,
+    pub buttons_mouse: &'a Res<'a, ButtonInput<MouseButton>>,
+    pub buttons_gamepad: &'a Res<'a, ButtonInput<GamepadButton>>,
 
     pub current_controller: &'a PlayerCurrentInput,
 }
@@ -136,7 +136,7 @@ impl <'a> PlayerInputs <'a> {
         return if self.current_controller.input_source == SupportedController::Keyboard {
             return self.keyboard_input.pressed(button.0) || self.buttons_mouse.pressed(button.1);
         } else {
-            let gamepad_button = GamepadButton(self.current_controller.gamepad.unwrap(), button.2);
+            let gamepad_button = GamepadButton { gamepad: self.current_controller.gamepad.unwrap(), button_type: button.2 };
             return self.buttons_gamepad.pressed(gamepad_button);
         }
     }
@@ -145,7 +145,7 @@ impl <'a> PlayerInputs <'a> {
         return if self.current_controller.input_source == SupportedController::Keyboard {
             return self.keyboard_input.just_pressed(button.0) || self.buttons_mouse.just_pressed(button.1);
         } else {
-            let gamepad_button = GamepadButton(self.current_controller.gamepad.unwrap(), button.2);
+            let gamepad_button = GamepadButton{ gamepad: self.current_controller.gamepad.unwrap(), button_type: button.2 };
             return self.buttons_gamepad.just_pressed(gamepad_button);
         }
     }
@@ -162,21 +162,21 @@ pub fn handle_weapon_input(
 	
     mut q_player: Query<(&GlobalTransform, &PlayerCurrentInput, &LookingAt, &mut CharacterMovementState, &mut AnimationTimer, &Children, &Player), (Without<Death>)>,
 
-    inputs: Res<Vec<(BoxInput, InputStatus)>>,
+    //inputs: Res<Vec<(BoxInput, InputStatus)>>,
 
-    mut rip: ResMut<RollbackIdProvider>,
+    //mut rip: ResMut<RollbackIdProvider>,
 ) {
     for (player_global_transform, current_input, looking_at, mut movement_state, mut timer, childrens, player) in q_player.iter_mut() {
 
-        if inputs.len() <= player.handle {
-            continue;
-        }
+        //if inputs.len() <= player.handle {
+        //    continue;
+        //}
 
-        let box_input = match inputs[player.handle].1 {
+        let box_input = BoxInput::default(); /*match inputs[player.handle].1 {
             InputStatus::Confirmed => inputs[player.handle].0,
             InputStatus::Predicted => inputs[player.handle].0,
             InputStatus::Disconnected => BoxInput::default(), // disconnected players do nothing
-        };
+        };*/
         
         if box_input.inp & INPUT_WEAPON_CHANGED == INPUT_WEAPON_CHANGED {
             for children in childrens.iter() {
@@ -194,7 +194,7 @@ pub fn handle_weapon_input(
         for children in childrens.iter() {
             if let Ok((_,mut ammunition_state, mut weapon_state, weapon, _)) = query_player_weapon.get_mut(*children) {
                 if weapon_state.state == WeaponCurrentAction::Reloading {
-                    let current_time = time.time_since_startup().as_secs_f32();
+                    let current_time = time.elapsed().as_secs_f32();
                     if current_time < weapon_state.fired_at + weapon.reloading_time {
                         continue;
                     } 
@@ -215,7 +215,7 @@ pub fn handle_weapon_input(
 
                     if ammunition_state.mag_remaining < weapon.ammunition.magasin_size {
                         weapon_state.state = WeaponCurrentAction::Reloading;
-                        weapon_state.fired_at = time.time_since_startup().as_secs_f32();
+                        weapon_state.fired_at = time.elapsed().as_secs_f32();
                         continue;
                     }
                 }
@@ -230,11 +230,11 @@ pub fn handle_weapon_input(
 
                     if ammunition_state.mag_remaining == 0 {
                         weapon_state.state = WeaponCurrentAction::Reloading;
-                        weapon_state.fired_at = time.time_since_startup().as_secs_f32();
+                        weapon_state.fired_at = time.elapsed().as_secs_f32();
                         continue;
                     }
 
-                    let current_time = time.time_since_startup().as_secs_f32();
+                    let current_time = time.elapsed().as_secs_f32();
 
                     if current_time < weapon_state.fired_at + weapon.firing_rate {
                         continue;
@@ -242,7 +242,7 @@ pub fn handle_weapon_input(
 
                     weapon_state.fired_at = current_time;
 
-                    let parent_location = player_global_transform.translation;
+                    let parent_location = player_global_transform.translation();
 
                     let mut diff = (if !looking_at.1 { 
                         let mouse_location = looking_at.0;
@@ -286,10 +286,10 @@ pub fn handle_weapon_input(
                                 let new_x = diff.x * angle.cos() - diff.y * angle.sin();
                                 let new_y = diff.x * angle.sin() + diff.y * angle.cos();
 
-                                spawn_bullet(&mut commands, &mut rip, &weapon, &time, &starting_point, &offset_each, &Vec2::new(new_x, new_y), i);
+                                spawn_bullet(&mut commands, &weapon, &time, &starting_point, &offset_each, &Vec2::new(new_x, new_y), i);
                             }
                         } else {
-                            spawn_bullet(&mut commands, &mut rip, &weapon, &time, &starting_point, &offset_each, &diff, i);
+                            spawn_bullet(&mut commands, &weapon, &time, &starting_point, &offset_each, &diff, i);
                         }
 
                     }
@@ -302,7 +302,7 @@ pub fn handle_weapon_input(
 
 pub fn spawn_bullet(
     commands: &mut Commands,
-    mut rip: &mut ResMut<RollbackIdProvider>,
+    //mut rip: &mut ResMut<RollbackIdProvider>,
     weapon: &Weapon,
     time: &Res<Time>,
     starting_point: &Vec3,
@@ -311,28 +311,27 @@ pub fn spawn_bullet(
     index: u32,
 ) {
     commands
-        .spawn()
-        .insert(Projectile {})
-        .insert_bundle(SpriteBundle {
+        .spawn(SpriteBundle {
             transform: Transform {
                 translation: *starting_point + (offset_each.extend(0.) * index as f32),
                 ..Transform::default()
             },
             sprite: Sprite {
-                color: Color::BISQUE,
+                color: Color::linear_rgb(255., 255., 135.),
                 custom_size: Some(weapon.ammunition.sprite_config.size),
                 ..Sprite::default()
             },
         ..SpriteBundle::default()
         })
+        .insert(Projectile {})
         .insert(ExpiringComponent {
-            created_at: time.time_since_startup().as_secs_f32(),
+            created_at: time.elapsed().as_secs_f32(),
             duration: weapon.ammunition.duration,
         })
         .insert(ProjectileCollider {})
         .insert(Velocity {
             v: *velocity * 1000.,
-        })
-        .insert(Rollback::new(rip.next_id()));
+        });
+        //.insert(Rollback::new(rip.next_id()));
 }
 

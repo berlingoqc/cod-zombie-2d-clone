@@ -113,7 +113,7 @@ impl PlayerBundle {
 }
 
 pub fn setup_player(
-    mut rip: &mut ResMut<RollbackIdProvider>,
+    //mut rip: &mut ResMut<RollbackIdProvider>,
     mut commands: &mut Commands,
     zombie_game: &ResMut<ZombieGameConfig>,
     weapons: &Res<WeaponAssetState>,

@@ -1,4 +1,4 @@
-use bevy::{prelude::*, math::const_vec2, ecs::query, sprite::collide_aabb::collide};
+use bevy::{prelude::*, ecs::query};
 
 use crate::shared::{
     map::{MapElementPosition, WindowPanel, Window},
@@ -13,7 +13,7 @@ use pathfinding::prelude::astar;
 
 use super::spawner::ZombieSpawnerConfig;
 
-pub const ZOMBIE_SIZE: Vec2 = const_vec2!([25. , 25. ]);
+pub const ZOMBIE_SIZE: Vec2 = Vec2::new(25. , 25.);
 
 // bot destination is a component
 // to register and apply the target of a bot
