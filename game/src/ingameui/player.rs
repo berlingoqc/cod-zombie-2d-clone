@@ -20,10 +20,8 @@ pub struct HealthBar {}
 
 pub fn setup_player_camera(mut commands: Commands) {
     commands
-        .spawn()
-        .insert_bundle(OrthographicCameraBundle::new_2d())
+        .spawn(Camera2dBundle::default())
         .insert(MainCamera);
-    commands.spawn().insert_bundle(UiCameraBundle::default());
 }
 
 
@@ -47,35 +45,36 @@ pub fn system_player_added(
             }
             clear_up = true;
         }
-        commands.spawn().insert_bundle(Text2dBundle {
-                text: Text::with_section(
+        commands.spawn(Text2dBundle {
+                text: Text::from_section(
                     "",
                     TextStyle {
                         font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                         font_size: 16.0,
                         color: Color::rgb(0.9, 0.9, 0.9),
                     },
-                    TextAlignment { vertical: VerticalAlign::Center, horizontal: HorizontalAlign::Center },
+                    //TextAlignment { vertical: VerticalAlign::Center, horizontal: HorizontalAlign::Center },
                 ),
                 text_2d_bounds: Text2dBounds {
+                
                    // Wrap text in the rectangle
-                    size: Size::new(100.0, 30.0),
+                    size: Vec2::new(100.0, 30.0),
                 },
                 ..default()
             }).insert(FollowingPlayer{ offset: Vec2::new(0., -50.), player: entity.clone()}).insert(PlayerInteractionText{}).insert(InGameUI{});
-        commands.spawn().insert_bundle(Text2dBundle {
-                text: Text::with_section(
+        commands.spawn(Text2dBundle {
+                text: Text::from_section(
                     "",
                     TextStyle {
                         font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                         font_size: 16.0,
                         color: Color::rgb(0.9, 0.9, 0.9),
                     },
-                    TextAlignment { vertical: VerticalAlign::Center, horizontal: HorizontalAlign::Center },
+                    //TextAlignment { vertical: VerticalAlign::Center, horizontal: HorizontalAlign::Center },
                 ),
                 text_2d_bounds: Text2dBounds {
                    // Wrap text in the rectangle
-                    size: Size::new(100.0, 30.0),
+                    size: Vec2::new(100.0, 30.0),
                 },
                 ..default()
             }).insert(FollowingPlayer{ offset: Vec2::new(0., 40.), player: entity.clone()}).insert(HealthBar{}).insert(InGameUI{});

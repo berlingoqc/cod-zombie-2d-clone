@@ -13,7 +13,7 @@ pub struct LocalHandles {
 }
 
 
-#[derive(SystemLabel, Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub enum P2PSystemLabel {
     // Input of player , zombie
     Input,

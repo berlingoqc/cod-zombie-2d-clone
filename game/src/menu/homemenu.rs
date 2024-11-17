@@ -14,22 +14,20 @@ pub fn setup_home_menu(
     mut commands: Commands, asset_server: Res<AssetServer>
 ) {
     commands
-        .spawn()
-        .insert(MenuComponent{})
-        .insert_bundle(NodeBundle{
+        .spawn((MenuComponent{},
+         NodeBundle{
             style: Style {
                 // center button
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
-                margin: Rect::all(Val::Auto),
+                margin: UiRect::all(Val::Auto),
                ..default()
             },
             ..default()
-        })
+        }))
         .with_children(|parent| {
             parent
-                .spawn()
-                .insert_bundle(NodeBundle {
+                .spawn(NodeBundle {
                     style: Style {
                         flex_direction: FlexDirection::Column,
                         ..default()
@@ -50,19 +48,20 @@ pub fn system_button_handle(
     game_speed: Res<GameSpeed>,
 
     mut interaction_query: Query<
-        (&Interaction, &mut UiColor, &ActionButtonComponent),
+        (&Interaction, &mut BackgroundColor, &ActionButtonComponent),
         (Changed<Interaction>, With<Button>),
     >,
 
     mut exit: EventWriter<AppExit>,
-    mut app_state: ResMut<State<GameState>>,
+    app_state: Res<State<GameState>>,
+    mut next_state: ResMut<NextState<GameState>>,
 
     mut zombie_game: ResMut<ZombieGameConfig>,
     controller: Res<AvailableGameController>
 ) {
     for (interaction, mut color, action) in interaction_query.iter_mut() {
         match *interaction {
-            Interaction::Clicked => {
+            Interaction::Pressed => {
                 *color = PRESSED_BUTTON.into();
                 match action.0 {
                     ButtonActions::StartLocalGame => {
@@ -80,10 +79,10 @@ pub fn system_button_handle(
                         players.push(NetworkPlayer{address: "localhost".to_string()});
                         create_session(&mut commands, &game_speed, players);
 
-                        app_state.set(GameState::PlayingZombie).unwrap();
+                        next_state.set(GameState::PlayingZombie);
                     },
                     ButtonActions::StartOnlineMultiplayerGame => {
-                        app_state.set(GameState::OnlineMenu).unwrap();
+                        next_state.set(GameState::OnlineMenu);
                     },
                     ButtonActions::StartLocalMultiplayerGame => {
                         // Add a player with the keyboard and add one player by present input
@@ -110,11 +109,11 @@ pub fn system_button_handle(
 
                         create_session(&mut commands, &game_speed, players);
 
-                        app_state.set(GameState::PlayingZombie).unwrap();
+                        next_state.set(GameState::PlayingZombie);
 
                     },
                     ButtonActions::QuitApplication => {
-                        exit.send(AppExit);
+                        exit.send(AppExit::Success);
                     },
                     _ => {}
                 }
@@ -146,18 +145,10 @@ pub struct HomeMenuPlugin {}
 
 impl Plugin for HomeMenuPlugin{
     fn build(&self, app: &mut App) {
-        app
-        .add_system_set(
-            SystemSet::on_enter(GameState::Menu)
-                .with_system(setup_home_menu)
-        )
-        .add_system_set(
-            SystemSet::on_update(GameState::Menu)
-                .with_system(system_button_handle)
-        )
-        .add_system_set(
-            SystemSet::on_exit(GameState::Menu)
-                .with_system(clear_home_menu)
-        );
+
+        app.add_systems(Update, (system_button_handle).run_if(in_state(GameState::Menu)));
+        app.add_systems(OnEnter(GameState::Menu), setup_home_menu);
+        app.add_systems(OnExit(GameState::Menu), clear_home_menu);
+
     }
 }

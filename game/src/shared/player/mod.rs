@@ -1,8 +1,8 @@
 pub mod interaction;
 pub mod input;
 
-use bevy::{prelude::*, math::const_vec2};
-use bevy_ggrs::{Rollback, RollbackIdProvider};
+use bevy::{prelude::*};
+use bevy_ggrs::{Rollback};
 
 use crate::shared::{
     collider::{MovementCollider, is_colliding},
@@ -14,12 +14,12 @@ use crate::shared::{
 use self::{interaction::{PlayerCurrentInteraction, PlayerInteractionType}, input::{PlayerCurrentInput, AvailableGameController}};
 
 
-pub const PLAYER_SIZE: Vec2 = const_vec2!([25., 25.]);
+pub const PLAYER_SIZE: Vec2 = Vec2::new(25., 25.);
 
-const SPAWN_OFFSET_0: Vec2 = const_vec2!([-50., 50.]);
-const SPAWN_OFFSET_1: Vec2 = const_vec2!([50., 50.]);
-const SPAWN_OFFSET_2: Vec2 = const_vec2!([-50., -50.]);
-const SPAWN_OFFSET_3: Vec2 = const_vec2!([50., -50.]);
+const SPAWN_OFFSET_0: Vec2 = Vec2::new(-50., 50.);
+const SPAWN_OFFSET_1: Vec2 = Vec2::new(50., 50.);
+const SPAWN_OFFSET_2: Vec2 = Vec2::new(-50., -50.);
+const SPAWN_OFFSET_3: Vec2 = Vec2::new(50., -50.);
 
 fn get_spawn_offset(player_index: usize) -> Vec2 {
     return match player_index {
@@ -47,7 +47,6 @@ pub struct PlayerDeadEvent {
 #[derive(Bundle)]
 pub struct PlayerBundle {
     pub player: Player,
-    #[bundle] 
     pub sprite: SpriteSheetBundle,
     pub interaction: PlayerCurrentInteraction,
     pub looking_direction: LookingAt,
@@ -88,7 +87,7 @@ impl PlayerBundle {
             character_movement_state: CharacterMovementState { state: String::from("walking"), sub_state: "".to_string() },
             looking_direction: LookingAt(Vec2::new(0., 0.), false),
             animation_timer: AnimationTimer{ 
-                timer: Timer::from_seconds(0.1, true),
+                timer: Timer::from_seconds(0.1, TimerMode::Repeating),
                 index: 0,
                 offset: 0,
                 asset_type: "player".to_string(),

@@ -1,14 +1,12 @@
 use bevy::prelude::*;
-use bevy::reflect::TypeUuid;
 //use bevy_ecs_tilemap::prelude::*;
 
-use crate::shared::collider::*;
 //use super::tiled_map::tiled::{TiledMap, TiledMapBundle};
 use super::*;
 use crate::shared::game::LevelMapRequested;
 use serde::Deserialize;
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct MapDataState {
     pub handle: Handle<MapDataAsset>,
     pub rendered: bool,
@@ -22,8 +20,7 @@ pub struct MapTiledData {
 }
 */
 
-#[derive(Deserialize, TypeUuid, Clone, Component)]
-#[uuid = "39cadc56-aa9c-4543-8640-a018b74b5052"]
+#[derive(Deserialize, Asset, TypePath)]
 pub struct MapDataAsset {
     pub walls: Vec<MapElementPosition>,
     pub windows: Vec<MapElementPosition>,
@@ -39,10 +36,9 @@ impl MapDataAsset {
     ) {
         //let handle: Handle<TiledMap> = asset_server.load(self.tiled.path.as_str());
 
-        let map_entity = command.spawn().id();
+        //let map_entity = command.spawn().id();
         command
-            .entity(map_entity)
-            .insert(MapElement {});
+            .spawn(MapElement {});
             /*.insert_bundle(TiledMapBundle {
                 tiled_map: handle,
                 map: Map::new(0u16, map_entity),
@@ -56,22 +52,19 @@ impl MapDataAsset {
 
         for s in (&self.spawners).into_iter() {
             command
-                .spawn()
-                .insert_bundle(ZombieSpawnerBundle::new(s.clone()));
+                .spawn(ZombieSpawnerBundle::new(s.clone()));
         }
 
         for w in (&self.walls).into_iter() {
             command
-                .spawn()
-                .insert(MapElement {})
-                .insert_bundle(WallBundle::new(w.clone()));
+                .spawn(WallBundle::new(w.clone()))
+                .insert(MapElement {});
         }
 
         for w in (&self.windows).into_iter() {
             let entity = command
-                .spawn()
-                .insert(MapElement {})
-                .insert_bundle(WindowBundle::new(w.clone())).id();
+                .spawn(WindowBundle::new(w.clone()))
+                .insert(MapElement {});
         }
 
 
@@ -93,11 +86,13 @@ pub fn load_scene_system(
     level_requested: Res<LevelMapRequested>
 ) {
     // Scenes are loaded just like any other asset.
-    let handle: Handle<MapDataAsset> = asset_server.load(level_requested.map.as_str());
+    let re: &LevelMapRequested = level_requested.as_ref();
+    let map = re.map.clone();
+    let handle: Handle<MapDataAsset> = asset_server.load(map);
     state.handle = handle;
     state.rendered = false;
 
-    asset_server.watch_for_changes().unwrap();
+    //asset_server.watch_for_changes().unwrap();
 }
 
 pub fn render_scene(
@@ -123,7 +118,7 @@ pub fn react_event_scene(
     entity: Query<Entity, With<MapElement>>,
     mut state: ResMut<MapDataState>,
 ) {
-    for event in asset_events.iter() {
+    for event in asset_events.read() {
         match event {
             AssetEvent::Modified { .. } => {
                 for element in entity.iter() {

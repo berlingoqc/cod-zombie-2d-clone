@@ -16,7 +16,7 @@ use tiled_map::{
 use serde::Deserialize;
 
 use crate::shared::{collider::*, health::Health, game::GameState, player::interaction::{PlayerInteraction, PlayerInteractionType}};
-use loader::*;
+use loader::MapDataAssetLoader;
 use render::*;
 
 pub struct MapPlugin {}
@@ -27,20 +27,15 @@ impl Plugin for MapPlugin {
             //.add_plugin(TilemapPlugin)
             //.add_plugin(TiledMapPlugin)
             .init_resource::<MapDataState>()
-            .add_asset::<MapDataAsset>()
+            .init_asset::<MapDataAsset>()
             .init_asset_loader::<MapDataAssetLoader>()
 
-            .add_system_set(
-                SystemSet::on_enter(GameState::PlayingZombie)
-                    .with_system(load_scene_system)
-            )
-            .add_system_set(
-                SystemSet::on_update(GameState::PlayingZombie)
-                    .with_system(react_event_scene)
-                    .with_system(render_scene)
-                    //.with_system(set_texture_filters_to_nearest)
-                    .with_system(map_item_system::system_window_panel_destroy)
-            );
+            .add_systems(OnEnter(GameState::PlayingZombie), load_scene_system)
+            .add_systems(Update, (
+                react_event_scene,
+                render_scene,
+                map_item_system::system_window_panel_destroy
+            ).run_if(in_state(GameState::PlayingZombie)));
    }
 }
 
@@ -51,7 +46,6 @@ pub struct Size(pub Vec2);
 
 #[derive(Bundle)]
 pub struct WallBundle {
-    #[bundle]
     sprite_bundle: SpriteBundle,
     collider: MovementCollider,
     projectile_collider: ProjectileCollider,
@@ -65,7 +59,6 @@ pub struct Window {
 
 #[derive(Bundle)]
 pub struct WindowBundle {
-    #[bundle]
     sprite_bundle: SpriteBundle,
     info: MapElementPosition,
     collider: MovementCollider,
@@ -79,7 +72,6 @@ pub struct WindowPanel {}
 
 #[derive(Bundle)]
 pub struct WindowPanelBundle {
-    #[bundle]
     sprite_bundle: SpriteBundle,
     panel: WindowPanel,
     size: Size,
@@ -101,7 +93,6 @@ pub struct ZombieSpawner {}
 
 #[derive(Bundle)]
 pub struct ZombieSpawnerBundle {
-    #[bundle]
     sprite_bundle: SpriteBundle,
     position: MapElementPosition,
     map_element: MapElement,

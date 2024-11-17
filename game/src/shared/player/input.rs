@@ -1,10 +1,9 @@
 
 use bevy::{
-    input::gamepad::{GamepadEvent, GamepadEventType},
+    input::gamepad::{GamepadConnection, GamepadEvent},
     prelude::*
 };
 
-use bevy_ggrs::{Rollback, RollbackIdProvider};
 use bytemuck::{Pod, Zeroable};
 use ggrs::{Config, InputStatus, P2PSession, PlayerHandle, SpectatorSession, SyncTestSession};
 use std::{hash::Hash};
@@ -48,7 +47,7 @@ pub const INPUT_INTERACTION_PRESSED: i32 = 1 << 8;
 pub const INPUT_FROM_GAMEPAD: i32 = 1 << 31;
 
 #[repr(C)]
-#[derive(Copy, Clone, PartialEq, Pod, Zeroable, Default)]
+#[derive(Copy, Clone, Resource, PartialEq, Pod, Zeroable, Default)]
 pub struct BoxInput {
     // 0 : UP
     // 1 : DOWN
@@ -84,6 +83,7 @@ pub struct PlayerCurrentInput {
     pub relative: bool,
 }
 
+#[derive(Resource)]
 pub struct AvailableGameController {
     pub keyboard_mouse: bool,
     pub gamepad: Vec<Gamepad>,
@@ -101,18 +101,26 @@ pub fn system_gamepad_event(
 
     mut available_controller: ResMut<AvailableGameController>,
 ) {
-    for GamepadEvent(id, kind) in gamepad_evr.iter() {
-        match kind {
-            GamepadEventType::Connected => {
-                available_controller.gamepad.push(id.clone());
+
+    for ev in gamepad_evr.read() {
+        
+        let GamepadEvent::Connection(ev_conn) = ev else {
+            return;
+        };
+
+        /*
+        match &ev_conn.connection {
+            GamepadConnection::Connected(info) => {
+                //available_controller.gamepad.push(info.);
             },
             GamepadEventType::Disconnected => {
-                available_controller.gamepad = available_controller.gamepad.iter().filter(|x| x.0 != id.0).map(|x| x.clone()).collect();
+                //available_controller.gamepad = available_controller.gamepad.iter().filter(|x| x.0 != id.0).map(|x| x.clone()).collect();
             },
             _ => {
                 //info!("OTHER EVENT I GUESS {:?}", id);
             }
         }
+        */
     }
 
 }
@@ -124,14 +132,14 @@ pub fn input(
 
     q_player: Query<(&PlayerCurrentInput, &Player)>,
     
-    keyboard_input: Res<Input<KeyCode>>,
-    mouse_input: Res<Input<MouseButton>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mouse_input: Res<ButtonInput<MouseButton>>,
 
-    wnds: Res<Windows>,
+    q_windows: Query<&Window>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
 
 
-    buttons: Res<Input<GamepadButton>>,
+    buttons: Res<ButtonInput<GamepadButton>>,
     axes: Res<Axis<GamepadAxis>>,
 
 
@@ -146,16 +154,16 @@ pub fn input(
 
             if player_input.input_source == SupportedController::Keyboard {
 
-                if keyboard_input.pressed(KeyCode::W) {
+                if keyboard_input.pressed(KeyCode::KeyW) {
                     input |= INPUT_UP;
                 }
-                if keyboard_input.pressed(KeyCode::A) {
+                if keyboard_input.pressed(KeyCode::KeyA) {
                     input |= INPUT_LEFT;
                 }
-                if keyboard_input.pressed(KeyCode::S) {
+                if keyboard_input.pressed(KeyCode::KeyS) {
                     input |= INPUT_DOWN;
                 }
-                if keyboard_input.pressed(KeyCode::D) {
+                if keyboard_input.pressed(KeyCode::KeyD) {
                     input |= INPUT_RIGHT;
                 }
                 if mouse_input.pressed(MouseButton::Left) {
@@ -167,25 +175,33 @@ pub fn input(
                 if keyboard_input.just_pressed(KeyCode::Tab) {
                     input |= INPUT_WEAPON_CHANGED;
                 }
-                if keyboard_input.just_pressed(KeyCode::R) {
+                if keyboard_input.just_pressed(KeyCode::KeyR) {
                     input |= INPUT_WEAPON_RELOAD;
                 }
-                if keyboard_input.pressed(KeyCode::F) {
+                if keyboard_input.pressed(KeyCode::KeyF) {
                     input |= INPUT_INTERACTION_PRESSED;
                 }
 
-                mouse_position = get_cursor_location(&wnds, &q_camera);
+                mouse_position = get_cursor_location(&q_windows, &q_camera);
             } else {
                 input |= INPUT_FROM_GAMEPAD;
 
 
                 let player_gamepad = player_input.gamepad.unwrap();
 
-                let axis_lx = GamepadAxis(player_gamepad, GamepadAxisType::LeftStickX);
-                let axis_ly = GamepadAxis(player_gamepad, GamepadAxisType::LeftStickY);
+                let axis_lx = GamepadAxis {
+                    gamepad: player_gamepad, axis_type: GamepadAxisType::LeftStickX
+                };
+                let axis_ly = GamepadAxis {
+                    gamepad: player_gamepad, axis_type: GamepadAxisType::LeftStickY
+                };
 
-                let axis_rx = GamepadAxis(player_gamepad, GamepadAxisType::RightStickX);
-                let axis_ry = GamepadAxis(player_gamepad, GamepadAxisType::RightStickY);
+                let axis_rx = GamepadAxis {
+                    gamepad: player_gamepad, axis_type: GamepadAxisType::RightStickX
+                };
+                let axis_ry = GamepadAxis {
+                    gamepad: player_gamepad, axis_type: GamepadAxisType::RightStickY
+                };
 
 
                 if let (Some(x), Some(y), Some(rx), Some(ry)) = (axes.get(axis_lx), axes.get(axis_ly), axes.get(axis_rx), axes.get(axis_ry)) {
@@ -207,10 +223,10 @@ pub fn input(
                     }
                 }
 
-                let reload_button = GamepadButton(player_gamepad, GamepadButtonType::West);
-                let change_weapon_button = GamepadButton(player_gamepad, GamepadButtonType::North);
-                let interaction_button = GamepadButton(player_gamepad, GamepadButtonType::South);
-                let weapon_trigger_button = GamepadButton(player_gamepad, GamepadButtonType::RightTrigger);
+                let reload_button = GamepadButton{ gamepad: player_gamepad, button_type: GamepadButtonType::West };
+                let change_weapon_button = GamepadButton{ gamepad: player_gamepad, button_type: GamepadButtonType::North };
+                let interaction_button = GamepadButton{ gamepad: player_gamepad, button_type: GamepadButtonType::South };
+                let weapon_trigger_button = GamepadButton{ gamepad: player_gamepad, button_type:GamepadButtonType::RightTrigger };
 
                 if buttons.pressed(weapon_trigger_button) {
                     input |= INPUT_FIRE
@@ -240,7 +256,7 @@ pub fn apply_input_players(
 
     mut query: Query<(&mut PlayerCurrentInput, &Player), Without<Death>>,
 
-    inputs: Res<Vec<(BoxInput, InputStatus)>>,
+    //inputs: Res<Vec<(BoxInput)>>,
 
     mut game_state: ResMut<State<GameState>>
 ) {
@@ -250,6 +266,7 @@ pub fn apply_input_players(
 		player,
 	) in query.iter_mut() {
 
+        /*
         if inputs.len() <= player.handle {
             continue;
         }
@@ -284,7 +301,7 @@ pub fn apply_input_players(
             }
         } else {
             current_input.looking_at = Vec2::new(box_input.right_x as f32, box_input.right_y as f32);
-        }
+        }*/
     }
 }
 

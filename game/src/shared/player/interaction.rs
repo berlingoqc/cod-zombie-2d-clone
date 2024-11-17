@@ -1,4 +1,4 @@
-use bevy::{prelude::*, sprite::collide_aabb::collide};
+use bevy::{prelude::*};
 use ggrs::InputStatus;
 
 use crate::shared::{map::{MapElementPosition, Window, WindowPanel, Size}, health::Health, weapons::weapons::{PlayerInputs, INTERACTION_BTN}};
@@ -55,7 +55,7 @@ pub fn system_interaction_player(
         ),
     >,
 
-    inputs: Res<Vec<(BoxInput, InputStatus)>>,
+    //inputs: Res<Vec<(BoxInput, InputStatus)>>,
 
     mut query_window: Query<(&mut Window, &mut Health, &Children)>,
     mut query_panel: Query<(&mut WindowPanel, &Size, &mut Sprite)>
@@ -63,16 +63,19 @@ pub fn system_interaction_player(
 
     for (player_transform, mut interaction, current_input, player) in query_player.iter_mut() {
 
-        if inputs.len() <= player.handle {
-            continue;
-        }
+        //if inputs.len() <= player.handle {
+        //    continue;
+        //}
 
-        let box_input = match inputs[player.handle].1 {
+        let box_input = BoxInput::default();
+        /*match inputs[player.handle].1 {
             InputStatus::Confirmed => inputs[player.handle].0,
             InputStatus::Predicted => inputs[player.handle].0,
             InputStatus::Disconnected => BoxInput::default(), // disconnected players do nothing
         };
+        */
 
+        /*
 
         for (entity, transform, info, player_interaction) in interaction_query.iter() {
             let collision = collide(player_transform.translation, Vec2::new(25., 25.), info.position.extend(10.),  player_interaction.interaction_size);
@@ -156,6 +159,7 @@ pub fn system_interaction_player(
                 }
             }
         }
+        */
     }
 
 }

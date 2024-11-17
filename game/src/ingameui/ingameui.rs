@@ -30,7 +30,7 @@ pub fn setup_ingame_ui(
 
 ) {
     // Text bundle for the round info 
-	  commands.spawn().insert(InGameUI{}).insert_bundle(TextBundle {
+	  commands.spawn((InGameUI {}, TextBundle {
         text: Text {
             sections: vec![
                 TextSection {
@@ -53,7 +53,7 @@ pub fn setup_ingame_ui(
             ..default()
         },
         ..default()
-    }).insert(RoundText{});
+    }, RoundText{}));
 }
 
 pub fn system_ingame_ui(
@@ -82,30 +82,27 @@ pub fn system_ingame_ui(
 
     for (i, entity) in player_added.iter().enumerate() {
         println!("Creating one set of ui");
-        commands.spawn().insert(InGameUI{}).insert(PlayerUI{ player: entity.clone()}).insert_bundle(NodeBundle {
+        commands.spawn((InGameUI{}, PlayerUI{ player: entity.clone()}, NodeBundle {
             style: Style {
                     align_self: AlignSelf::FlexEnd,
                     position_type: PositionType::Absolute,
-                    position: Rect {
-                        bottom: Val::Px(5.0 + ((i as f32) * 75.)),
-                        right: Val::Px(15.0),
-                        ..default()
-                    },
+                    bottom: Val::Px(5.0 + ((i as f32) * 75.)),
+                    right: Val::Px(15.0),
                     ..default()
                 },
-                color: UiColor(Color::NONE),
             ..default()
-        }).with_children(|parent| {
+        })).with_children(|parent| {
 
-            parent.spawn_bundle(ImageBundle {
+            parent.spawn((ImageBundle {
                 style: Style {
-                    size: Size::new(Val::Px(25.), Val::Auto),
+                    height: Val::Px(25.0),
+                    width: Val::Auto,
                     ..default()
                 },
                 ..default()
-            }).insert(WeaponUiImage{});
+            }, WeaponUiImage{}));
 
-            parent.spawn_bundle(TextBundle{
+            parent.spawn((TextBundle{
             text: Text {
                 sections: vec![
                     TextSection {
@@ -120,7 +117,7 @@ pub fn system_ingame_ui(
                 ..default()
             },
             ..default()
-            }).insert(WeaponText{});
+            }, WeaponText{}));
 
         });
     }
@@ -148,7 +145,8 @@ pub fn system_weapon_ui(
                             }
                             if let Ok(mut weapon_image) = query_weapon_image.get_mut(*children) {
                                 // TODO: added a event of weapon change to trigger this instead of every frame lol
-                                weapon_image.0 = asset_server.load(weapon.asset_name.as_str());
+                                weapon_image.texture = asset_server.load(weapon.asset_name.as_str());
+                                //weapon_image.0 = asset_server.load(weapon.asset_name.as_str());
                             } 
                         }
                     }

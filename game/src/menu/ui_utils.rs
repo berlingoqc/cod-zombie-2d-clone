@@ -27,29 +27,28 @@ pub fn add_button(
     parent: &mut ChildBuilder,
     asset_server: &Res<AssetServer>,
 ) {
-    parent.spawn()
-        .insert(MenuComponent{})
-        .insert(action)
-        .insert_bundle(ButtonBundle {
+    parent.spawn((MenuComponent{},
+        action,
+        ButtonBundle {
             style: Style {
-                size: Size::new(Val::Px(400.0), Val::Px(65.0)),
+                height: Val::Px(400.0),
+                width: Val::Px(65.0),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                ..default()
             },
-            color: Color::rgb(0.15,0.15,0.15).into(),
+            background_color: Color::rgb(0.15,0.15,0.15).into(),
             ..default()
-        })
+        }))
         .with_children(|parent| {
-            parent.spawn_bundle(TextBundle {
-                text: Text::with_section(
+            parent.spawn(TextBundle {
+                text: Text::from_section(
                     text,
                     TextStyle {
                         font: asset_server.load("fonts/FiraSans-Bold.ttf"),
                         font_size: 40.0,
                         color: Color::rgb(0.9, 0.9, 0.9),
                     },
-                    default(),
                 ),
                 ..default()
             });

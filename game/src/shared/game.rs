@@ -18,9 +18,8 @@ use super::zombies::spawner::*;
 use super::zombies::zombie::*;
 
 
-use bevy::asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset};
+use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
 use bevy::prelude::*;
-use bevy::reflect::TypeUuid;
 use bevy_ggrs::{RollbackIdProvider, Rollback};
 use ggrs::InputStatus;
 use rand::prelude::*;
@@ -28,7 +27,7 @@ use serde::{Deserialize, Serialize};
 
 use pathfinding::prelude::astar;
 
-#[derive(Component)]
+#[derive(Resource)]
 pub struct GameSpeed(pub f32, pub usize);
 
 impl Default for GameSpeed {
@@ -40,7 +39,7 @@ impl Default for GameSpeed {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Clone, States, Eq, PartialEq, Hash, Debug)]
 pub enum GameState {
     Menu,
     OnlineMenu,
@@ -83,8 +82,7 @@ pub struct WindowPanelConfiguration {
 }
 
 
-#[derive(Deserialize, TypeUuid, Clone, Component)]
-#[uuid = "39cadc56-aa9c-4543-8640-a018b74b5023"]
+#[derive(Deserialize, TypePath, Clone, Component)]
 pub struct ZombieLevelAsset {
     pub configuration: MapRoundConfiguration,
     pub starting_weapons: StartingWeapons,
@@ -122,7 +120,7 @@ pub struct ZombieGame {
 }
 
 
-#[derive(Default, Debug)]
+#[derive(Default, Resource, Debug)]
 pub struct ZombieGameConfig {
     pub configuration: MapRoundConfiguration,
     pub starting_weapons: StartingWeapons,
@@ -160,7 +158,7 @@ impl AssetLoader for ZombieLevelAssetLoader {
         &["level.ron"]
     }
 }
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct LevelMapRequested {
     pub map: String,
     pub level: String
