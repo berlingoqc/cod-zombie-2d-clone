@@ -6,9 +6,9 @@ use serde::Deserialize;
 pub struct SpriteSheetConfiguration {
 	pub name: String,
 	pub path: String,
-	pub tile_size: Vec2,
-	pub columns: usize,
-	pub rows: usize
+	pub tile_size: u32,
+	pub columns: u32,
+	pub rows: u32
 }
 
 #[derive(Deserialize, Default, Clone)]

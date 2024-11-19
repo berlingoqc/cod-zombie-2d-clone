@@ -64,7 +64,7 @@ pub struct Ammunition {
     pub sprite_config: AmmunitionSpriteConfig
 }
 
-#[derive(Default, Component, Reflect)]
+#[derive(Default, Component, Clone, Copy, Reflect)]
 pub struct AmmunitionState {
 	pub mag_remaining: i32,
 	pub remaining_ammunition: i32
@@ -87,7 +87,7 @@ pub struct WeaponState {
 #[derive(Default, Component)]
 pub struct ActiveWeapon {}
 
-#[derive(Default, Component, Reflect)]
+#[derive(Default, Component,Clone, Copy,  Reflect)]
 pub struct Projectile {}
 
 

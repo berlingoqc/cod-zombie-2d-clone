@@ -1,6 +1,11 @@
-use std::rc::Weak;
 
-use bevy::{prelude::*, utils::HashMap, asset::{AssetLoader, LoadContext, LoadedAsset}};
+
+use bevy::asset::{
+    AssetLoader, LoadContext,
+    io::Reader,
+    AsyncReadExt,
+};
+use bevy::prelude::*;
 use serde::Deserialize;
 
 use crate::shared::asset_error::BlobAssetLoaderError;

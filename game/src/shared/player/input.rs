@@ -14,7 +14,7 @@ use super::{Player, MainCamera, PLAYER_SIZE};
 
 // You can also register resources. If your Component / Resource implements Hash, you can make use of `#[reflect(Hash)]`
 // in order to allow a GGRS `SyncTestSession` to construct a checksum for a world snapshot
-#[derive(Default, Reflect, Hash, Component)]
+#[derive(Default, Resource, Reflect, Hash, Copy, Clone, Component)]
 #[reflect(Hash)]
 pub struct FrameCount {
     pub frame: u32,

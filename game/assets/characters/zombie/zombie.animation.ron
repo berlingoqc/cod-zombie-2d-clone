@@ -2,7 +2,7 @@ CharacterAnimationConfiguration(
 	sprite_sheet: (
 		name: "player_n_zombie",
 		path: "characters/player/character_spritesheet.png",
-		tile_size: (112., 112.),
+		tile_size: 112
 		columns: 8,
 		rows: 6
 	),

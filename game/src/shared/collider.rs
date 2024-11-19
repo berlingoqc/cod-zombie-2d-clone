@@ -1,4 +1,4 @@
-use bevy::{prelude::*, sprite::collide_aabb::collide};
+use bevy::prelude::*;
 use serde::Deserialize;
 
 
@@ -9,7 +9,7 @@ pub struct MovementCollider {
     pub allowed_entity_type: Vec<String>
 }
 
-#[derive(Component, Reflect, Default, Deserialize, Clone)]
+#[derive(Component, Reflect, Default, Copy, Deserialize, Clone)]
 #[reflect(Component)]
 pub struct ProjectileCollider {}
 
@@ -26,6 +26,7 @@ pub fn is_colliding<T : Component, R : Component>(
         (Without<T>, Without<R>)
     >,
 ) -> bool {
+    /*
     for (_, transform, collider) in collider_query.iter() {
         if collider.allowed_entity_type.iter().any(|x| x == character_type) { continue }
         let collision = collide(destination, size, transform.translation, collider.size);
@@ -33,5 +34,6 @@ pub fn is_colliding<T : Component, R : Component>(
             return true;
         }
     }
+    */
     return false;
 }

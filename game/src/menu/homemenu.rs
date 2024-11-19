@@ -1,6 +1,6 @@
 use bevy::{prelude::*, app::AppExit};
 
-use crate::{p2p::{online::{NetworkPlayer, create_session}}};
+//use crate::{p2p::{online::{NetworkPlayer, create_session}}};
 
 use super::ui_utils::*;
 use crate::shared::{
@@ -34,9 +34,9 @@ pub fn setup_home_menu(
                     },
                     ..default()
                 }).with_children(|parent| {
-                    add_button(ActionButtonComponent(ButtonActions::QuitApplication), "Close", parent, &asset_server);
-                    add_button(ActionButtonComponent(ButtonActions::StartOnlineMultiplayerGame), "online multiplayer", parent, &asset_server);
-                    add_button(ActionButtonComponent(ButtonActions::StartLocalMultiplayerGame), "local multiplayer", parent, &asset_server);
+                    //add_button(ActionButtonComponent(ButtonActions::QuitApplication), "Close", parent, &asset_server);
+                    //add_button(ActionButtonComponent(ButtonActions::StartOnlineMultiplayerGame), "online multiplayer", parent, &asset_server);
+                    //add_button(ActionButtonComponent(ButtonActions::StartLocalMultiplayerGame), "local multiplayer", parent, &asset_server);
                     add_button(ActionButtonComponent(ButtonActions::StartLocalGame), "single player", parent, &asset_server);
                 });
         });
@@ -75,9 +75,11 @@ pub fn system_button_handle(
                             is_local: true,
                         }];
 
+                        /*
                         let mut players: Vec<NetworkPlayer> = vec![];
                         players.push(NetworkPlayer{address: "localhost".to_string()});
                         create_session(&mut commands, &game_speed, players);
+                        */
 
                         next_state.set(GameState::PlayingZombie);
                     },
@@ -93,12 +95,12 @@ pub fn system_button_handle(
                             is_local: true,
                         }];
 
-                        let mut players: Vec<NetworkPlayer> = vec![];
-                        players.push(NetworkPlayer{address: "localhost".to_string()});
+                        //let mut players: Vec<NetworkPlayer> = vec![];
+                        //players.push(NetworkPlayer{address: "localhost".to_string()});
 
                         for (i, gamepad) in controller.gamepad.iter().enumerate() {
 
-                            players.push(NetworkPlayer{address: "localhost".to_string()});
+                            //players.push(NetworkPlayer{address: "localhost".to_string()});
                             zombie_game.players.push(ZombiePlayerInformation {
                                 name: format!("Player {}", i + 2),
                                 controller: PlayerCurrentInput { input_source: SupportedController::Gamepad, gamepad: Some(gamepad.clone()), ..default() },
@@ -107,7 +109,7 @@ pub fn system_button_handle(
                             })
                         }
 
-                        create_session(&mut commands, &game_speed, players);
+                        //create_session(&mut commands, &game_speed, players);
 
                         next_state.set(GameState::PlayingZombie);
 

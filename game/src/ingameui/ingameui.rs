@@ -137,7 +137,7 @@ pub fn system_weapon_ui(
             if let Ok(childrens_player) = query_player.get(player_ui.player) {
 
                 for children in childrens_player.iter() {
-                    if let Ok((ammo_state, weapon, weapon_state)) = query_player_weapon.get(*children) {
+                    if let Ok((ammo_state, weapon, weapon_state)) = query_player_weapon.get(children.clone()) {
 
                         for children in childrens_ui.iter() {
                             if let Ok(mut text) = query_ammo_text.get_mut(*children) {
@@ -145,7 +145,7 @@ pub fn system_weapon_ui(
                             }
                             if let Ok(mut weapon_image) = query_weapon_image.get_mut(*children) {
                                 // TODO: added a event of weapon change to trigger this instead of every frame lol
-                                weapon_image.texture = asset_server.load(weapon.asset_name.as_str());
+                                weapon_image.texture = asset_server.load(weapon.asset_name.clone());
                                 //weapon_image.0 = asset_server.load(weapon.asset_name.as_str());
                             } 
                         }

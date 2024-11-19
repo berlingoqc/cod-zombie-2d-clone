@@ -16,7 +16,7 @@ impl HealthRegeneration {
 	// call when the health is updated to calculate when i can regenerate
 	// start a new timer
 	pub fn on_health_change(&mut self) -> () {
-		self.timer = Some(Timer::from_seconds(self.timeout_regeneration, false));
+		self.timer = Some(Timer::from_seconds(self.timeout_regeneration, TimerMode::Once));
 	}
 
 	// trigger each time to modify health if possible
@@ -38,7 +38,7 @@ impl HealthRegeneration {
 	}
 }
 
-#[derive(Component, Default, Reflect)]
+#[derive(Component, Default,Clone, Copy,  Reflect)]
 pub struct Health {
 	pub current_health: f32,
 	pub tmp_health: f32,

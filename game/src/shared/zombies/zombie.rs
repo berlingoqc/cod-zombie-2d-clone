@@ -17,7 +17,7 @@ pub const ZOMBIE_SIZE: Vec2 = Vec2::new(25. , 25.);
 
 // bot destination is a component
 // to register and apply the target of a bot
-#[derive(Component, Reflect)]
+#[derive(Component, Clone, Reflect)]
 pub struct BotDestination {
     // Destination element
     pub destination: Vec2,
@@ -99,7 +99,7 @@ impl BotDestination {
 
 
 // the different state of a zombie
-#[derive(Clone, Eq, PartialEq, Debug, Hash, Reflect, Default)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Copy, Reflect, Default)]
 pub enum ZombieState {
     // When the zombie is spawning
     #[default]
@@ -115,7 +115,7 @@ pub enum ZombieState {
 }
 
 
-#[derive(Component, Reflect, Default)]
+#[derive(Component, Reflect, Clone, Copy,  Default)]
 pub struct Zombie {
     pub state: ZombieState,
 }
@@ -123,7 +123,6 @@ pub struct Zombie {
 
 #[derive(Bundle)]
 pub struct ZombieBundle {
-    #[bundle]
     sprite_bundle: SpriteSheetBundle,
     collider: MovementCollider,
     destination: BotDestination,
@@ -159,7 +158,7 @@ impl ZombieBundle {
             },
             chracter_movement_state: CharacterMovementState { state: "rising".to_string(), sub_state: "".to_string() },
             animation_timer: AnimationTimer {
-                timer: Timer::from_seconds(0.1, true),
+                timer: Timer::from_seconds(0.1,TimerMode::Repeating),
                 index: 0,
                 offset: 0,
                 current_state: "".to_string(),
@@ -220,7 +219,7 @@ pub fn system_zombie_handle(
                 if !dest.move_bot(&mut pos, &collider_query) {
                     if let Ok((entity, mut health)) = query_ennemy.get_mut(dest.entity) {
                         if health.current_health > 0. {
-                            let current_time = time.time_since_startup().as_secs_f32();
+                            let current_time = time.elapsed().as_secs_f32();
                             if !(current_time < weapon_state.fired_at + 1.) {
                                 health.tmp_health -= 1.;
                                 weapon_state.fired_at = current_time;
@@ -266,15 +265,15 @@ pub fn system_zombie_handle(
                     }
 
                     // Valid if i'm colliding with him.
-                    if let Some(collision) = collide(pos.translation, ZOMBIE_SIZE * 2., player_translation, PLAYER_SIZE) {
+                    /*if let Some(collision) = collide(pos.translation, ZOMBIE_SIZE * 2., player_translation, PLAYER_SIZE) {
                         if let Ok((_, mut health)) = query_ennemy.get_mut(dest.entity) {
-                            let current_time = time.time_since_startup().as_secs_f32();
+                            let current_time = time.elapsed().as_secs_f32();
                             if !(current_time < weapon_state.fired_at + 1.) {
                                 health.tmp_health -= 1.;
                                 weapon_state.fired_at = current_time;
                             }
                         }
-                    } else {
+                    } else {*/
                         let player_translation = player_translation.truncate();
                         dest.set_destination(
                             player_translation, 
@@ -282,7 +281,7 @@ pub fn system_zombie_handle(
                             player_entity.clone(), 10.
                         );
                         looking_at.0 = player_translation;
-                    }
+                    //}
                 }
             }
         }

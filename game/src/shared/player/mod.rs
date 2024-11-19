@@ -34,12 +34,13 @@ fn get_spawn_offset(player_index: usize) -> Vec2 {
 #[derive(Component)]
 pub struct MainCamera;
 
-#[derive(Default, Component, Reflect)]
+#[derive(Default, Component, Clone, Copy, Reflect)]
 pub struct Player {
     pub handle: usize,
     pub is_local: bool,
 }
 
+#[derive(Event)]
 pub struct PlayerDeadEvent {
     pub player: Entity,
 }
@@ -47,7 +48,8 @@ pub struct PlayerDeadEvent {
 #[derive(Bundle)]
 pub struct PlayerBundle {
     pub player: Player,
-    pub sprite: SpriteSheetBundle,
+    pub sprite: SpriteBundle,
+    pub texture_atlas: TextureAtlas,
     pub interaction: PlayerCurrentInteraction,
     pub looking_direction: LookingAt,
     pub animation_timer: AnimationTimer,
@@ -63,6 +65,7 @@ pub struct PlayerBundle {
 
 impl PlayerBundle {
     fn new(starting_weapon_name: &str, input: PlayerCurrentInput, index_player: usize, is_local: bool) -> PlayerBundle {
+        println!("spawning player");
         PlayerBundle { 
             player: Player{
                 handle: index_player,
@@ -70,12 +73,16 @@ impl PlayerBundle {
                 ..default()
             },
             player_current_input: input,
-            sprite : SpriteSheetBundle {
+            sprite : SpriteBundle {
                 transform: Transform {
                     translation: Vec3::new(0., 0., 10.) + get_spawn_offset(index_player).extend(0.),
                     ..Transform::default()
                 },
                 ..default()
+            },
+            texture_atlas: TextureAtlas {
+                index: 0,
+                ..Default::default()
             },
             movement_collider: MovementCollider {
                 size: PLAYER_SIZE,
@@ -134,19 +141,19 @@ pub fn setup_player(
 
     let weapon = weapons.weapons.iter().find(|w| w.name.eq(default_weapon_name)).unwrap().clone();
 
-    let player = commands.spawn_bundle(PlayerBundle::new(default_weapon_name, config.controller.clone(), index_player, config.is_local)).id();
+    let player = commands.spawn(PlayerBundle::new(default_weapon_name, config.controller.clone(), index_player, config.is_local)).id();
 
-    commands.entity(player).insert(Rollback::new(rip.next_id()));
+    commands.entity(player);//.insert(Rollback::new(rip.next_id()));
 
-    let weapon = commands.spawn()
-        .insert_bundle(WeaponBundle::new(weapon)).insert(ActiveWeapon{}).id();
+    let weapon = commands.spawn(WeaponBundle::new(weapon)).insert(ActiveWeapon{}).id();
 
     commands.entity(player).add_child(weapon);
 
     if let Some(alternate_weapon) = &zombie_game.starting_weapons.starting_alternate_weapon {
         let weapon = weapons.weapons.iter().find(|w| w.name.eq(alternate_weapon.as_str())).unwrap().clone();
-        let weapon = commands.spawn()
-            .insert_bundle(WeaponBundle::new(weapon)).insert(Rollback::new(rip.next_id())).id();
+        let weapon = commands.spawn(WeaponBundle::new(weapon))
+        //.insert(Rollback::new(rip.next_id()))
+        .id();
         commands.entity(player).add_child(weapon);
     }
 }

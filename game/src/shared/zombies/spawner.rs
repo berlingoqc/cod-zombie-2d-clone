@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use bevy::prelude::*;
 
+#[derive(Resource)]
 pub struct ZombieSpawnerConfig {
     pub timer: Timer,
     pub nums_ndg: Vec<f32>,

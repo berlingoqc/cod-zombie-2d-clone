@@ -1,5 +1,9 @@
-use bevy::{
-    asset::{AssetLoader, LoadContext },
+
+
+use bevy::asset::{
+    AssetLoader, LoadContext,
+    io::Reader,
+    AsyncReadExt,
 };
 
 use crate::shared::asset_error::BlobAssetLoaderError;
@@ -27,7 +31,7 @@ impl AssetLoader for MapDataAssetLoader {
             let mut bytes = Vec::new();
             reader.read_to_end(&mut bytes).await?;
 
-            let map_data_asset = ron::de::from_bytes::<MapDataAsset>(&bytes)?;
+            let map_data_asset = ron::de::from_bytes::<MapDataAsset>(&bytes).unwrap();
 
             Ok(map_data_asset)
         

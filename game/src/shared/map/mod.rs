@@ -88,7 +88,7 @@ pub struct MapElementPosition {
     pub rotation: i32,
 }
 
-#[derive(Component, Default, Reflect)]
+#[derive(Component, Default, Clone, Copy,  Reflect)]
 pub struct ZombieSpawner {}
 
 #[derive(Bundle)]

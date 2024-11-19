@@ -12,16 +12,19 @@ use crate::shared::utils::Checksum;
 use crate::shared::weapons::loader::{WeaponAssetPlugin, WeaponAssetState};
 use crate::shared::weapons::weapons::Weapon;
 
+use super::asset_error::BlobAssetLoaderError;
 use super::map::{MapElementPosition,  ZombieSpawner, render::MapDataState};
 use super::player::Player;
 use super::zombies::spawner::*;
 use super::zombies::zombie::*;
 
 
-use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
+use bevy::asset::{
+    AssetLoader, LoadContext,
+    io::Reader,
+    AsyncReadExt,
+};
 use bevy::prelude::*;
-use bevy_ggrs::{RollbackIdProvider, Rollback};
-use ggrs::InputStatus;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -47,7 +50,7 @@ pub enum GameState {
     GameOver,
 }
 
-#[derive(Clone, Eq, PartialEq, Hash, Debug, Default, Reflect)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Copy, Default, Reflect)]
 #[repr(i32)]
 pub enum ZombieGameState {
     #[default]
@@ -82,7 +85,7 @@ pub struct WindowPanelConfiguration {
 }
 
 
-#[derive(Deserialize, TypePath, Clone, Component)]
+#[derive(Deserialize,Asset, TypePath, Clone, Component)]
 pub struct ZombieLevelAsset {
     pub configuration: MapRoundConfiguration,
     pub starting_weapons: StartingWeapons,
@@ -90,7 +93,7 @@ pub struct ZombieLevelAsset {
 }
 
 
-#[derive(Default, Debug, Reflect)]
+#[derive(Default, Debug,Clone, Copy,  Reflect)]
 pub struct CurrentRoundInfo {
     pub total_zombie: i32,
     pub zombie_remaining: i32,
@@ -112,7 +115,7 @@ pub struct ZombiePlayerInformation {
     pub is_local: bool,
 }
 
-#[derive(Default, Debug, Reflect, Component)]
+#[derive(Default, Debug,Clone, Copy,  Reflect, Component)]
 pub struct ZombieGame {
     pub round: i32,
     pub state: ZombieGameState,
@@ -130,9 +133,11 @@ pub struct ZombieGameConfig {
 }
 
 
+#[derive(Event)]
 pub struct ZombieGameStateChangeEvent {}
+#[derive(Event)]
 pub struct ZombieGamePanelEvent {}
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct ZombieLevelAssetState {
     pub handle: Handle<ZombieLevelAsset>,
     pub loaded: bool,
@@ -142,16 +147,19 @@ pub struct ZombieLevelAssetState {
 pub struct ZombieLevelAssetLoader;
 
 impl AssetLoader for ZombieLevelAssetLoader {
-    fn load<'a>(
+    type Asset = ZombieLevelAsset;
+    type Settings = ();
+    type Error = BlobAssetLoaderError;
+
+    async fn load<'a>(
         &'a self,
-        bytes: &'a [u8],
-        load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
-        Box::pin(async move {
-            let map_data_asset = ron::de::from_bytes::<ZombieLevelAsset>(bytes)?;
-            load_context.set_default_asset(LoadedAsset::new(map_data_asset));
-            Ok(())
-        })
+        reader: &'a mut Reader<'_>,
+        _settings: &'a (),
+        _load_context: &'a mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes).await?;
+            Ok(ron::de::from_bytes::<ZombieLevelAsset>(&bytes).unwrap())
     }
 
     fn extensions(&self) -> &[&str] {
@@ -169,7 +177,7 @@ pub struct ZombieGamePlugin {}
 impl Plugin for ZombieGamePlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_plugin(WeaponAssetPlugin{})
+            .add_plugins(WeaponAssetPlugin{})
             .add_event::<ZombieGameStateChangeEvent>()
             .add_event::<ZombieGamePanelEvent>()
             .add_event::<PlayerDeadEvent>()
@@ -178,37 +186,36 @@ impl Plugin for ZombieGamePlugin {
             .init_resource::<ZombieLevelAssetState>()
             .init_resource::<ZombieSpawnerConfig>()
 
-            .add_system(change_game_state_event)
-            .add_system(system_panel_event)
-
-            .add_asset::<ZombieLevelAsset>()
+            .add_systems(Update, (change_game_state_event, system_panel_event))
+            .init_asset::<ZombieLevelAsset>()
             .init_asset_loader::<ZombieLevelAssetLoader>()
-
-            .add_state(GameState::Menu);
+            .insert_state(GameState::Menu);
     }
 }
 
 #[allow(dead_code)]
-pub fn increase_frame_system(mut frame_count: ResMut<FrameCount>, inputs: Res<Vec<(BoxInput, InputStatus)>>,) {
-    frame_count.frame += 1;
+pub fn increase_frame_system(
+//    mut frame_count: ResMut<FrameCount>, inputs: Res<Vec<(BoxInput, InputStatus)>>,
+) {
+//    frame_count.frame += 1;
 }
 
 // make on client and server side ....
 pub fn setup_zombie_game(
     mut state: ResMut<ZombieLevelAssetState>,
     mut commands: Commands,
-    mut rip: ResMut<RollbackIdProvider>,
+    //mut rip: ResMut<RollbackIdProvider>,
     asset_server: Res<AssetServer>,
     requested_level: Res<LevelMapRequested>,
 ) {
-    let handle: Handle<ZombieLevelAsset> = asset_server.load(requested_level.level.as_str());
+    let handle: Handle<ZombieLevelAsset> = asset_server.load(requested_level.level.clone());
     state.handle = handle;
     state.loaded = false;
 
 
-    commands.spawn().insert(ZombieGame{
+    commands.spawn(ZombieGame{
         ..Default::default()
-    }).insert(Checksum::default()).insert(Rollback::new(rip.next_id()));
+    }).insert(Checksum::default());//.insert(Rollback::new(rip.next_id()));
 
 
 }
@@ -216,13 +223,13 @@ pub fn setup_zombie_game(
 pub fn system_end_game(
     q_player: Query<&Health, With<Player>>,
     mut ev_player_dead: EventReader<PlayerDeadEvent>,
-    mut game_state: ResMut<State<GameState>>,
+    mut next_game_state: ResMut<NextState<GameState>>,
 
 ) {
 
-    for ev in ev_player_dead.iter() {
+    for ev in ev_player_dead.read() {
         if q_player.iter().map(|x| x.current_health <= 0.).filter(|x| !x).count() == 0 {
-            game_state.set(GameState::Menu).unwrap();
+            next_game_state.set(GameState::Menu);
         }
     }
 }
@@ -249,7 +256,7 @@ pub fn system_zombie_game(
     query_spawner: Query<&MapElementPosition, With<ZombieSpawner>>,
     query_window: Query<(&MapElementPosition, Entity), With<Window>>,
 
-    mut rip: ResMut<RollbackIdProvider>,
+    //mut rip: ResMut<RollbackIdProvider>,
 
     
 
@@ -288,7 +295,7 @@ pub fn system_zombie_game(
  
             config.timer = Timer::new(
                 Duration::from_millis(zombie_game_config.configuration.initial_timeout),
-                true,
+                TimerMode::Repeating,
             );
 
             // creating event
@@ -296,7 +303,7 @@ pub fn system_zombie_game(
 
             // Spawn players
             for player in zombie_game_config.players.iter() {
-                setup_player(&mut rip,&mut commands, &zombie_game_config, &weapons, player, player.index);
+                setup_player(&mut commands, &zombie_game_config, &weapons, player, player.index);
             }
 
             zombie_game.state = ZombieGameState::Round;
@@ -348,14 +355,14 @@ pub fn system_zombie_game(
 
                         bot_destination.set_destination(closest_window.position, position, closest_window_entity.clone(), 0.);
 
-                        commands.spawn().insert_bundle(ZombieBundle::new(
+                        commands.spawn(ZombieBundle::new(
                             MapElementPosition {
                                 position,
                                 size: Vec2::new(25., 25.),
                                 rotation: 0,
                             },
                             bot_destination,
-                        )).insert(Rollback::new(rip.next_id()));
+                        ));//.insert(Rollback::new(rip.next_id()));
 
                         zombie_game.current_round.zombie_remaining -= 1;
 
@@ -384,9 +391,9 @@ pub fn react_level_data(
     mut asset_events: EventReader<AssetEvent<ZombieLevelAsset>>,
     mut ev_state_change: EventWriter<ZombieGameStateChangeEvent>,
 
-    keyboard_input: Res<Input<KeyCode>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
-    for event in asset_events.iter() {
+    for event in asset_events.read() {
         match event {
            AssetEvent::Modified { .. } => {
                ev_state_change.send(ZombieGameStateChangeEvent {  });
@@ -410,7 +417,7 @@ pub fn change_game_state_event(
     query_weapons: Query<Entity, With<Weapon>>,
     query_window: Query<Entity, With<Window>>,
 ) {
-    for _ in ev_change_state.iter() {
+    for _ in ev_change_state.read() {
         let mut zombie_game = q_zombie_game.get_single_mut().unwrap();
         zombie_game.state = ZombieGameState::Initializing;
         for z in query_zombies.iter() {
@@ -441,12 +448,11 @@ pub fn system_panel_event(
 
     let window_panel_health = 1.0;
 
-    for _ in ev_change_state.iter() {
+    for _ in ev_change_state.read() {
         for (entity, mut health, mut p_interaction, w) in q_window.iter_mut() {
             p_interaction.interaction_timeout = zombie_game.window_panel.interaction_timeout;
             for i in 0..zombie_game.window_panel.nbr {
-                let panel = commands.spawn()
-                    .insert_bundle(
+                let panel = commands.spawn(
                         WindowPanelBundle::new(w.clone(), i, zombie_game.window_panel.spacing)
                     ).id();
                 commands.entity(entity).add_child(panel);
